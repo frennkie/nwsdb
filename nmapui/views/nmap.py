@@ -84,10 +84,22 @@ def nmap_report(report_id):
     return render_template('nmap_report.html', report=_report)
 
 
-@appmodule.route('/compare')
+@appmodule.route('/compare', methods=['GET', 'POST'])
 @login_required
 def nmap_compare():
-    return render_template('nmap_compare.html')
+    if request.method == "POST":
+        selected_tasks = request.form.getlist('task_id')
+        if len(selected_tasks) != 2:
+            flash('Please select exactly two reports.', 'danger')
+            _nmap_tasks = NmapTask.find(user_id=current_user.id)
+            return render_template('nmap_compare_select.html',
+                                   tasks=_nmap_tasks)
+        else:
+            return render_template('nmap_compare.html',
+                                   reports_list=selected_tasks)
+    else:
+        _nmap_tasks = NmapTask.find(user_id=current_user.id)
+        return render_template('nmap_compare_select.html', tasks=_nmap_tasks)
 
 
 @appmodule.route('/test', methods=['GET', 'POST'])
