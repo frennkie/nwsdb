@@ -18,6 +18,7 @@
   </head>
 
   <body>
+
     <div class="container">
 
       <form class="form-signin" method="POST" action="/login">
@@ -33,6 +34,18 @@
         </div>
         <button class="btn btn-lg btn-primary btn-block" type="submit">Sign in</button>
       </form>
+
+        <!-- Display flashed messages -->
+        <!-- possible values: alert alert-[success|info|warning|danger] -->
+        {% with messages = get_flashed_messages(with_categories=true) %}
+            {% if messages %}
+            <div class="page-header">
+              {% for category, message in messages %}
+                <div class="alert alert-{{ category }}">{{ message }}</div>
+              {% endfor %}
+            </div>
+            {% endif %}
+        {% endwith %}
 
     </div> <!-- /container -->
   </body>
