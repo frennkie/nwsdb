@@ -1,7 +1,7 @@
 from nmapui import app
 from nmapui.models import NmapTask
 from nmapui.tasks import celery_nmap_scan
-from flask import Blueprint, render_template, request, redirect, url_for
+from flask import Blueprint, render_template, request, redirect, url_for, flash
 from flask.ext.login import login_required, current_user
 from celery.states import READY_STATES
 import json
