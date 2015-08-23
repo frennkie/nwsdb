@@ -3,9 +3,9 @@
     <!--Body content-->
     <form>
     <fieldset>
-        <legend>nmap scans status</legend>
+        <legend>NMAP Scans Status</legend>
         <table id="tasktable" class="table table-striped">
-        <th>Tasks</th><th>Status</th><th>Progress</th><th>Details</th>
+        <th>Tasks</th><th>Status</th><th>Progress</th><th>Details</th><th></th>
         {% for nmap_task in tasks %}
             <tr>
                 <td>{{ nmap_task.id }}</td>
@@ -18,9 +18,14 @@
                     Details
                 {% endif %}
                 </td>
+                <td>
+                    <a href="/nmap/task/delete/{{ nmap_task.id }}"><span class="glyphicon glyphicon-trash"></span></a>
+                </td>
+
             </tr>
         {% endfor %}
         </table>
+
     </fieldset>
     </form>
 {% endblock %}
@@ -57,7 +62,7 @@
             if(all_done){
                 clearInterval(interval_id);
             }
-    }          
+    }
 
 $(function () {
     $(".progressbar")

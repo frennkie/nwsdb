@@ -1,60 +1,92 @@
 <!DOCTYPE html>
 <html>
-<head>
-<title>{{ title }}</title>
-<title>{% block title %}{% endblock %} Web Nmap</title>
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-<!-- Bootstrap -->
-<link href="/static/css/bootstrap.min.css" rel="stylesheet" media="screen">
-<link href="/static/css/jquery-ui-1.10.3.custom.min.css" rel="stylesheet" media="screen">
-</head>
-<body>
-    <div class="row-fluid">
-        <div class="span2">
-        <!--Sidebar content-->
-            <ul class="nav nav-list">
-                <li {% if request.endpoint == 'nmap_index' %}class="active"{% endif %}>
-                    <a href="/nmap/"><i class="icon-home"></i> Home</a>
-                </li>
-                <li {% if request.endpoint == 'nmap_scan' %}class="active"{% endif %}>
-                    <a href="/nmap/scan"><i class="icon-fire"></i> Scan</a>
-                </li>
-                <li {% if request.endpoint == 'nmap_tasks' %}class="active"{% endif %}>
-                    <a href="/nmap/tasks"><i class="icon-book"></i> Tasks</a>
-                </li>
-                <li {% if request.endpoint == 'nmap_compare' %}class="active"{% endif %}>
-                    <a href="/nmap/compare"><i class="icon-random"></i> Compare</a>
-                </li>
-                <li {% if request.endpoint == 'logout' %}class="active"{% endif %}>
-                    <a href="/logout"><i class="icon-off"></i> Logout</a>
-                </li>
+  <head>
+    <meta charset="utf-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <!-- The above 3 meta tags *must* come first in the head; any other
+        head content must come *after* these tags -->
+    <title>{% block title %}{% endblock %} Web Nmap</title>
 
+    <!-- Bootstrap -->
+    <!-- Latest compiled and minified CSS -->
+    <link rel="stylesheet" href="/static/css/bootstrap.min.css">
+    <!-- Optional theme -->
+    <link rel="stylesheet" href="/static/css/bootstrap-theme.min.css">
+    <!-- Latest compiled and minified JavaScript -->
+    <script src="/static/js/bootstrap.min.js"></script>
+
+  </head>
+
+  <body role="document">
+
+    <!-- Fixed navbar -->
+    <nav class="navbar navbar-default navbar-fixed-top">
+        <div class="container">
+            <!-- Brand and toggle get grouped for better mobile display -->
+            <div class="navbar-header">
+            <button type="button" class="navbar-toggle collapsed" data-toggle="collapse" data-target="#bs-example-navbar-collapse-1" aria-expanded="false">
+                <span class="sr-only">Toggle navigation</span>
+                <span class="icon-bar"></span>
+                <span class="icon-bar"></span>
+                <span class="icon-bar"></span>
+            </button>
+            <a class="navbar-brand" href="#">NMAP Web Tool</a>
+            </div>
+
+            <!-- Collect the nav links, forms, and other content for toggling -->
+            <div class="collapse navbar-collapse" id="bs-example-navbar-collapse-1">
+            <ul class="nav navbar-nav">
+                <!--
+                <li class="active"><a href="#">Link <span class="sr-only">(current)</span></a></li>
+                -->
+                <li {% if request.path == '/nmap/' %}class="active"{% endif %}>
+                    <a href="/nmap/"><span class="glyphicon glyphicon-home"></span>&nbsp; Home</a>
+                <li {% if request.path == '/nmap/scan' %}class="active"{% endif %}>
+                    <a href="/nmap/scan"><span class="glyphicon glyphicon-fire"></span>&nbsp; Scan</a>
+                <li {% if request.path == '/nmap/tasks' %}class="active"{% endif %}>
+                    <a href="/nmap/tasks"><span class="glyphicon glyphicon-book"></span>&nbsp; Tasks</a>
+                <li {% if request.path == '/nmap/compare' %}class="active"{% endif %}>
+                    <a href="/nmap/compare"><span class="glyphicon glyphicon-random"></span>&nbsp; Compare</a>
             </ul>
-        </div>
+            <ul class="nav navbar-nav navbar-right">
+                <li><a href="/logout"><span class="glyphicon glyphicon-off"></span>&nbsp; Logout</a>
+            </ul>
+            </div><!-- /.navbar-collapse -->
+        </div><!-- /.container-fluid -->
+    </nav>
 
-        <div class="span10">
+
+    <div class="container main-page" role="main">
+
+      <div class="page-header">
+        <!-- This is foo.. -->
+        &nbsp;
 
         <!-- Display flashed messages -->
         <!-- possible values: alert alert-[success|info|warning|danger] -->
-            {% with messages = get_flashed_messages(with_categories=true) %}
-                {% if messages %}
-                    {% for category, message in messages %}
-                    <div class="alert alert-{{ category }}">{{ message }}</div>
-                    {% endfor %}
-                {% endif %}
-            {% endwith %}
+        {% with messages = get_flashed_messages(with_categories=true) %}
+            {% if messages %}
+              {% for category, message in messages %}
+                <div class="alert alert-{{ category }}">{{ message }}</div>
+              {% endfor %}
+            {% endif %}
+        {% endwith %}
+      </div>
 
-        <!--Body content-->
-            {% block body %}
-            {% endblock %}
-        </div>
-    </div>
-    <script src="/static/js/jquery.min.js"></script>
+      <div class="jumbotron">
+          {% block body %}{% endblock %}
+      </div>
+
+
+    <!-- jQuery (necessary for Bootstrap's JavaScript plugins) -->
+    <script src="/static/js/jquery-1.11.3.min.js"></script>
+    <!-- Include all compiled plugins (below), or include individual files as needed -->
     <script src="/static/js/bootstrap.min.js"></script>
-    <script src="/static/js/jquery-ui-1.10.3.custom.min.js"></script>
+
     <script type='text/javascript'>
     {% block javascript %}
     {% endblock %}
     </script>
-</body>
+  </body>
 </html>
