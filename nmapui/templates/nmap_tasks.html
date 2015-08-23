@@ -5,7 +5,7 @@
     <fieldset>
         <legend>nmap scans status</legend>
         <table id="tasktable" class="table table-striped">
-        <th>Tasks</th><th>Status</th><th>Progress</th><th>Details</th>
+        <th>Tasks</th><th>Status</th><th>Progress</th><th>Details</th><th></th>
         {% for nmap_task in tasks %}
             <tr>
                 <td>{{ nmap_task.id }}</td>
@@ -18,9 +18,23 @@
                     Details
                 {% endif %}
                 </td>
+                <td>
+                    <button type="submit" class="btn btn-default btn-sm"><span class="glyphicon glyphicon-trash"></span></button>
+                </td>
+
             </tr>
         {% endfor %}
         </table>
+
+        <div class="bs-example">
+                <form>
+                            <button type="submit" class="btn btn-default"><span class="glyphicon glyphicon-search"></span> Search</button>
+                                    <button type="submit" class="btn btn-primary"><span class="glyphicon glyphicon-search"></span> Search</button>
+                                            <button type="submit" class="btn btn-primary"><span class="glyphicon glyphicon-trash"></span> Search</button>
+
+                                                </form>
+                                            </div>
+
     </fieldset>
     </form>
 {% endblock %}
@@ -57,7 +71,7 @@
             if(all_done){
                 clearInterval(interval_id);
             }
-    }          
+    }
 
 $(function () {
     $(".progressbar")
