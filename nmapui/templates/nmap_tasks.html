@@ -10,7 +10,8 @@
             <tr>
                 <td>{{ nmap_task.id }}</td>
                 <td id="{{ nmap_task.id }}" class="taskstatus">{{ nmap_task.status }}</td>
-                <td><div id="{{ nmap_task.id }}" class="progressbar"></div></td>
+                <!--<td><div id="{{ nmap_task.id }}" class="progressbar"></div></td> --
+                <td><div id="progressTimer"></div></td>
                 <td id="{{ nmap_task.id }}" class="detailslink">
                 {% if nmap_task.result and 'report' in nmap_task.result %}
                     <a href="{{ url_for('nmap.nmap_report', report_id=nmap_task.id) }}">Details</a>
@@ -30,49 +31,14 @@
     </form>
 {% endblock %}
 {% block javascript %}
-    var interval_id = 0;
-    var tasks_done = new Array();
+<script src="/static/js/jquery.progressTimer.js"></script>
 
-    ajax_handler = function(){
-        $.ajax({ url: "/nmap/jsontasks",
-                 success: task_update_handler
-        });
-    }
-    task_update_handler = function(jsontasks) {
-            var tasklist = $.parseJSON(jsontasks);
-            var all_done = true;
-            $.each(tasklist, function(index, ntask){
-                var pbarid = ntask.id + '.progressbar';
-                var pstatusid = ntask.id + '.taskstatus';
-                var plinkid = ntask.id + '.detailslink';
-                var details_link = "<a href=\"/nmap/report/" + ntask.id + "\">Details</a>";
-                if((ntask.ready == 1) && ($.inArray(ntask.id, tasks_done) == -1)){
-                    $('#' + pbarid).progressbar({value: ntask.progress});
-                    $('#' + pstatusid).text(ntask.status);
-                    $('#' + plinkid).html(details_link);
-                    tasks_done.push(ntask.id);
-                    all_done = false;
-                }
-                else if($.inArray(ntask.id, tasks_done) == -1){
-                    $('#' + pbarid).progressbar({value: ntask.progress});
-                    $('#' + pstatusid).text(ntask.status);
-                    all_done = false;
-                }
+        <script>
+            $("#startProgressTimer").click(function() {
+                $("#progressTimer").progressTimer({
+                    timeLimit: $("#restTime").val()
+                });
             });
-            if(all_done){
-                clearInterval(interval_id);
-            }
-    }
+        </script>
 
-$(function () {
-    $(".progressbar")
-        .progressbar()
-        .height(10)
-        .width(70)
-        .find('.ui-progressbar-value').css({
-            "background": '#F20081'
-        });
-    ajax_handler();
-    interval_id = setInterval(ajax_handler, 2000);
-});
 {% endblock %}
