@@ -31,7 +31,19 @@
 
             </ul>
         </div>
+
         <div class="span10">
+
+        <!-- Display flashed messages -->
+        <!-- possible values: alert alert-[success|info|warning|danger] -->
+            {% with messages = get_flashed_messages(with_categories=true) %}
+                {% if messages %}
+                    {% for category, message in messages %}
+                    <div class="alert alert-{{ category }}">{{ message }}</div>
+                    {% endfor %}
+                {% endif %}
+            {% endwith %}
+
         <!--Body content-->
             {% block body %}
             {% endblock %}
