@@ -23,7 +23,7 @@ def login():
         if 'username' in request.form and len(request.form['username']):
             app_users = Users.find(username=username)
             if len(app_users) != 1:
-                flash("login failed: check username and password", "danger")
+                flash("Login failed: Check Username and Password", "danger")
                 # this might make user enumeration possible/simple
                 return render_template("nmap_login.html")
             else:
@@ -31,9 +31,9 @@ def login():
 
         if app_user and app_user.credentials_valid(password):
             login_user(app_user)
-            return redirect(request.args.get("next") or url_for("nmap.nmap_index"))
+            return redirect(url_for("nmap.nmap_index"))
         else:
-            flash("login failed: check username and password", "danger")
+            flash("Login failed: Check Username and Password", "danger")
 
     return render_template("nmap_login.html")
 
