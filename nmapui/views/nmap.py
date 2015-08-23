@@ -13,12 +13,10 @@ appmodule = Blueprint('nmap', __name__, url_prefix='/nmap')
 def nmap_index():
     return render_template('nmap_index.html')
 
-
 @appmodule.route('/scan')
 @login_required
 def nmap_scan():
     return render_template('nmap_scans.html')
-
 
 @appmodule.route('/tasks', methods=['GET', 'POST'])
 @login_required
@@ -100,7 +98,6 @@ def nmap_task_delete(task_id):
         flash("Delete failed?! for task_id: " + task_id, 'danger')
         return redirect(url_for('nmap.nmap_tasks'))
 
-
 @appmodule.route('/report/<report_id>')
 @login_required
 def nmap_report(report_id):
@@ -108,7 +105,6 @@ def nmap_report(report_id):
     if report_id is not None:
         _report = NmapTask.get_report(task_id=report_id)
     return render_template('nmap_report.html', report=_report)
-
 
 @appmodule.route('/compare', methods=['GET', 'POST'])
 @login_required
@@ -134,7 +130,6 @@ def nmap_compare():
     else:
         _nmap_tasks = NmapTask.find(user_id=current_user.id)
         return render_template('nmap_compare_select.html', tasks=_nmap_tasks)
-
 
 @appmodule.route('/test', methods=['GET', 'POST'])
 #@login_required
