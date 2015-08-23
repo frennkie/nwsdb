@@ -1,5 +1,5 @@
 from nmapui import app
-from nmapui.models import NmapTask
+from nmapui.models import NmapTask, NmapDiffer
 from nmapui.tasks import celery_nmap_scan
 from flask import Blueprint, render_template, request, redirect, url_for, flash
 from flask.ext.login import login_required, current_user
@@ -75,6 +75,32 @@ def nmap_tasks_json():
 
     return json.dumps(_jtarray)
 
+@appmodule.route('/task/delete/<task_id>')
+@login_required
+def nmap_task_delete(task_id):
+    if task_id is None:
+        # TODO dead code?! How should task_id be None here?
+        flash("Can not delete as no task id is given!", 'info')
+        return redirect(url_for('nmap.nmap_tasks'))
+
+    _nmap_task = NmapTask.get(task_id)
+    if _nmap_task is None:
+        flash("There is no entry for task_id: " + task_id, 'info')
+        return redirect(url_for('nmap.nmap_tasks'))
+
+    if 'report' not in _nmap_task:
+        flash("Not yet finished?! task_id: " + task_id, 'info')
+        return redirect(url_for('nmap.nmap_tasks'))
+
+    if NmapTask.remove_task_by_id(task_id=task_id):
+        flash("Deleted entry for task_id: " + task_id, 'success')
+        return redirect(url_for('nmap.nmap_tasks'))
+
+    else:
+        flash("Delete failed?! for task_id: " + task_id, 'danger')
+        return redirect(url_for('nmap.nmap_tasks'))
+
+
 @appmodule.route('/report/<report_id>')
 @login_required
 def nmap_report(report_id):
@@ -95,8 +121,16 @@ def nmap_compare():
             return render_template('nmap_compare_select.html',
                                    tasks=_nmap_tasks)
         else:
+            print selected_tasks[0]
+            print selected_tasks[1]
+            nd = NmapDiffer(old_report=NmapTask.get_report(task_id=selected_tasks[0]),
+                            new_report=NmapTask.get_report(task_id=selected_tasks[1]))
+
             return render_template('nmap_compare.html',
-                                   reports_list=selected_tasks)
+                                   reports_list=selected_tasks,
+                                   changed=nd.changed,
+                                   added=nd.added,
+                                   removed=nd.removed)
     else:
         _nmap_tasks = NmapTask.find(user_id=current_user.id)
         return render_template('nmap_compare_select.html', tasks=_nmap_tasks)

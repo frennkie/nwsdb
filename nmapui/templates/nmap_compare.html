@@ -6,6 +6,13 @@
         <legend>Compare nmap reports</legend>
 
         Checking {{ reports_list[0] }} against {{ reports_list[1] }}
+        <br>
+        {{ changed }}
+        <br>
+        {{ added }}
+        <br>
+        {{ removed }}
+        <br>
     </fieldset>
     </form>
 {% endblock %}
