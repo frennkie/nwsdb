@@ -5,14 +5,42 @@
     <fieldset>
         <legend>Compare nmap reports</legend>
 
-        Checking {{ reports_list[0] }} against {{ reports_list[1] }}
+        <table id="changedtable" class="table table-striped">
+          <th>Changed</th>
+          {% for changed_item in changed %}
+          <tr>
+              <td>
+                {{ changed_item }}
+              </td>
+          </tr>
+          {% endfor %}
+        </table>
         <br>
-        {{ changed }}
+        <table id="addedtable" class="table table-striped">
+          <th>New</th>
+          {% for added_item in added %}
+          <tr>
+              <td>
+                {{ added_item }}
+              </td>
+          </tr>
+          {% endfor %}
+        </table>
         <br>
-        {{ added }}
-        <br>
-        {{ removed }}
-        <br>
+        <table id="removedtable" class="table table-striped">
+          <th>Removed</th>
+          {% for removed_item in removed %}
+          <tr>
+              <td>
+                {{ removed_item }}
+              </td>
+          </tr>
+          {% endfor %}
+        </table>
+
     </fieldset>
     </form>
+
+    <br>
+    <p class="small">checked {{ reports_list[0] }} against {{ reports_list[1] }}</p>
 {% endblock %}
