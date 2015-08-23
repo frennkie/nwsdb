@@ -1,0 +1,24 @@
+{% extends "base.html" %}
+{% block body %}
+    <!--Body content-->
+    <form>
+    <fieldset>
+        <legend>Select nmap reports to compare</legend>
+        <table id="tasktable" class="table table-striped">
+        <th></th><th>Tasks</th><th>Status</th><th>Details</th>
+        {% for nmap_task in tasks %}
+            <tr>
+                {% if nmap_task.result and 'report' in nmap_task.result %}
+                    <td><input type="checkbox" name="task_id" value="{{ nmap_task.id }}"></td>
+                    <td>{{ nmap_task.id }}</td>
+                    <td id="{{ nmap_task.id }}" class="taskstatus">{{ nmap_task.status }}</td>
+                    <td id="{{ nmap_task.id }}" class="detailslink">
+                    <a href="{{ url_for('nmap.nmap_report', report_id=nmap_task.id) }}">Details</a></td>
+                {% endif %}
+            </tr>
+        {% endfor %}
+        </table>
+        <input type="submit" formmethod="post" formaction="compare" value="Compare">
+    </fieldset>
+    </form>
+{% endblock %}
