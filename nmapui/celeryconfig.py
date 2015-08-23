@@ -12,4 +12,4 @@ CELERY_MONGODB_BACKEND_SETTINGS = {
     "database": MONGO_DBNAME,
     "taskmeta_collection": "celery_taskmeta",
     }
-CELERY_TIMEZONE = 'Europe/Brussels'
+CELERY_TIMEZONE = 'Europe/Berlin'
