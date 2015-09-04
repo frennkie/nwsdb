@@ -5,15 +5,16 @@
     <fieldset>
         <legend>Select nmap reports to compare</legend>
         <table id="tasktable" class="table table-striped">
-        <th></th><th>Tasks</th><th>Status</th><th>Details</th>
+        <th></th><th>Tasks</th><th>Comment</th><th>Status</th><th>Details</th>
         {% for nmap_task in tasks %}
             <tr>
-                {% if nmap_task.result and 'report' in nmap_task.result %}
-                    <td><input type="checkbox" name="task_id" value="{{ nmap_task.id }}"></td>
-                    <td>{{ nmap_task.id }}</td>
-                    <td id="{{ nmap_task.id }}" class="taskstatus">{{ nmap_task.status }}</td>
-                    <td id="{{ nmap_task.id }}" class="detailslink">
-                    <a href="{{ url_for('nmap.nmap_report', report_id=nmap_task.id) }}">Details</a></td>
+                {% if nmap_task['task_id'].result and 'report' in nmap_task['task_id'].result %}
+                    <td><input type="checkbox" name="task_id" value="{{ nmap_task['task_id'].id }}"></td>
+                    <td>{{ nmap_task['task_id'].id }}</td>
+                    <td id="{{ nmap_task['task_id'].id }}" > {{ nmap_task['comment'] }}</td>
+                    <td id="{{ nmap_task['task_id'].id }}" class="taskstatus">{{ nmap_task['task_id'].status }}</td>
+                    <td id="{{ nmap_task['task_id'].id }}" class="detailslink">
+                    <a href="{{ url_for('nmap.nmap_report', report_id=nmap_task['task_id'].id) }}">Details</a></td>
                 {% endif %}
             </tr>
         {% endfor %}

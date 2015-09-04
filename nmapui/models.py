@@ -3,7 +3,7 @@ from nmapui.celeryapp import celery_pipe
 from bson.objectid import ObjectId
 from nmapui import mongo
 import hashlib
-
+import datetime
 
 class Users(object):
     @classmethod
@@ -73,7 +73,8 @@ class NmapTask(object):
         _reports = []
         _dbreports = mongo.db.reports.find(kwargs)
         for _dbreport in _dbreports:
-            _nmap_task = celery_pipe.AsyncResult(_dbreport['task_id'])
+            _nmap_task = {'task_id': celery_pipe.AsyncResult(_dbreport['task_id']),
+                          'comment': _dbreport['comment']}
             _reports.append(_nmap_task)
         return _reports
 
@@ -100,10 +101,13 @@ class NmapTask(object):
         return _report
 
     @classmethod
-    def add(cls, user_id=None, task_id=None):
+    def add(cls, user_id=None, task_id=None, comment=None):
         rval = False
-        if user_id is not None and task_id is not None:
-            mongo.db.reports.insert({'user_id': user_id, 'task_id': task_id})
+        if user_id is not None and task_id is not None and comment is not None:
+            mongo.db.reports.insert({'user_id': user_id,
+                                     'task_id': task_id,
+                                     'comment': comment,
+                                     'created': datetime.datetime.utcnow()})
             rval = True
         return rval
 

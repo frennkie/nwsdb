@@ -30,6 +30,11 @@ def nmap_tasks():
         else:
             abort(401)
 
+        if 'comment' in request.form:
+            comment = request.form["comment"]
+        else:
+            pass
+
         options = ""
         scani = int(request.form['scantype']) if 'scantype' in request.form else 0
         if 'ports' in request.form and len(request.form['ports']):
@@ -46,10 +51,14 @@ def nmap_tasks():
                                                   bannerdetect)
         _celery_task = celery_nmap_scan.delay(targets=str(targets),
                                               options=str(options))
-        NmapTask.add(user_id=current_user.id, task_id=_celery_task.id)
+        NmapTask.add(user_id=current_user.id,
+                     task_id=_celery_task.id,
+                     comment=comment)
+
         return redirect(url_for('nmap.nmap_tasks'))
 
     _nmap_tasks = NmapTask.find(user_id=current_user.id)
+
     return render_template('nmap_tasks.html', tasks=_nmap_tasks)
 
 @appmodule.route('/jsontasks', methods=['GET', 'POST'])
