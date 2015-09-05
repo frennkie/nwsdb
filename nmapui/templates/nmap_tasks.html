@@ -41,6 +41,8 @@
     </form>
 {% endblock %}
 {% block javascript %}
+    var interval_id = 0;
+    var tasks_done = new Array();
 
     ajax_handler = function(){
         $.ajax({ url: "/nmap/jsontasks",
