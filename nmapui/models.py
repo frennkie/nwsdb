@@ -69,12 +69,20 @@ class User:
 
 class NmapTask(object):
     @classmethod
-    def find(cls, **kwargs):
+    def find(cls, asc=True, **kwargs):
         _reports = []
-        _dbreports = mongo.db.reports.find(kwargs)
+
+        if asc is True:
+            sort_order = 1
+        else:
+            sort_order = -1
+
+        _dbreports = mongo.db.reports.find(kwargs).sort("created", sort_order)
+
         for _dbreport in _dbreports:
             _nmap_task = {'task_id': celery_pipe.AsyncResult(_dbreport['task_id']),
-                          'comment': _dbreport['comment']}
+                          'comment': _dbreport['comment'],
+                          'created': _dbreport['created']}
             _reports.append(_nmap_task)
         return _reports
 
