@@ -7,14 +7,12 @@ from flask import Flask
 from nmapui import config
 from flask.ext.pymongo import PyMongo
 from flask.ext.login import LoginManager
-from flask.ext.moment import Moment
 import datetime
 
 app = Flask(__name__)
 app.config.from_object(config)
 
 mongo = PyMongo(app)
-moment = Moment(app)
 
 login_manager = LoginManager()
 login_manager.init_app(app)
