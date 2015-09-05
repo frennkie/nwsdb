@@ -67,16 +67,16 @@ def nmap_tasks_json():
     _nmap_tasks = NmapTask.find(user_id=current_user.id)
     _jtarray = []
     for _ntask in _nmap_tasks:
-        tdict = {'id': _ntask.id,
-                 'status': _ntask.status,
+        tdict = {'id': _ntask['task_id'].id,
+                 'status': _ntask['task_id'].status,
                  'ready': 0}
-        if _ntask.result and 'done' in _ntask.result:
-            tdict.update({'progress': float(_ntask.result['done'])})
-        elif _ntask.result and 'report' in _ntask.result:
+        if _ntask['task_id'].result and 'done' in _ntask['task_id'].result:
+            tdict.update({'progress': float(_ntask['task_id'].result['done'])})
+        elif _ntask['task_id'].result and 'report' in _ntask['task_id'].result:
             tdict.update({'progress': 100})
         else:
             tdict.update({'progress': 0})
-        if _ntask.status in READY_STATES:
+        if _ntask['task_id'].status in READY_STATES:
             tdict.update({'ready': 1})
         _jtarray.append(tdict)
 
