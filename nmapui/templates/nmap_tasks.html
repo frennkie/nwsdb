@@ -5,10 +5,11 @@
     <fieldset>
         <legend>NMAP Scans Status</legend>
         <table id="tasktable" class="table table-striped">
-        <th>Tasks</th><th>Comment</th><th>Status</th><th>Progress</th><th>Details</th><th></th>
+        <th>Tasks</th><th>Created (UTC)</th><th>Comment</th><th>Status</th><th>Progress</th><th>Details</th><th></th>
         {% for nmap_task in tasks %}
             <tr>
                 <td>{{ nmap_task['task_id'].id }}</td>
+                <td id="{{ nmap_task['task_id'].id }}" > {{ nmap_task['created'] }}</td>
                 <td id="{{ nmap_task['task_id'].id }}" > {{ nmap_task['comment'] }}</td>
                 <td id="{{ nmap_task['task_id'].id }}" class="taskstatus">{{ nmap_task['task_id'].status }}</td>
                 <td><div id="{{ nmap_task['task_id'].id }}" class="progressbar"></div></td>
