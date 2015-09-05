@@ -126,8 +126,6 @@ def nmap_compare():
             return render_template('nmap_compare_select.html',
                                    tasks=_nmap_tasks)
         else:
-            print selected_tasks[0]
-            print selected_tasks[1]
             nd = NmapDiffer(old_report=NmapTask.get_report(task_id=selected_tasks[0]),
                             new_report=NmapTask.get_report(task_id=selected_tasks[1]))
 
