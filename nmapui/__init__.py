@@ -7,6 +7,7 @@ from flask import Flask
 from nmapui import config
 from flask.ext.pymongo import PyMongo
 from flask.ext.login import LoginManager
+from momentjs import momentjs
 import datetime
 
 app = Flask(__name__)
@@ -22,6 +23,9 @@ from nmapui.views import ui
 from nmapui.views import nmap
 app.register_blueprint(ui.appmodule)
 app.register_blueprint(nmap.appmodule)
+
+# Set jinja template global
+app.jinja_env.globals['momentjs'] = momentjs
 
 def unix2datetime(unixstr):
     _rstr = ''
