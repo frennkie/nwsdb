@@ -16,7 +16,7 @@ def nmap_index():
 @appmodule.route('/scan')
 @login_required
 def nmap_scan():
-    return render_template('nmap_scans.html')
+    return render_template('nmap_scan.html')
 
 @appmodule.route('/tasks', methods=['GET', 'POST'])
 @login_required
