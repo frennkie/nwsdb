@@ -15,6 +15,9 @@
     <!-- Optional theme -->
     <!--<link rel="stylesheet" href="/static/css/bootstrap-theme.min.css">-->
 
+    <!-- custom css -->
+    <link rel="stylesheet" href="/static/css/custom-base.css">
+
     <!-- jQuery (necessary for Bootstrap's JavaScript plugins) -->
     <script src="/static/js/jquery-1.11.3.min.js"></script>
 
@@ -68,17 +71,16 @@
     <div class="container main-page" role="main">
 
       <div class="page-header">
-        <!-- This is foo.. -->
-        &nbsp;
-
         <!-- Display flashed messages -->
         <!-- possible values: alert alert-[success|info|warning|danger] -->
         {% with messages = get_flashed_messages(with_categories=true) %}
-            {% if messages %}
-              {% for category, message in messages %}
+          {% if messages %}
+            <!-- Need this blank line otherwise the flashed message would overlap
+                with the navigation bar. -->
+            {% for category, message in messages %}
                 <div class="alert alert-{{ category }}">{{ message }}</div>
-              {% endfor %}
-            {% endif %}
+            {% endfor %}
+          {% endif %}
         {% endwith %}
       </div>
 
