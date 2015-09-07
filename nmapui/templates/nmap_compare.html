@@ -6,8 +6,23 @@
     <fieldset>
         <legend>Compare nmap reports</legend>
 
+        <div class="row">
+            <div class="col-sm-2">
+                <table id="changedtable" class="table table-striped" width=100px>
+
+                <tbody>
+                    <!--<th colspan=2>Summary</th>-->
+                    <tr class="info"><td>Changed:</td><td class=text-right>{{changed|length}}</td></tr>
+                    <tr class="danger"><td>Added:</td><td class=text-right>{{added|length}}</td></tr>
+                    <tr class="warning"><td>Removed:</td><td class=text-right>{{removed|length}}</td></tr>
+                </tbody>
+                </table>
+            </div>
+
+        </div>
+
         <table id="changedtable" class="table table-striped">
-          <th>Changed</th>
+          <th class="info">Changed Services</th>
           {% for changed_item in changed %}
           <tr>
               <td>
@@ -18,7 +33,7 @@
         </table>
         <br>
         <table id="addedtable" class="table table-striped">
-          <th>New</th>
+          <th class="danger">Newly discovered Services</th>
           {% for added_item in added %}
           <tr>
               <td>
@@ -29,7 +44,7 @@
         </table>
         <br>
         <table id="removedtable" class="table table-striped">
-          <th>Removed</th>
+          <th class="warning">Removed Services</th>
           {% for removed_item in removed %}
           <tr>
               <td>
@@ -42,6 +57,4 @@
     </fieldset>
     </form>
 
-    <br>
-    <p class="small">checked {{ reports_list[0] }} against {{ reports_list[1] }}</p>
 {% endblock %}

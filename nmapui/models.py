@@ -197,8 +197,8 @@ class NmapDiffer(object):
             else:
                 self.removed.append("- {0} {1}: {2}".format(obj2, rkey, getattr(obj2, rkey)))
 
-    def do_diff_changed(self, obj1, obj2, changes):
-        for mkey in changes:
+    def do_diff_changed(self, obj1, obj2, changed):
+        for mkey in changed:
             nested = self.nested_obj(mkey)
             if nested is not None:
                 if nested[0] == 'NmapHost':
