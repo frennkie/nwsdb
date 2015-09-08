@@ -4,6 +4,16 @@
 
 This webapp is being developped. Basic structure is here, you can launch scan and have nmap scan reports automatically stored but no more so far :p
 
+
+## Backup/Restore
+
+mongodump
+
+mongorestore --db nmapuidb --collection reports dump/nmapuidb/reports.bson
+mongorestore --db nmapuidb --collection celery_taskmeta dump/nmapuidb/celery_taskmeta.bson
+
+
+
 ## Use cases
 nmap-webgui is a multi-user small web application based on flask to enable the user to:
 
