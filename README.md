@@ -12,7 +12,11 @@ mongodump
 mongorestore --db nmapuidb --collection reports dump/nmapuidb/reports.bson
 mongorestore --db nmapuidb --collection celery_taskmeta dump/nmapuidb/celery_taskmeta.bson
 
+## clean out all reports
 
+mongo nmapuidb
+db.reports.remove({})
+db.celery_taskmeta.remove({})
 
 ## Use cases
 nmap-webgui is a multi-user small web application based on flask to enable the user to:
