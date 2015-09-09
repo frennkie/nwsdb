@@ -25,7 +25,7 @@ def login():
             if len(app_users) != 1:
                 flash("Login failed: Check Username and Password", "danger")
                 # this might make user enumeration possible/simple
-                return render_template("nmap_login.html")
+                return render_template("login.html")
             else:
                 app_user = app_users[0]
 
@@ -35,8 +35,13 @@ def login():
         else:
             flash("Login failed: Check Username and Password", "danger")
 
-    return render_template("nmap_login.html")
+    return render_template("login.html")
 
+
+@appmodule.route("/profile")
+@login_required
+def profile():
+    return render_template("profile.html")
 
 @appmodule.route("/logout")
 @login_required

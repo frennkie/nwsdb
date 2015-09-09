@@ -48,19 +48,33 @@
             <!-- Collect the nav links, forms, and other content for toggling -->
             <div class="collapse navbar-collapse" id="bs-example-navbar-collapse-1">
             <ul class="nav navbar-nav">
-                <!--
-                <li class="active"><a href="#">Link <span class="sr-only">(current)</span></a></li>
-                -->
                 <li {% if request.path == '/nmap/' %}class="active"{% endif %}>
-                    <a href="/nmap/"><span class="glyphicon glyphicon-home"></span>&nbsp; Home</a>
+                    <a href="/nmap/"><span class="glyphicon glyphicon-home"></span>&nbsp; Home</a></li>
                 <li {% if request.path == '/nmap/scan' %}class="active"{% endif %}>
-                    <a href="/nmap/scan"><span class="glyphicon glyphicon-fire"></span>&nbsp; Scan</a>
+                    <a href="/nmap/scan"><span class="glyphicon glyphicon-fire"></span>&nbsp; Scan</a></li>
                 <li {% if request.path == '/nmap/tasks' %}class="active"{% endif %}>
-                    <a href="/nmap/tasks"><span class="glyphicon glyphicon-book"></span>&nbsp; Tasks</a>
+                    <a href="/nmap/tasks"><span class="glyphicon glyphicon-book"></span>&nbsp; Tasks</a></li>
                 <li {% if request.path == '/nmap/compare' %}class="active"{% endif %}>
-                    <a href="/nmap/compare"><span class="glyphicon glyphicon-random"></span>&nbsp; Compare</a>
+                    <a href="/nmap/compare"><span class="glyphicon glyphicon-random"></span>&nbsp; Compare</a></li>
+
+                <li class="dropdown">
+                <a href="#" class="dropdown-toggle" data-toggle="dropdown" role="button" aria-haspopup="true" aria-expanded="false">Database <span class="caret"></span></a>
+                    <ul class="dropdown-menu">
+                        <li {% if request.path == '/nmap/db' %}class="active"{% endif %}>
+                            <a href="/nmap/db"><span class="glyphicon glyphicon-hdd"></span>&nbsp; Overview</a></li>
+                        <li role="separator" class="divider"></li>
+                        <li {% if request.path == '/nmap/export' %}class="active"{% endif %}>
+                            <a href="/nmap/export"><span class="glyphicon glyphicon-export"></span>&nbsp; Export</a></li>
+                        <li {% if request.path == '/nmap/import' %}class="active"{% endif %}>
+                            <a href="/nmap/import"><span class="glyphicon glyphicon-import"></span>&nbsp; Import</a></li>
+                    </ul>
+                </li>
+
+
             </ul>
             <ul class="nav navbar-nav navbar-right">
+                <li {% if request.path == '/profile' %}class="active"{% endif %}>
+                    <a href="/profile"><span class="glyphicon glyphicon-user"></span>&nbsp; {{ current_user.username }}</a></li>
                 <li><a href="/logout"><span class="glyphicon glyphicon-off"></span>&nbsp; Logout</a>
             </ul>
             </div><!-- /.navbar-collapse -->

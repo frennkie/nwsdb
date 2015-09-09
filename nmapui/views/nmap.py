@@ -6,6 +6,8 @@ from flask.ext.login import login_required, current_user
 from celery.states import READY_STATES
 import json
 
+from xlsx import Workbook
+
 appmodule = Blueprint('nmap', __name__, url_prefix='/nmap')
 
 @appmodule.route('/')
@@ -137,6 +139,37 @@ def nmap_compare():
     else:
         _nmap_tasks = NmapTask.find(user_id=current_user.id)
         return render_template('nmap_compare_select.html', tasks=_nmap_tasks)
+
+@appmodule.route('/db')
+@login_required
+def nmap_database():
+    return render_template('nmap_database.html')
+
+@appmodule.route('/export')
+@login_required
+def nmap_export():
+    return render_template('nmap_export.html')
+
+@appmodule.route('/import', methods=['GET', 'POST'])
+@login_required
+def nmap_import():
+    if request.method == "POST":
+        import_file = request.files['file']
+        if import_file:
+            foo = import_file.filename
+            book = Workbook(import_file) #Open xlsx file
+            sheets = []
+            for sheet in book:
+                    print sheet.name
+                    sheets.append(sheet)
+            content = import_file.read()
+            #return render_template('nmap_import_result.html', foo=foo, content=content)
+            return render_template('nmap_import_result.html', sheets=sheets)
+        else:
+            raise Exception("nmap_import failed")
+
+    else:
+        return render_template('nmap_import.html')
 
 @appmodule.route('/test', methods=['GET', 'POST'])
 #@login_required
