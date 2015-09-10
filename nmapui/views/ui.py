@@ -30,7 +30,10 @@ def login():
                 app_user = app_users[0]
 
         if app_user and app_user.credentials_valid(password):
-            login_user(app_user)
+            if request.form.getlist("remember-me"):
+                login_user(app_user, remember=True)
+            else:
+                login_user(app_user)
             return redirect(url_for("nmap.nmap_index"))
         else:
             flash("Login failed: Check Username and Password", "danger")
