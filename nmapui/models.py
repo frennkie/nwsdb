@@ -2,6 +2,7 @@ from libnmap.parser import NmapParser, NmapParserException
 from nmapui.celeryapp import celery_pipe
 from bson.objectid import ObjectId
 from nmapui import mongo, login_serializer
+from flask.ext.login import UserMixin
 import hashlib
 import datetime
 
@@ -41,24 +42,12 @@ class Users(object):
             rval = True
         return rval
 
-class User:
+class User(UserMixin):
     def __init__(self, id, username, email, password):
         self.id = id
         self.username = username
         self.password = password
         self.email = email
-
-    def is_authenticated(self):
-        return True
-
-    def is_active(self):
-        return True
-
-    def is_anonymous(self):
-      return False
-
-    def get_id(self):
-        return unicode(self.id)
 
     def get_auth_token(self):
         """
