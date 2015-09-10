@@ -1,8 +1,11 @@
 import os
+from datetime import timedelta
 basedir = os.path.abspath(os.path.dirname(__file__))
 
 CSRF_ENABLED = True
 SECRET_KEY = '973fb5503d479a2ccd1ce8b4227bdd3c'
+
+REMEMBER_COOKIE_DURATION = timedelta(minutes=5)
 
 # mongodb config
 MONGO_DBNAME = 'nmapuidb'

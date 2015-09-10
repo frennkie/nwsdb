@@ -1,7 +1,7 @@
 from libnmap.parser import NmapParser, NmapParserException
 from nmapui.celeryapp import celery_pipe
 from bson.objectid import ObjectId
-from nmapui import mongo
+from nmapui import mongo, login_serializer
 import hashlib
 import datetime
 
@@ -59,6 +59,13 @@ class User:
 
     def get_id(self):
         return unicode(self.id)
+
+    def get_auth_token(self):
+        """
+        Encode a secure token for cookie
+        """
+        data = [str(self.id), self.password]
+        return login_serializer.dumps(data)
 
     def credentials_valid(self, _password):
         return hashlib.sha256(_password).hexdigest() == self.password
