@@ -48,7 +48,6 @@ class User(UserMixin):
         self.id = id
         self.username = username
         self.password = password
-        self.password_utf8 = password.encode('utf-8')
         self.email = email
 
     def get_auth_token(self):
@@ -59,8 +58,9 @@ class User(UserMixin):
         return login_serializer.dumps(data)
 
     def credentials_valid(self, _password):
+        _db_password_utf8 = self.password.encode('utf-8')
         return bcrypt.hashpw(_password.encode('utf-8') + app.config["PEPPER"],
-                             self.password_utf8) == self.password_utf8
+                             _db_password_utf8) == _db_password_utf8
 
     def __repr__(self):
         return "<User {0}>".format(self.username)

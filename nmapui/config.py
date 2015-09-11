@@ -4,7 +4,7 @@ basedir = os.path.abspath(os.path.dirname(__file__))
 
 CSRF_ENABLED = True
 SECRET_KEY = '973fb5503d479a2ccd1ce8b4227bdd3c'
-PEPPER= "green_peppers"
+PEPPER = "green_peppers"
 
 REMEMBER_COOKIE_DURATION = timedelta(days=1)
 
