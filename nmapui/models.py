@@ -3,7 +3,8 @@ from nmapui.celeryapp import celery_pipe
 from bson.objectid import ObjectId
 from nmapui import mongo, login_serializer
 from flask.ext.login import UserMixin
-import hashlib
+from nmapui import app
+import bcrypt
 import datetime
 
 class Users(object):
@@ -47,6 +48,7 @@ class User(UserMixin):
         self.id = id
         self.username = username
         self.password = password
+        self.password_utf8 = password.encode('utf-8')
         self.email = email
 
     def get_auth_token(self):
@@ -57,7 +59,8 @@ class User(UserMixin):
         return login_serializer.dumps(data)
 
     def credentials_valid(self, _password):
-        return hashlib.sha256(_password).hexdigest() == self.password
+        return bcrypt.hashpw(_password.encode('utf-8') + app.config["PEPPER"],
+                             self.password_utf8) == self.password_utf8
 
     def __repr__(self):
         return "<User {0}>".format(self.username)

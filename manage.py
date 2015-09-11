@@ -1,5 +1,5 @@
 import getpass
-import hashlib
+import bcrypt
 from flask.ext.script import Manager, Server
 from nmapui import app
 from nmapui.models import Users
@@ -17,7 +17,7 @@ def adduser(username, email):
     __p1 = getpass.getpass()
     __p2 = getpass.getpass("Confirm password:")
     if __p1 == __p2 and len(__p1):
-        __px = hashlib.sha256(__p1).hexdigest()
+        __px = bcrypt.hashpw(__p1 + app.config["PEPPER"], bcrypt.gensalt())
         u = Users.add(username=username, email=email, password=__px)
     else:
         print "Error: password do not match"
