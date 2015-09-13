@@ -6,7 +6,7 @@ BROKER_URL = "amqp://guest:guest@localhost:5672//"
 CELERY_IMPORTS = ("nmapui.tasks", )
 CELERY_ENABLE_UTC = True
 
-CELERY_RESULT_BACKEND = "db+" + app.config["DATABASE_URI"]
+CELERY_RESULT_BACKEND = "db+" + DATABASE_URI
 
 CELERY_TIMEZONE = 'Europe/Berlin'
 
