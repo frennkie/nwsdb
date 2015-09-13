@@ -1,7 +1,7 @@
 *~
 *.pyc
 config.py
-migrate.py
 testtools/*
 build/
 dump/
+nmapui.db

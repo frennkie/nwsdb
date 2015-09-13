@@ -3,18 +3,18 @@ __email__ =  'mini.pelle@gmail.com'
 __license__ = 'CC-BY'
 __version__ = '0.1'
 
+import datetime
 from flask import Flask
-from nmapui import config
-from flask.ext.pymongo import PyMongo
+from flask.ext.sqlalchemy import SQLAlchemy
 from flask.ext.login import LoginManager
 from itsdangerous import URLSafeTimedSerializer
 from momentjs import momentjs
-import datetime
+from nmapui import config
 
 app = Flask(__name__)
 app.config.from_object(config)
 
-mongo = PyMongo(app)
+db = SQLAlchemy(app)
 
 login_serializer = URLSafeTimedSerializer(app.config["SECRET_KEY"])
 

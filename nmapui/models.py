@@ -1,50 +1,80 @@
-from libnmap.parser import NmapParser, NmapParserException
-from nmapui.celeryapp import celery_pipe
-from bson.objectid import ObjectId
-from nmapui import mongo, login_serializer
-from flask.ext.login import UserMixin
-from nmapui import app
 import bcrypt
 import datetime
+from flask.ext.login import UserMixin
+from flask.ext.sqlalchemy import SQLAlchemy
+from sqlalchemy.exc import SQLAlchemyError
+from sqlalchemy import create_engine, MetaData, Table, desc
+from libnmap.parser import NmapParser, NmapParserException
+from bson.objectid import ObjectId
+from nmapui import app
+from nmapui import db
+from nmapui import login_serializer
+from nmapui.celeryapp import celery_pipe
+
+# move to __init__.py ?!
+engine = create_engine(app.config["DATABASE_URI"], convert_unicode=True)
+metadata = MetaData(bind=engine)
+celery_taskmeta = Table('celery_taskmeta', metadata, autoload=True)
+nmap_task = Table('nmap_task', metadata, autoload=True)
 
 class Users(object):
+    """ """
+
     @classmethod
     def find(cls, **kwargs):
+        """ find Users from database
+        Args:
+            cls (Class):
+            **kwargs: Optional
+
+        Returns:
+            List of User objects
+
+        Examples:
+            TODO
+
+        """
         _users = []
-        _dbusers = mongo.db.users.find(kwargs)
+        _dbusers = User.query.filter_by(**kwargs)
         for _dbuser in _dbusers:
-            _users.append(User(id=_dbuser['_id'],
-                               username=_dbuser['username'],
-                               password=_dbuser['password'],
-                               email=_dbuser['email']))
+            _users.append(User(id=_dbuser.id,
+                          username=_dbuser.username,
+                          password=_dbuser.password,
+                          email=_dbuser.email))
         return _users
 
     @classmethod
     def get(cls, user_id):
+        """ """
         _user = None
-        if isinstance(user_id, unicode):
-            user_id = ObjectId(user_id)
-
-        if isinstance(user_id, ObjectId):
-            _dbuser = mongo.db.users.find_one({'_id': user_id})
-            _user = User(id=_dbuser['_id'],
-                         username=_dbuser['username'],
-                         password=_dbuser['password'],
-                         email=_dbuser['email'])
+        _dbuser = User.query.get(user_id)
+        _user = User(id=_dbuser.id,
+                     username=_dbuser.username,
+                     password=_dbuser.password,
+                     email=_dbuser.email)
         return _user
 
     @classmethod
     def add(cls, username=None, email=None, password=None):
+        """ """
         rval = False
         if username is not None and email is not None and password is not None:
-            mongo.db.users.insert({'username': username,
-                                   'email': email,
-                                   'password': password})
+            new_user = User(username=username, email=email, password=password)
+            db.session.add(new_user)
+            db.session.commit()
             rval = True
         return rval
 
-class User(UserMixin):
-    def __init__(self, id, username, email, password):
+
+class User(db.Model, UserMixin):
+    """ User Class and SQL Table """
+    __table_args__ = {'sqlite_autoincrement': True}
+    id = db.Column(db.Integer, primary_key=True)
+    username = db.Column(db.String(128))
+    password = db.Column(db.String(128))
+    email = db.Column(db.String(128))
+
+    def __init__(self, id=None, username=None, email=None, password=None):
         self.id = id
         self.username = username
         self.password = password
@@ -63,40 +93,61 @@ class User(UserMixin):
                              _db_password_utf8) == _db_password_utf8
 
     def __repr__(self):
-        return "<User {0}>".format(self.username)
+        return "<User {0}> ({1})".format(self.username, self.email)
 
 
-class NmapTask(object):
+class NmapTask(db.Model):
+    """ NmapTask Class """
+    id = db.Column(db.Integer, primary_key=True)
+    comment = db.Column(db.String(128))
+    task_id = db.Column(db.String(36))
+    created = db.Column(db.DateTime)
+
+    user_id = db.Column(db.Integer, db.ForeignKey("user.id"))
+    user = db.relationship('User', backref='nmaptask')
+
+    def __init__(self, id=None, comment=None, task_id=None, user_id=None,
+                 created=datetime.datetime.utcnow()):
+        self.id = id
+        self.comment = comment
+        self.task_id = task_id
+        self.user_id = user_id
+        self.created = created
+
+
     @classmethod
     def find(cls, asc=True, **kwargs):
         _reports = []
 
         if asc is True:
-            sort_order = 1
+            _dbreports = NmapTask.query.filter_by(**kwargs).order_by("id")
         else:
-            sort_order = -1
+            _dbreports = NmapTask.query.filter_by(**kwargs).order_by(desc("id"))
 
-        _dbreports = mongo.db.reports.find(kwargs).sort("created", sort_order)
 
         for _dbreport in _dbreports:
-            _nmap_task = {'task_id': celery_pipe.AsyncResult(_dbreport['task_id']),
-                          'comment': _dbreport['comment'],
-                          'created': _dbreport['created']}
+            _nmap_task = {'task_id': celery_pipe.AsyncResult(_dbreport.task_id),
+                          'comment': _dbreport.comment,
+                          'created': _dbreport.created}
             _reports.append(_nmap_task)
         return _reports
 
+
     @classmethod
     def get(cls, task_id):
+        #print("DEBUG: nmaptask_get: " + str(task_id))
         _report = None
         if isinstance(task_id, str) or isinstance(task_id, unicode):
             try:
                 _resultdict = celery_pipe.AsyncResult(task_id).result
             except NmapParserException:
                 pass
+        #print("DEBUG: nmaptask_get resultdict: " + str(_resultdict))
         return _resultdict
 
     @classmethod
     def get_report(cls, task_id):
+        #print("DEBUG: nmaptask_getreport: " + task_id)
         _report = None
         if isinstance(task_id, str) or isinstance(task_id, unicode):
             try:
@@ -111,23 +162,28 @@ class NmapTask(object):
     def add(cls, user_id=None, task_id=None, comment=None):
         rval = False
         if user_id is not None and task_id is not None and comment is not None:
-            mongo.db.reports.insert({'user_id': user_id,
-                                     'task_id': task_id,
-                                     'comment': comment,
-                                     'created': datetime.datetime.utcnow()})
+            new_nmaptask = NmapTask(user_id=user_id, task_id=task_id,
+                                    comment=comment)
+            db.session.add(new_nmaptask)
+            db.session.commit()
             rval = True
         return rval
 
     @classmethod
-    def remove_task_by_id(cls, task_id=None):
-        """
-        db.reports.find({'task_id':"727dd22b-edf9-4b2d-a021-0441cedb0c51"})
-        db.celery_taskmeta.find({'_id':"727dd22b-edf9-4b2d-a021-0441cedb0c51"})
-        """
+    def remove_task_by_id(cls, task_id=task_id):
+        """  """
         result = False
+
         if task_id is not None:
-            mongo.db.reports.remove({'task_id': task_id})
-            mongo.db.celery_taskmeta.remove({'_id': task_id})
+            con = engine.connect()
+            result = con.execute(celery_taskmeta.delete().where(celery_taskmeta.c.task_id == task_id))
+            if result.rowcount != 1:
+                print "celery_taskmeta: Something is wrong... should have found exactly one row"
+            result = con.execute(nmap_task.delete().where(nmap_task.c.task_id == task_id))
+            if result.rowcount != 1:
+                print "nmap_task: Something is wrong... should have found exactly one row"
+            con.close()
+
             result = True
         return result
 
