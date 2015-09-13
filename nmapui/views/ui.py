@@ -2,6 +2,7 @@ from nmapui import login_manager, login_serializer, app
 from nmapui.models import Users
 from flask import Blueprint, render_template, request, redirect, url_for, flash
 from flask.ext.login import login_user, logout_user, login_required
+import bcrypt
 
 appmodule = Blueprint('ui', __name__)
 
@@ -53,9 +54,11 @@ def login():
         password = request.form['password']
         if 'username' in request.form and len(request.form['username']):
             app_users = Users.find(username=username)
+
             if len(app_users) != 1:
+                # this should make time based user enumeration difficult
+                bcrypt.hashpw("faked calculation", bcrypt.gensalt())
                 flash("Login failed: Check Username and Password", "danger")
-                # this might make user enumeration possible/simple
                 return render_template("login.html")
             else:
                 app_user = app_users[0]

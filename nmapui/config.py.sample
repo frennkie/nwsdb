@@ -15,6 +15,27 @@ MONGO_PORT = 27017
 MONGO_USERNAME = ''
 MONGO_PASSWORD = ''
 
+
+# SQLAlchemy
+SQLALCHEMY_ECHO = True
+
+# SQLite
+SQLALCHEMY_DATABASE_URI = "sqlite:///" + os.path.join(basedir, "nmapui.db")
+
+# MySQL
+"""
+mysql_db_username = 'root'
+mysql_db_password = ''
+mysql_db_name = 'fscaffold'
+mysql_db_hostname = 'localhost'
+
+SQLALCHEMY_DATABASE_URI = "mysql+pymysql://{DB_USER}:{DB_PASS}@{DB_ADDR}/{DB_NAME}".format(DB_USER=mysql_db_username,
+                                                                                        DB_PASS=mysql_db_password,
+                                                                                        DB_ADDR=mysql_db_hostname,
+                                                                                        DB_NAME=mysql_db_name)
+"""
+
+
 # File upload config
 UPLOAD_FOLDER = basedir + 'nmapui/uploads'
 ALLOWED_EXTENSIONS= set(['xml'])
