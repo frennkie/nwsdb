@@ -31,9 +31,9 @@
 
   <body role="document">
 
-    <!-- Fixed navbar -->
+    <!-- navbar fixed -->
     <nav class="navbar navbar-default navbar-fixed-top">
-        <div class="container">
+        <div class="container-fluid">
             <!-- Brand and toggle get grouped for better mobile display -->
             <div class="navbar-header">
             <button type="button" class="navbar-toggle collapsed" data-toggle="collapse" data-target="#bs-example-navbar-collapse-1" aria-expanded="false">
@@ -79,9 +79,9 @@
             </ul>
             </div><!-- /.navbar-collapse -->
         </div><!-- /.container-fluid -->
-    </nav>
+    </nav><!-- /.navbar fixed -->
 
-
+    <!-- container-fluid main-page -->
     <div class="container-fluid main-page" role="main">
 
       <div class="page-header">
@@ -98,14 +98,20 @@
         {% endwith %}
       </div>
 
-      <div class="jumbotron">
+      <div class="jumbotron" style="padding-bottom: 25px">
           {% block body %}{% endblock %}
+
+          <div class="pull-right">
+              Todo <a href="/changelog">Version x.y.z</a>&nbsp;
+          </div>
+
       </div>
 
       <script type='text/javascript'>
           {% block javascript %}
           {% endblock %}
       </script>
-    </div>
+
+    </div><!-- /.container-fluid -->
   </body>
 </html>
