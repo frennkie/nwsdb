@@ -27,6 +27,21 @@ def adduser(username, email):
         print "Error: passwords do not match"
 
 @manager.command
+def change_password(user_id):
+    try:
+        _user = Users.get(user_id)
+    except:
+        print "Not User found for ID: " + str(user_id)
+
+    __p1 = getpass.getpass()
+    __p2 = getpass.getpass("Confirm password:")
+    if __p1 == __p2 and len(__p1):
+        __px = bcrypt.hashpw(__p1 + app.config["PEPPER"], bcrypt.gensalt())
+        _user.change_password(__px)
+    else:
+        print "Error: passwords do not match"
+
+@manager.command
 def create_db():
     """ needed?! """
     db.create_all()

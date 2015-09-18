@@ -92,6 +92,10 @@ class User(db.Model, UserMixin):
         return bcrypt.hashpw(_password.encode('utf-8') + app.config["PEPPER"],
                              _db_password_utf8) == _db_password_utf8
 
+    def change_password(self, _password):
+        db.session.query(User).filter(User.id == self.id).update({'password': _password})
+        db.session.commit()
+
     def __repr__(self):
         return "<User {0}> ({1})".format(self.username, self.email)
 
