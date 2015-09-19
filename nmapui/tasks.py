@@ -1,7 +1,6 @@
 from celery import Task, task, current_task
 from libnmap.process import NmapProcess
 import json
-#from libnmap.reportjson import ReportDecoder, ReportEncoder
 from libnmap.plugins.sql import NmapSqlPlugin
 from libnmap.plugins.backendpluginFactory import BackendPluginFactory
 from libnmap.objects.report import NmapReport
