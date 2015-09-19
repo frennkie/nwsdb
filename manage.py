@@ -43,7 +43,11 @@ def change_password(user_id):
 
 @manager.command
 def create_db():
-    """ needed?! """
+    """ needed?!
+    https://stackoverflow.com/questions/21482817/alembic-flask-migrate-doesnt-recognise-database-structure
+    Do not call db.create_all() when you use Flask-Migrate/Alembic.
+    The migration framework replaces that call.
+    """
     db.create_all()
 
 if __name__ == "__main__":
