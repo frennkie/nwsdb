@@ -30,6 +30,7 @@ app.register_blueprint(nmap.appmodule)
 # Set jinja template global
 app.jinja_env.globals['momentjs'] = momentjs
 
+# used in Report view - can be replaced by momentjs
 def unix2datetime(unixstr):
     _rstr = ''
     try:
