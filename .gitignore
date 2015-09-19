@@ -4,4 +4,4 @@ config.py
 testtools/*
 build/
 dump/
-nmapui.db
+celerybeat-schedule
