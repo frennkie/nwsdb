@@ -53,7 +53,7 @@ def nmap_tasks():
                                                   bannerdetect)
         _celery_task = celery_nmap_scan.delay(targets=str(targets),
                                               options=str(options))
-        NmapTask.add(user_id=current_user.id,
+        NmapTask.add(user=current_user,
                      task_id=_celery_task.id,
                      comment=comment)
 
@@ -67,6 +67,7 @@ def nmap_tasks():
 @login_required
 def nmap_tasks_json():
     _nmap_tasks = NmapTask.find(user_id=current_user.id)
+
     _jtarray = []
     for _ntask in _nmap_tasks:
         tdict = {'id': _ntask['task_id'].id,
@@ -115,6 +116,7 @@ def nmap_report(report_id):
     _report = None
     if report_id is not None:
         _report = NmapTask.get_report(task_id=report_id)
+
     return render_template('nmap_report.html', report=_report)
 
 @appmodule.route('/compare', methods=['GET', 'POST'])

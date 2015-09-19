@@ -1,21 +1,17 @@
 import bcrypt
 import datetime
+import json
 from flask.ext.login import UserMixin
 from flask.ext.sqlalchemy import SQLAlchemy
-from sqlalchemy.exc import SQLAlchemyError
-from sqlalchemy import create_engine, MetaData, Table, desc
 from libnmap.parser import NmapParser, NmapParserException
+from libnmap.plugins.sql import NmapSqlPlugin
+from libnmap.plugins.backendpluginFactory import BackendPluginFactory
 from bson.objectid import ObjectId
 from nmapui import app
 from nmapui import db
 from nmapui import login_serializer
 from nmapui.celeryapp import celery_pipe
 
-# move to __init__.py ?!
-engine = create_engine(app.config["DATABASE_URI"], convert_unicode=True)
-metadata = MetaData(bind=engine)
-celery_taskmeta = Table('celery_taskmeta', metadata, autoload=True)
-nmap_task = Table('nmap_task', metadata, autoload=True)
 
 class Users(object):
     """ """
@@ -73,6 +69,7 @@ class User(db.Model, UserMixin):
     username = db.Column(db.String(128))
     password = db.Column(db.String(128))
     email = db.Column(db.String(128))
+    nmaptasks = db.relationship('NmapTask', backref=db.backref('buser'))
 
     def __init__(self, id=None, username=None, email=None, password=None):
         self.id = id
@@ -106,16 +103,14 @@ class NmapTask(db.Model):
     comment = db.Column(db.String(128))
     task_id = db.Column(db.String(36))
     created = db.Column(db.DateTime)
-
     user_id = db.Column(db.Integer, db.ForeignKey("user.id"))
-    user = db.relationship('User', backref='nmaptask')
 
-    def __init__(self, id=None, comment=None, task_id=None, user_id=None,
+    def __init__(self, id=None, comment=None, task_id=None, user=None,
                  created=datetime.datetime.utcnow()):
         self.id = id
         self.comment = comment
         self.task_id = task_id
-        self.user_id = user_id
+        self.user_id = user.id
         self.created = created
 
 
@@ -144,8 +139,8 @@ class NmapTask(db.Model):
         if isinstance(task_id, str) or isinstance(task_id, unicode):
             try:
                 _resultdict = celery_pipe.AsyncResult(task_id).result
-            except NmapParserException:
-                pass
+            except NmapParserException as e:
+                print e
         #print("DEBUG: nmaptask_get resultdict: " + str(_resultdict))
         return _resultdict
 
@@ -158,17 +153,17 @@ class NmapTask(db.Model):
                 _resultdict = celery_pipe.AsyncResult(task_id).result
                 _resultxml = _resultdict['report']
                 _report = NmapParser.parse_fromstring(_resultxml)
-            except NmapParserException:
-                pass
+            except NmapParserException as e:
+                print e
         return _report
 
     @classmethod
-    def add(cls, user_id=None, task_id=None, comment=None):
+    def add(cls, user=None, task_id=None, comment=None):
         rval = False
-        if user_id is not None and task_id is not None and comment is not None:
-            new_nmaptask = NmapTask(user_id=user_id, task_id=task_id,
-                                    comment=comment)
-            db.session.add(new_nmaptask)
+        if user is not None and task_id is not None and comment is not None:
+            new_nmaptask = NmapTask(user=user,
+                                    task_id=task_id, comment=comment)
+            db.session.merge(new_nmaptask)
             db.session.commit()
             rval = True
         return rval
@@ -179,15 +174,9 @@ class NmapTask(db.Model):
         result = False
 
         if task_id is not None:
-            con = engine.connect()
-            result = con.execute(celery_taskmeta.delete().where(celery_taskmeta.c.task_id == task_id))
-            if result.rowcount != 1:
-                print "celery_taskmeta: Something is wrong... should have found exactly one row"
-            result = con.execute(nmap_task.delete().where(nmap_task.c.task_id == task_id))
-            if result.rowcount != 1:
-                print "nmap_task: Something is wrong... should have found exactly one row"
-            con.close()
-
+            nt = NmapTask.query.filter(NmapTask.task_id == task_id).one()
+            db.session.delete(nt)
+            db.session.commit()
             result = True
         return result
 
