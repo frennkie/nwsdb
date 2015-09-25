@@ -1,5 +1,5 @@
 from nmapui import app
-from nmapui.models import NmapTask, NmapDiffer
+from nmapui.models import NmapTask, NmapDiffer, Contact, AddressDetail, Address
 from nmapui.tasks import celery_nmap_scan
 from flask import Blueprint, render_template, request, redirect, url_for, flash
 from flask.ext.login import login_required, current_user
@@ -88,11 +88,6 @@ def nmap_tasks_json():
 @appmodule.route('/task/delete/<task_id>')
 @login_required
 def nmap_task_delete(task_id):
-    if task_id is None:
-        # TODO dead code?! How should task_id be None here?
-        flash("Can not delete as no task id is given!", 'info')
-        return redirect(url_for('nmap.nmap_tasks'))
-
     _nmap_task = NmapTask.get(task_id)
     if _nmap_task is None:
         flash("There is no entry for task_id: " + task_id, 'info')
@@ -145,7 +140,12 @@ def nmap_compare():
 @appmodule.route('/db')
 @login_required
 def nmap_database():
-    return render_template('nmap_database.html')
+    Address.discover_from_reports()
+
+    ad = AddressDetail.query.get(4)
+    #ad = AddressDetail.query.get_or_404(4) # default 404 page
+
+    return render_template('nmap_database.html', ad=ad)
 
 @appmodule.route('/export')
 @login_required

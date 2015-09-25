@@ -4,7 +4,7 @@ import json
 from libnmap.plugins.sql import NmapSqlPlugin
 from libnmap.plugins.backendpluginFactory import BackendPluginFactory
 from libnmap.objects.report import NmapReport
-from nmapui.models import NmapTask
+from nmapui.models import NmapTask, Address
 from nmapui.config import LIBNMAP_DB_URI
 from nmapui.celeryapp import celery_pipe as celery
 
@@ -41,11 +41,15 @@ def celery_nmap_store_report(task_id):
         db = BackendPluginFactory.create(plugin_name="sql",
                                          url=LIBNMAP_DB_URI,
                                          echo=False)
-        _report.save(db)
-        return True
+
+        _id = _report.save(db)
+        r = Address.discover_from_report(report_id=_id)
+
+        return {"rc": 0}
 
     except Exception as e:
         print e
+        return {"rc": 1}
 
 
 # Class for a task

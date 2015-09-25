@@ -3,14 +3,20 @@ import datetime
 import json
 from flask.ext.login import UserMixin
 from flask.ext.sqlalchemy import SQLAlchemy
+from sqlalchemy_utils import IPAddressType
 from libnmap.parser import NmapParser, NmapParserException
 from libnmap.plugins.sql import NmapSqlPlugin
 from libnmap.plugins.backendpluginFactory import BackendPluginFactory
+
 from bson.objectid import ObjectId
 from nmapui import app
 from nmapui import db
 from nmapui import login_serializer
 from nmapui.celeryapp import celery_pipe
+
+class Reports(NmapSqlPlugin.Reports):
+    __tablename__ = 'reports'
+    __table_args__ = {'extend_existing': True}
 
 
 class Users(object):
@@ -261,3 +267,115 @@ class NmapDiffer(object):
                                                     getattr(obj2, mkey),
                                                     getattr(obj1, mkey)))
 
+""" --- """
+
+
+contacts = db.Table("contacts",
+    db.Column('contact_id', db.Integer, db.ForeignKey('contact.id')),
+    db.Column('address_detail_id', db.Integer, db.ForeignKey('address_detail.id'))
+)
+
+class AddressDetail(db.Model):
+    id = db.Column(db.Integer, primary_key=True)
+    created = db.Column(db.DateTime)
+    name = db.Column(db.String(128))
+    comment = db.Column(db.String(128))
+    source = db.Column(db.String(128))
+    ip_address = db.Column(IPAddressType)
+    report_id = db.Column(db.Integer)
+    contact = db.relationship("Contact", secondary=contacts)
+
+    def __init__(self, id=None, created=datetime.datetime.utcnow(), name=None,
+                 comment=None, source=None, ip_address=None, report_id=None):
+        self.id = id
+        self.created = created
+        self.name = name
+        self.comment = comment
+        self.source = source
+        self.ip_address = ip_address
+        self.report_id = report_id
+
+    def __repr__(self):
+        return "<AddressDetail {0}> ({4}) Name: ({2}) IP: {5}".format(self.id,
+                self.created,
+                self.name,
+                self.comment,
+                self.source,
+                self.ip_address,
+                self.report_id)
+
+
+class Contact(db.Model):
+    """ User Class and SQL Table """
+    id = db.Column(db.Integer, primary_key=True)
+    created = db.Column(db.DateTime)
+    name = db.Column(db.String(128))
+    email = db.Column(db.String(128))
+    address_detail = db.relationship("AddressDetail", secondary=contacts)
+
+    def __init__(self, id=None, created=datetime.datetime.utcnow(), name=None,
+            email=None):
+        self.id = id
+        self.created = created
+        self.name = name
+        self.email = email
+
+    def __repr__(self):
+        return "<Contact {0}> Name: ({2}) Mail: ({3})".format(self.id,
+                self.created,
+                self.name,
+                self.email)
+
+class Address(object):
+    """ Address class for modeling Scan Targets """
+
+    def __init__(address=None):
+        self.address = address
+
+    @classmethod
+    def discover_from_report(cls, report_id):
+        """ discover hosts from report """
+
+        dbp = BackendPluginFactory.create(plugin_name='sql',
+                                         url=app.config["LIBNMAP_DB_URI"],
+                                         echo=False)
+
+        nmap_report = dbp.get(report_id=report_id)
+
+        if nmap_report:
+            for host in nmap_report._hosts:
+                print "Address: " +  str(host.address) + " is: " + host.status
+                ad = AddressDetail(comment="scanned by me", source="nmap_scan",
+                                   ip_address=host.address,
+                                   report_id=report_id)
+                db.session.add(ad)
+
+            db.session.commit()
+            return True
+
+        else:
+            print "could not extract report"
+            return False
+
+
+    @classmethod
+    def discover_from_reports(cls):
+        """ discover hosts """
+
+        dbp = BackendPluginFactory.create(plugin_name='sql',
+                                         url=app.config["LIBNMAP_DB_URI"],
+                                         echo=False)
+
+        nmapreportList = dbp.getall()
+
+        all_addresses = []
+        for report_id, report_obj in nmapreportList:
+            #print str(report_id) + ": " + str(report_obj)
+            #print report_obj._hosts
+            for host in report_obj._hosts:
+                all_addresses.append({"address": host.address, "report_id": report_id})
+
+        print "\n---\n"
+        print all_addresses
+
+#EOF
