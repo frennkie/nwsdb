@@ -111,10 +111,10 @@ def nmap_task_delete(task_id):
 def nmap_report(report_id):
     _report = None
     if report_id is not None:
-        # TODO this needs reviewing
-        if int(report_id) in range(0, 16777216):
+        try:
+            int(report_id)
             _report = NmapReportHelper.get_report(report_id=report_id)
-        else:
+        except:
             _report = NmapTask.get_report(task_id=report_id)
 
     return render_template('nmap_report.html', report=_report)
