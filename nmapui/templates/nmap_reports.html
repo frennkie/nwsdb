@@ -1,0 +1,19 @@
+{% extends "base.html" %}
+{% block title %} Reports{% endblock %}
+{% block body %}
+    <!--Body content-->
+        <legend>Showing Reports from finished tasks</legend>
+        <table id="tasktable" class="table table-striped">
+            <th></th><th>Started</th><th>Hosts_Up</th><th>Hosts_Total</th><th>Details</th>
+        {% for report_id, report in reports %}
+            <tr>
+                <td id="{{ report_id }}">&nbsp;</td>
+                <td id="{{ report_id }}">{{ report.started|unix2datetime }}</td>
+                <td id="{{ report_id }}">{{ report.hosts_up }}</td>
+                <td id="{{ report_id }}">{{ report.hosts_total }}</td>
+                <td id="{{ report_id }}" class="detailslink">
+                    <a href="{{ url_for('nmap.nmap_report', report_id=report_id) }}">Details</a></td>
+            </tr>
+        {% endfor %}
+        </table>
+{% endblock %}

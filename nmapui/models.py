@@ -5,7 +5,6 @@ from flask.ext.login import UserMixin
 from flask.ext.sqlalchemy import SQLAlchemy
 from sqlalchemy_utils import IPAddressType
 from libnmap.parser import NmapParser, NmapParserException
-from libnmap.plugins.sql import NmapSqlPlugin
 from libnmap.plugins.backendpluginFactory import BackendPluginFactory
 
 from bson.objectid import ObjectId
@@ -14,9 +13,33 @@ from nmapui import db
 from nmapui import login_serializer
 from nmapui.celeryapp import celery_pipe
 
-class Reports(NmapSqlPlugin.Reports):
-    __tablename__ = 'reports'
-    __table_args__ = {'extend_existing': True}
+
+class NmapReportHelper(object):
+    """ Helper for NmapReport Class
+
+        Is this needed.. can this be done with Super?!
+
+    """
+
+
+    @classmethod
+    def getall_reports(cls):
+        """ getall NmapReport """
+
+        dbp = BackendPluginFactory.create(plugin_name='sql',
+                                          url=app.config["LIBNMAP_DB_URI"],
+                                          echo=False)
+        return dbp.getall()
+
+    @classmethod
+    def get_report(cls, report_id):
+        """ get one NmapReport """
+
+        dbp = BackendPluginFactory.create(plugin_name='sql',
+                                          url=app.config["LIBNMAP_DB_URI"],
+                                          echo=False)
+        return dbp.get(report_id=report_id)
+
 
 
 class Users(object):
@@ -336,11 +359,7 @@ class Address(object):
     def discover_from_report(cls, report_id):
         """ discover hosts from report """
 
-        dbp = BackendPluginFactory.create(plugin_name='sql',
-                                         url=app.config["LIBNMAP_DB_URI"],
-                                         echo=False)
-
-        nmap_report = dbp.get(report_id=report_id)
+        nmap_report = NmapReportHelper.get_report(report_id)
 
         if nmap_report:
             for host in nmap_report._hosts:
@@ -362,11 +381,7 @@ class Address(object):
     def discover_from_reports(cls):
         """ discover hosts """
 
-        dbp = BackendPluginFactory.create(plugin_name='sql',
-                                         url=app.config["LIBNMAP_DB_URI"],
-                                         echo=False)
-
-        nmapreportList = dbp.getall()
+        nmapreportList = NmapReportHelper.getall_reports()
 
         all_addresses = []
         for report_id, report_obj in nmapreportList:
