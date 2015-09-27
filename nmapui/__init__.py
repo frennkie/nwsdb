@@ -1,7 +1,7 @@
 __author__ = 'Robert Habermann'
 __email__ =  'frennkie@gmail.com'
 __license__ = 'CC-BY'
-__version__ = '0.1.0'
+__version__ = '0.1.1'
 
 # Initial code base by Ronald Bister (mini.pelle@gmail.com)
 
