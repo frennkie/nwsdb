@@ -1,5 +1,7 @@
 *~
 *.pyc
-migrate.py
+config.py
 testtools/*
 build/
+dump/
+celerybeat-schedule
