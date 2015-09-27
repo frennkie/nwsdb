@@ -2,8 +2,9 @@
 
 ## Code status
 
-This webapp is being developped. Basic structure is here, you can launch scan and have nmap scan reports automatically stored but no more so far :p
+This project is a fork of this repo: https://github.com/savon-noir/nmap-webgui
 
+For in Progress
 
 ## Backup/Restore
 

@@ -1,7 +1,9 @@
-__author__ = 'Ronald Bister'
-__email__ =  'mini.pelle@gmail.com'
+__author__ = 'Robert Habermann'
+__email__ =  'frennkie@gmail.com'
 __license__ = 'CC-BY'
-__version__ = '0.1'
+__version__ = '0.1.0'
+
+# Initial code base by Ronald Bister (mini.pelle@gmail.com)
 
 import datetime
 from flask import Flask
