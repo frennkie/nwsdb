@@ -4,8 +4,7 @@ import json
 from libnmap.plugins.sql import NmapSqlPlugin
 from libnmap.plugins.backendpluginFactory import BackendPluginFactory
 from libnmap.objects.report import NmapReport
-from nmapui.models import NmapTask, Address
-from nmapui.config import LIBNMAP_DB_URI
+from nmapui.models import NmapTask, Address, NmapReportMeta
 from nmapui.celeryapp import celery_pipe as celery
 
 
@@ -35,6 +34,14 @@ def celery_nmap_scan(targets, options):
 def celery_nmap_store_report(task_id):
     """ after scan is finished get report for scan from celery backend (db)
         and insert into db """
+
+
+    report_meta = NmapReportMeta(task_id=task_id)
+    print report_meta
+    res = report_meta.save_report(task_id=task_id)
+    return res
+
+    """
     _report = NmapTask.get_report(task_id=task_id)
 
     try:
@@ -50,7 +57,7 @@ def celery_nmap_store_report(task_id):
     except Exception as e:
         print e
         return {"rc": 1}
-
+    """
 
 # Class for a task
 @task(name="tasks.cleanup")
