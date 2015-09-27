@@ -1,6 +1,6 @@
 from nmapui import app
 from nmapui.models import NmapTask, NmapDiffer, Contact, AddressDetail, Address
-from nmapui.models import NmapReportHelper
+from nmapui.models import NmapReportMeta
 from nmapui.tasks import celery_nmap_scan
 from flask import Blueprint, render_template, request, redirect, url_for, flash
 from flask.ext.login import login_required, current_user
@@ -113,7 +113,7 @@ def nmap_report(report_id):
     if report_id is not None:
         try:
             int(report_id)
-            _report = NmapReportHelper.get_report(report_id=report_id)
+            _report = NmapReportMeta.get_report(report_id=report_id)
         except:
             _report = NmapTask.get_report(task_id=report_id)
 
@@ -122,7 +122,7 @@ def nmap_report(report_id):
 @appmodule.route('/reports')
 @login_required
 def nmap_reports():
-    _nmap_reports = NmapReportHelper.getall_reports()
+    _nmap_reports = NmapReportMeta.getall_reports()
     return render_template('nmap_reports.html', reports=_nmap_reports)
 
 @appmodule.route('/compare', methods=['GET', 'POST'])

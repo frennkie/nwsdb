@@ -14,32 +14,6 @@ from nmapui import login_serializer
 from nmapui.celeryapp import celery_pipe
 
 
-class NmapReportHelper(object):
-    """ Helper for NmapReport Class
-
-        Is this needed.. can this be done with Super?!
-
-    """
-
-
-    @classmethod
-    def getall_reports(cls):
-        """ getall NmapReport """
-
-        dbp = BackendPluginFactory.create(plugin_name='sql',
-                                          url=app.config["LIBNMAP_DB_URI"],
-                                          echo=False)
-        return dbp.getall()
-
-    @classmethod
-    def get_report(cls, report_id):
-        """ get one NmapReport """
-
-        dbp = BackendPluginFactory.create(plugin_name='sql',
-                                          url=app.config["LIBNMAP_DB_URI"],
-                                          echo=False)
-        return dbp.get(report_id=report_id)
-
 
 
 class Users(object):
@@ -129,8 +103,8 @@ class User(db.Model, UserMixin):
 class NmapTask(db.Model):
     """ NmapTask Class """
     id = db.Column(db.Integer, primary_key=True)
-    comment = db.Column(db.String(128))
     task_id = db.Column(db.String(36))
+    comment = db.Column(db.String(128))
     created = db.Column(db.DateTime)
     user_id = db.Column(db.Integer, db.ForeignKey("user.id"))
 
@@ -292,6 +266,80 @@ class NmapDiffer(object):
 
 """ --- """
 
+class NmapReportMeta(db.Model):
+    """ Meta Class for NmapReport
+
+        This class needs to copy data from NmapTask Table that can (and will be
+        removed from there.. therefore this can not be implemented as foreigen
+        key..
+
+    """
+
+    id = db.Column(db.Integer, primary_key=True)
+    # "foreign key"/identifier is the NmapTask.task_id (faef323-afec3-a...)
+    task_task_id = db.Column(db.Integer)
+    task_comment = db.Column(db.String(128))
+    task_created = db.Column(db.DateTime)
+    task_user_id = db.Column(db.Integer, db.ForeignKey("user.id"))
+
+
+    def __init__(self, task_id=None):
+        self.task_id = task_id
+        # TODO .. id ..?! sql.. ? db.session.add(self) + commit()?
+
+
+    def __repr__(self):
+        return "<{0} {1}> TaskID: ({2})".format(
+                self.__class__.__name__,
+                self.id,
+                self.task_id)
+
+    def save_report(self, task_id=None):
+        """ TODO """
+
+        _report = NmapTask.get_report(task_id=task_id)
+
+        try:
+            dbp = BackendPluginFactory.create(plugin_name="sql",
+                                            url=app.config["LIBNMAP_DB_URI"],
+                                            echo=False)
+
+            _id = _report.save(dbp)
+            r = Address.discover_from_report(report_id=_id)
+            print r
+
+            return {"rc": 0}
+
+        except Exception as e:
+            print e
+            return {"rc": 1}
+
+    @classmethod
+    def get_report(cls, report_id):
+        """ get one NmapReport """
+
+        dbp = BackendPluginFactory.create(plugin_name='sql',
+                                          url=app.config["LIBNMAP_DB_URI"],
+                                          echo=False)
+        return dbp.get(report_id=report_id)
+
+    @classmethod
+    def get_report_by_task_id(cls, report_id=None, task_id=None):
+        """ TODO will probably only need either report or task id """
+        pass
+
+    @classmethod
+    def getall_reports(cls):
+        """ getall NmapReport """
+
+        dbp = BackendPluginFactory.create(plugin_name='sql',
+                                          url=app.config["LIBNMAP_DB_URI"],
+                                          echo=False)
+        return dbp.getall()
+
+    def create_scan_from_report(self):
+        pass
+
 
 contacts = db.Table("contacts",
     db.Column('contact_id', db.Integer, db.ForeignKey('contact.id')),
@@ -319,7 +367,9 @@ class AddressDetail(db.Model):
         self.report_id = report_id
 
     def __repr__(self):
-        return "<AddressDetail {0}> ({4}) Name: ({2}) IP: {5}".format(self.id,
+        return "<{0} {1}> ({5}) Name: ({3}) IP: {6}".format(
+                self.__class__.__name__,
+                self.id,
                 self.created,
                 self.name,
                 self.comment,
@@ -344,7 +394,9 @@ class Contact(db.Model):
         self.email = email
 
     def __repr__(self):
-        return "<Contact {0}> Name: ({2}) Mail: ({3})".format(self.id,
+        return "<{0} {1}> Name: ({3}) Mail: ({4})".format(
+                self.__class__.__name__,
+                self.id,
                 self.created,
                 self.name,
                 self.email)
@@ -355,11 +407,16 @@ class Address(object):
     def __init__(address=None):
         self.address = address
 
+    def __repr__(self):
+        return "<{0} {1}>".format(
+                self.__class__.__name__,
+                self.address)
+
     @classmethod
     def discover_from_report(cls, report_id):
         """ discover hosts from report """
 
-        nmap_report = NmapReportHelper.get_report(report_id)
+        nmap_report = NmapReportMeta.get_report(report_id)
 
         if nmap_report:
             for host in nmap_report._hosts:
@@ -381,7 +438,7 @@ class Address(object):
     def discover_from_reports(cls):
         """ discover hosts """
 
-        nmapreportList = NmapReportHelper.getall_reports()
+        nmapreportList = NmapReportMeta.getall_reports()
 
         all_addresses = []
         for report_id, report_obj in nmapreportList:

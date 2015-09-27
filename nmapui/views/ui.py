@@ -2,6 +2,7 @@ from nmapui import login_manager, login_serializer, app
 from nmapui.models import Users
 from flask import Blueprint, render_template, request, redirect, url_for, flash
 from flask.ext.login import login_user, logout_user, login_required
+from itsdangerous import BadSignature
 import bcrypt
 
 appmodule = Blueprint('ui', __name__)
@@ -31,7 +32,12 @@ def load_token(token):
     max_age = app.config["REMEMBER_COOKIE_DURATION"].total_seconds()
 
     #Decrypt the Security Token, data = [username, hashpass]
-    data = login_serializer.loads(token, max_age=max_age)
+    try:
+        data = login_serializer.loads(token, max_age=max_age)
+        # This payload is decoded and safe
+    except BadSignature, e:
+        print("Cookie has been tampered: " + str(e))
+        return None
 
     #Find the User
     user = Users.get(data[0])
