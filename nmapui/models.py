@@ -323,8 +323,7 @@ class NmapReportMeta(db.Model):
 
             _id = _report.save(dbp)
             r = Address.discover_from_report(report_id=_id)
-            print r
-
+            #print r
             return {"rc": 0}
 
         except Exception as e:
@@ -437,7 +436,7 @@ class Address(object):
 
         if nmap_report:
             for host in nmap_report._hosts:
-                print "Address: " +  str(host.address) + " is: " + host.status
+                #print("Address: " +  str(host.address) + " is: " + host.status)
                 ad = AddressDetail(comment="scanned by me", source="nmap_scan",
                                    ip_address=host.address,
                                    report_id=report_id)

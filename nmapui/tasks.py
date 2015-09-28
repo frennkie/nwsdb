@@ -38,11 +38,9 @@ def celery_nmap_store_report(task_id):
     """ after scan is finished get report for scan from celery backend (db)
         and insert into db """
 
-
     report_meta = NmapReportMeta(task_id=task_id)
-    print report_meta
-    res = report_meta.save_report(task_id=task_id)
-    return res
+    rc = report_meta.save_report(task_id=task_id)
+    return {"rc": rc}
 
     """
     _report = NmapTask.get_report(task_id=task_id)
@@ -71,6 +69,8 @@ class CleanupTask(Task):
     >>> result = CleanupTask.delay()
 
     """
+    # do not store result in backend
+    ignore_result = True
 
     def run(self,**kwargs):
         """ Run method of the class """
