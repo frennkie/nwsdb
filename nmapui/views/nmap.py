@@ -86,16 +86,37 @@ def nmap_tasks_json():
 
     return json.dumps(_jtarray)
 
+@appmodule.route('/task/stop/<task_id>')
+@login_required
+def nmap_task_stop(task_id):
+    """
+    _nmap_task = NmapTask.get(task_id)
+    if _nmap_task is None:
+        flash("There is no entry for task_id: " + task_id, 'info')
+        return redirect(url_for('nmap.nmap_tasks'))
+
+    NmapTask.stop_task_by_id(task_id=task_id)
+    """
+    flash("Sorry.. This feature is not implemented", 'danger')
+    return redirect(url_for('nmap.nmap_tasks'))
+
+    """
+    if NmapTask.stop_task_by_id(task_id=task_id):
+        flash("Stopped task: " + task_id, 'success')
+        return redirect(url_for('nmap.nmap_tasks'))
+
+    else:
+        flash("Stop failed?! for task_id: " + task_id, 'danger')
+        return redirect(url_for('nmap.nmap_tasks'))
+    """
+
+
 @appmodule.route('/task/delete/<task_id>')
 @login_required
 def nmap_task_delete(task_id):
     _nmap_task = NmapTask.get(task_id)
     if _nmap_task is None:
         flash("There is no entry for task_id: " + task_id, 'info')
-        return redirect(url_for('nmap.nmap_tasks'))
-
-    if 'report' not in _nmap_task:
-        flash("Not yet finished?! task_id: " + task_id, 'info')
         return redirect(url_for('nmap.nmap_tasks'))
 
     if NmapTask.remove_task_by_id(task_id=task_id):

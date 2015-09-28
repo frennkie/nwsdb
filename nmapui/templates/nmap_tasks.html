@@ -32,7 +32,7 @@
                         <a href="{{ url_for('nmap.nmap_report', report_id=nmap_task['task_id'].id) }}">Details</a></td>
 
                 {% else %}
-                    <td class="detailslink" id="{{ nmap_task['task_id'].id }}">Details</td>
+                    <td class="detailslink" id="{{ nmap_task['task_id'].id }}">&nbsp;</td>
 
                 {% endif %}
 
@@ -70,7 +70,9 @@
                     document.getElementById('stop_' + ntask.id).innerHTML = stop_link;
                     $('#pb_' + pbarid).css('width', ntask.progress+'%').attr('aria-valuenow', ntask.progress);
                     $('#' + pstatusid).text(ntask.status);
-                    $('#' + plinkid).html(details_link);
+                    if(ntask.status == "SUCCESS"){
+                        $('#' + plinkid).html(details_link);
+                    }
                     tasks_done.push(ntask.id);
                     all_done = false;
                 }
