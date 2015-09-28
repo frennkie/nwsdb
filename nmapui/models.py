@@ -12,6 +12,7 @@ from nmapui import app
 from nmapui import db
 from nmapui import login_serializer
 from nmapui.celeryapp import celery_pipe
+from celery.task.control import revoke
 
 
 
@@ -182,6 +183,22 @@ class NmapTask(db.Model):
             db.session.commit()
             result = True
         return result
+
+    @classmethod
+    def stop_task_by_id(cls, task_id=task_id):
+        """  """
+        print("This is not implemented1")
+        """
+        print("trying to stop " + task_id)
+        try:
+            #revoke(task_id, terminate=True, signal="SIGUSR1")
+            revoke(task_id, terminate=True)
+            return True
+        except Exception as e:
+            print(e)
+            return False
+        """
+        return False
 
 
 class NmapDiffer(object):

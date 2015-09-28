@@ -11,9 +11,12 @@ from nmapui.celeryapp import celery_pipe as celery
 @task(name="tasks.nmap_scan")
 def celery_nmap_scan(targets, options):
     def status_callback(nmapscan=None, data=""):
-        current_task.update_state(state="PROGRESS",
-                                  meta={"done": nmapscan.progress,
-                                        "etc": nmapscan.etc})
+        try:
+            current_task.update_state(state="PROGRESS",
+                                      meta={"done": nmapscan.progress,
+                                            "etc": nmapscan.etc})
+        except Exception, e:
+            print("status_callback error: " + e)
 
     nm = NmapProcess(targets, options, event_callback=status_callback)
     rc = nm.run()
@@ -60,7 +63,6 @@ def celery_nmap_store_report(task_id):
     """
 
 # Class for a task
-@task(name="tasks.cleanup")
 class CleanupTask(Task):
     """
     Examples:
@@ -70,9 +72,7 @@ class CleanupTask(Task):
 
     """
 
-    # A Task instance got a backend property
-
     def run(self,**kwargs):
-        """ Running method of the task """
+        """ Run method of the class """
         # Cleanup here
         self.backend.cleanup()
