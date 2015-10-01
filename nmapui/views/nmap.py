@@ -115,6 +115,7 @@ def nmap_task_stop(task_id):
 @login_required
 def nmap_task_delete(task_id):
     _nmap_task = NmapTask.get(task_id)
+
     if _nmap_task is None:
         flash("There is no entry for task_id: " + task_id, 'info')
         return redirect(url_for('nmap.nmap_tasks'))
@@ -124,7 +125,8 @@ def nmap_task_delete(task_id):
         return redirect(url_for('nmap.nmap_tasks'))
 
     else:
-        flash("Delete failed?! for task_id: " + task_id, 'danger')
+        flash("Delete failed. Entry might still be in Celery cache but is \
+              already deleted from Database. Task_id: " + task_id, 'danger')
         return redirect(url_for('nmap.nmap_tasks'))
 
 @appmodule.route('/report/<report_id>')

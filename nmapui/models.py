@@ -143,6 +143,7 @@ class NmapTask(db.Model):
         _report = None
         if isinstance(task_id, str) or isinstance(task_id, unicode):
             try:
+                # TODO this shouldn't go look into AsyncResult.. or should it?
                 _resultdict = celery_pipe.AsyncResult(task_id).result
             except NmapParserException as e:
                 print e
@@ -176,14 +177,19 @@ class NmapTask(db.Model):
     @classmethod
     def remove_task_by_id(cls, task_id=task_id):
         """  """
-        result = False
 
-        if task_id is not None:
-            nt = NmapTask.query.filter(NmapTask.task_id == task_id).one()
-            db.session.delete(nt)
-            db.session.commit()
-            result = True
-        return result
+        try:
+            if task_id is not None:
+                nt = NmapTask.query.filter(NmapTask.task_id == task_id).one()
+                db.session.delete(nt)
+                db.session.commit()
+                return True
+            else:
+                return False
+
+        except Exception as e:
+            print("Error: " + str(e))
+            return False
 
     @classmethod
     def stop_task_by_id(cls, task_id=task_id):
