@@ -131,7 +131,8 @@ class NmapTask(db.Model):
         for _dbreport in _dbreports:
             _nmap_task = {'task_id': celery_pipe.AsyncResult(_dbreport.task_id),
                           'comment': _dbreport.comment,
-                          'created': _dbreport.created}
+                          'created': _dbreport.created,
+                          'user_id': int(_dbreport.user_id)}
             _reports.append(_nmap_task)
         return _reports
 
@@ -294,7 +295,7 @@ class NmapReportMeta(db.Model):
 
     id = db.Column(db.Integer, primary_key=True)
     # "foreign key"/identifier is the NmapTask.task_id (faef323-afec3-a...)
-    task_task_id = db.Column(db.Integer)
+    task_task_id = db.Column(db.String(36))
     task_comment = db.Column(db.String(128))
     task_created = db.Column(db.DateTime)
     task_user_id = db.Column(db.Integer, db.ForeignKey("user.id"))
@@ -323,7 +324,18 @@ class NmapReportMeta(db.Model):
 
             _id = _report.save(dbp)
             r = Address.discover_from_report(report_id=_id)
-            #print r
+
+            # save Meta information of Report
+            self.task_task_id = task_id
+            self.task_created = datetime.datetime.utcnow()
+            # TODO this is murks.. need to add a method to gets 1 NmapTask obj!
+            _nmap_task = NmapTask.find(task_id=task_id)
+            self.task_comment = _nmap_task[0]["comment"]
+            self.task_user_id = _nmap_task[0]["user_id"]
+
+            db.session.add(self)
+            db.session.commit()
+
             return {"rc": 0}
 
         except Exception as e:
