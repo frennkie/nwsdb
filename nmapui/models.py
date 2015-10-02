@@ -4,6 +4,7 @@ import json
 from flask.ext.login import UserMixin
 from flask.ext.sqlalchemy import SQLAlchemy
 from sqlalchemy_utils import IPAddressType
+from sqlalchemy import asc, desc
 from libnmap.parser import NmapParser, NmapParserException
 from libnmap.plugins.backendpluginFactory import BackendPluginFactory
 
@@ -119,11 +120,11 @@ class NmapTask(db.Model):
 
 
     @classmethod
-    def find(cls, asc=True, **kwargs):
+    def find(cls, sort_asc=True, **kwargs):
         _reports = []
 
-        if asc is True:
-            _dbreports = NmapTask.query.filter_by(**kwargs).order_by("id")
+        if sort_asc is True:
+            _dbreports = NmapTask.query.filter_by(**kwargs).order_by(asc("id"))
         else:
             _dbreports = NmapTask.query.filter_by(**kwargs).order_by(desc("id"))
 
@@ -131,7 +132,8 @@ class NmapTask(db.Model):
         for _dbreport in _dbreports:
             _nmap_task = {'task_id': celery_pipe.AsyncResult(_dbreport.task_id),
                           'comment': _dbreport.comment,
-                          'created': _dbreport.created}
+                          'created': _dbreport.created,
+                          'user_id': int(_dbreport.user_id)}
             _reports.append(_nmap_task)
         return _reports
 
@@ -142,6 +144,7 @@ class NmapTask(db.Model):
         _report = None
         if isinstance(task_id, str) or isinstance(task_id, unicode):
             try:
+                # TODO this shouldn't go look into AsyncResult.. or should it?
                 _resultdict = celery_pipe.AsyncResult(task_id).result
             except NmapParserException as e:
                 print e
@@ -175,14 +178,19 @@ class NmapTask(db.Model):
     @classmethod
     def remove_task_by_id(cls, task_id=task_id):
         """  """
-        result = False
 
-        if task_id is not None:
-            nt = NmapTask.query.filter(NmapTask.task_id == task_id).one()
-            db.session.delete(nt)
-            db.session.commit()
-            result = True
-        return result
+        try:
+            if task_id is not None:
+                nt = NmapTask.query.filter(NmapTask.task_id == task_id).one()
+                db.session.delete(nt)
+                db.session.commit()
+                return True
+            else:
+                return False
+
+        except Exception as e:
+            print("Error: " + str(e))
+            return False
 
     @classmethod
     def stop_task_by_id(cls, task_id=task_id):
@@ -201,7 +209,7 @@ class NmapTask(db.Model):
         return False
 
 
-class NmapDiffer(object):
+class NmapReportDiffer(object):
     """Foo"""
 
     def __init__(self, old_report=None, new_report=None):
@@ -294,7 +302,7 @@ class NmapReportMeta(db.Model):
 
     id = db.Column(db.Integer, primary_key=True)
     # "foreign key"/identifier is the NmapTask.task_id (faef323-afec3-a...)
-    task_task_id = db.Column(db.Integer)
+    task_task_id = db.Column(db.String(36))
     task_comment = db.Column(db.String(128))
     task_created = db.Column(db.DateTime)
     task_user_id = db.Column(db.Integer, db.ForeignKey("user.id"))
@@ -306,29 +314,19 @@ class NmapReportMeta(db.Model):
 
 
     def __repr__(self):
-        return "<{0} {1}> TaskID: ({2})".format(
+        return "<{0} {1}> TaskID: ({2}), UserID: {4}, Comment: ({3})".format(
                 self.__class__.__name__,
                 self.id,
-                self.task_id)
+                self.task_task_id,
+                self.task_comment,
+                self.task_user_id)
 
-    def save_report(self, task_id=None):
-        """ TODO """
+    @classmethod
+    def get_report_meta(cls, **kwargs):
+        """ get one NmapReport """
 
-        _report = NmapTask.get_report(task_id=task_id)
-
-        try:
-            dbp = BackendPluginFactory.create(plugin_name="sql",
-                                            url=app.config["LIBNMAP_DB_URI"],
-                                            echo=False)
-
-            _id = _report.save(dbp)
-            r = Address.discover_from_report(report_id=_id)
-            #print r
-            return {"rc": 0}
-
-        except Exception as e:
-            print e
-            return {"rc": 1}
+        #NmapReportMeta.query.filter_by(**kwargs).order_by("id")
+        return NmapReportMeta.query.filter_by(**kwargs).order_by(asc("id")).all()
 
     @classmethod
     def get_report(cls, report_id):
@@ -352,6 +350,36 @@ class NmapReportMeta(db.Model):
                                           url=app.config["LIBNMAP_DB_URI"],
                                           echo=False)
         return dbp.getall()
+
+    def save_report(self, task_id=None):
+        """ TODO """
+
+        _report = NmapTask.get_report(task_id=task_id)
+
+        try:
+            dbp = BackendPluginFactory.create(plugin_name="sql",
+                                            url=app.config["LIBNMAP_DB_URI"],
+                                            echo=False)
+
+            _id = _report.save(dbp)
+            r = Address.discover_from_report(report_id=_id)
+
+            # save Meta information of Report
+            self.task_task_id = task_id
+            self.task_created = datetime.datetime.utcnow()
+            # TODO this is murks.. need to add a method to gets 1 NmapTask obj!
+            _nmap_task = NmapTask.find(task_id=task_id)
+            self.task_comment = _nmap_task[0]["comment"]
+            self.task_user_id = _nmap_task[0]["user_id"]
+
+            db.session.add(self)
+            db.session.commit()
+
+            return {"rc": 0}
+
+        except Exception as e:
+            print e
+            return {"rc": 1}
 
     def create_scan_from_report(self):
         pass

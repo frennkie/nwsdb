@@ -4,16 +4,19 @@
     <!--Body content-->
         <legend>Showing Reports from finished tasks</legend>
         <table id="tasktable" class="table table-striped">
-            <th></th><th>Started</th><th>Hosts_Up</th><th>Hosts_Total</th><th>Details</th>
-        {% for report_id, report in reports %}
+          <th>ID</th><th>TaskID</th><th>Started</th><th>Inserted</th><th>Comment</th><th>Hosts_Up</th><th>Hosts_Total</th><th>Details</th>
+          {% for report_meta in nmap_report_meta_all %}
             <tr>
-                <td id="{{ report_id }}">&nbsp;</td>
-                <td id="{{ report_id }}">{{ report.started|unix2datetime }}</td>
-                <td id="{{ report_id }}">{{ report.hosts_up }}</td>
-                <td id="{{ report_id }}">{{ report.hosts_total }}</td>
-                <td id="{{ report_id }}" class="detailslink">
-                    <a href="{{ url_for('nmap.nmap_report', report_id=report_id) }}">Details</a></td>
+                <td id="{{ report_meta.id }}">{{ report_meta.id }}</td>
+                <td id="{{ report_meta.id }}">{{ report_meta.task_task_id }}</td>
+                <td id="{{ report_meta.id }}">{{ momentjs(reports[report_meta.id - 1][1].started).format('YYYY-MM-DD HH:mm:ss') }}</td>
+                <td id="{{ report_meta.id }}">{{ momentjs(report_meta.task_created).format('YYYY-MM-DD HH:mm:ss') }}</td>
+                <td id="{{ report_meta.id }}">{{ report_meta.task_comment }}</td>
+                <td id="{{ report_meta.id }}">{{ reports[report_meta.id - 1][1].hosts_up }}</td>
+                <td id="{{ report_meta.id }}">{{ reports[report_meta.id - 1][1].hosts_total }}</td>
+                <td id="{{ report_meta.id }}" class="detailslink">
+                    <a href="{{ url_for('nmap.nmap_report', report_id=report_meta.id) }}">Details</a></td>
             </tr>
-        {% endfor %}
+          {% endfor %}
         </table>
 {% endblock %}

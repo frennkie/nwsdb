@@ -6,10 +6,10 @@ CSRF_ENABLED = True
 SECRET_KEY = '<fill_me>'
 PEPPER = "<fill_me>"
 
-REMEMBER_COOKIE_DURATION = timedelta(days=1)
+REMEMBER_COOKIE_DURATION = timedelta(days=30)
 
 # SQLAlchemy
-SQLALCHEMY_ECHO = True
+SQLALCHEMY_ECHO = False
 
 # MySQL
 MYSQL_DB_USERNAME = 'nmap'
@@ -23,6 +23,7 @@ DATABASE_URI = "mysql://{DB_USER}:{DB_PASS}@{DB_ADDR}/{DB_NAME}".format(DB_USER=
                                                                         DB_NAME=MYSQL_DB_NAME)
 
 SQLALCHEMY_DATABASE_URI = "mysql+py" + DATABASE_URI
+LIBNMAP_DB_URI = DATABASE_URI
 
 # File upload config
 UPLOAD_FOLDER = basedir + 'nmapui/uploads'
