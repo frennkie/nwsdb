@@ -4,6 +4,7 @@ import json
 from flask.ext.login import UserMixin
 from flask.ext.sqlalchemy import SQLAlchemy
 from sqlalchemy_utils import IPAddressType
+from sqlalchemy import asc, desc
 from libnmap.parser import NmapParser, NmapParserException
 from libnmap.plugins.backendpluginFactory import BackendPluginFactory
 
@@ -119,11 +120,11 @@ class NmapTask(db.Model):
 
 
     @classmethod
-    def find(cls, asc=True, **kwargs):
+    def find(cls, sort_asc=True, **kwargs):
         _reports = []
 
-        if asc is True:
-            _dbreports = NmapTask.query.filter_by(**kwargs).order_by("id")
+        if sort_asc is True:
+            _dbreports = NmapTask.query.filter_by(**kwargs).order_by(asc("id"))
         else:
             _dbreports = NmapTask.query.filter_by(**kwargs).order_by(desc("id"))
 
@@ -208,7 +209,7 @@ class NmapTask(db.Model):
         return False
 
 
-class NmapDiffer(object):
+class NmapReportDiffer(object):
     """Foo"""
 
     def __init__(self, old_report=None, new_report=None):
@@ -313,10 +314,42 @@ class NmapReportMeta(db.Model):
 
 
     def __repr__(self):
-        return "<{0} {1}> TaskID: ({2})".format(
+        return "<{0} {1}> TaskID: ({2}), UserID: {4}, Comment: ({3})".format(
                 self.__class__.__name__,
                 self.id,
-                self.task_id)
+                self.task_task_id,
+                self.task_comment,
+                self.task_user_id)
+
+    @classmethod
+    def get_report_meta(cls, **kwargs):
+        """ get one NmapReport """
+
+        #NmapReportMeta.query.filter_by(**kwargs).order_by("id")
+        return NmapReportMeta.query.filter_by(**kwargs).order_by(asc("id")).all()
+
+    @classmethod
+    def get_report(cls, report_id):
+        """ get one NmapReport """
+
+        dbp = BackendPluginFactory.create(plugin_name='sql',
+                                          url=app.config["LIBNMAP_DB_URI"],
+                                          echo=False)
+        return dbp.get(report_id=report_id)
+
+    @classmethod
+    def get_report_by_task_id(cls, report_id=None, task_id=None):
+        """ TODO will probably only need either report or task id """
+        pass
+
+    @classmethod
+    def getall_reports(cls):
+        """ getall NmapReport """
+
+        dbp = BackendPluginFactory.create(plugin_name='sql',
+                                          url=app.config["LIBNMAP_DB_URI"],
+                                          echo=False)
+        return dbp.getall()
 
     def save_report(self, task_id=None):
         """ TODO """
@@ -347,29 +380,6 @@ class NmapReportMeta(db.Model):
         except Exception as e:
             print e
             return {"rc": 1}
-
-    @classmethod
-    def get_report(cls, report_id):
-        """ get one NmapReport """
-
-        dbp = BackendPluginFactory.create(plugin_name='sql',
-                                          url=app.config["LIBNMAP_DB_URI"],
-                                          echo=False)
-        return dbp.get(report_id=report_id)
-
-    @classmethod
-    def get_report_by_task_id(cls, report_id=None, task_id=None):
-        """ TODO will probably only need either report or task id """
-        pass
-
-    @classmethod
-    def getall_reports(cls):
-        """ getall NmapReport """
-
-        dbp = BackendPluginFactory.create(plugin_name='sql',
-                                          url=app.config["LIBNMAP_DB_URI"],
-                                          echo=False)
-        return dbp.getall()
 
     def create_scan_from_report(self):
         pass

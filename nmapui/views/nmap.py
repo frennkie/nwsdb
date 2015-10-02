@@ -1,5 +1,5 @@
 from nmapui import app
-from nmapui.models import NmapTask, NmapDiffer, Contact, AddressDetail, Address
+from nmapui.models import NmapTask, NmapReportDiffer, Contact, AddressDetail, Address
 from nmapui.models import NmapReportMeta
 from nmapui.tasks import celery_nmap_scan
 from flask import Blueprint, render_template, request, redirect, url_for, flash
@@ -145,31 +145,37 @@ def nmap_report(report_id):
 @appmodule.route('/reports')
 @login_required
 def nmap_reports():
-    _nmap_reports = NmapReportMeta.getall_reports()
-    return render_template('nmap_reports.html', reports=_nmap_reports)
+    _nmap_report_meta_all = NmapReportMeta.get_report_meta()
+    _nmap_report_all = NmapReportMeta.getall_reports()
+    return render_template('nmap_reports.html',
+                           reports=_nmap_report_all,
+                           nmap_report_meta_all=_nmap_report_meta_all)
 
 @appmodule.route('/compare', methods=['GET', 'POST'])
 @login_required
 def nmap_compare():
     if request.method == "POST":
-        selected_tasks = request.form.getlist('task_id')
-        if len(selected_tasks) != 2:
+        selected_reports = request.form.getlist('report_meta.id')
+        if len(selected_reports) != 2:
             flash('Please select exactly two reports.', 'danger')
-            _nmap_tasks = NmapTask.find(user_id=current_user.id)
+            #_nmap_tasks = NmapTask.find(user_id=current_user.id)
+            _nmap_report_meta_all = NmapReportMeta.get_report_meta()
             return render_template('nmap_compare_select.html',
-                                   tasks=_nmap_tasks)
+                                   nmap_report_meta_all=_nmap_report_meta_all)
         else:
-            nd = NmapDiffer(old_report=NmapTask.get_report(task_id=selected_tasks[0]),
-                            new_report=NmapTask.get_report(task_id=selected_tasks[1]))
+            old=NmapReportMeta.get_report(report_id=selected_reports[0])
+            new=NmapReportMeta.get_report(report_id=selected_reports[1])
+            nd = NmapReportDiffer(old_report=old, new_report=new)
 
             return render_template('nmap_compare.html',
-                                   reports_list=selected_tasks,
+                                   reports_list=selected_reports,
                                    changed=nd.changed,
                                    added=nd.added,
                                    removed=nd.removed)
     else:
-        _nmap_tasks = NmapTask.find(user_id=current_user.id)
-        return render_template('nmap_compare_select.html', tasks=_nmap_tasks)
+        #_nmap_tasks = NmapTask.find(user_id=current_user.id)
+        _nmap_report_meta_all = NmapReportMeta.get_report_meta()
+        return render_template('nmap_compare_select.html', nmap_report_meta_all=_nmap_report_meta_all)
 
 @appmodule.route('/db')
 @login_required

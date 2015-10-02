@@ -10,7 +10,7 @@
         {% for nmap_task in tasks %}
             <tr>
                 <td>{{ nmap_task['task_id'].id }}</td>
-                <td id="{{ nmap_task['task_id'].id }}" >{{momentjs(nmap_task['created']).format('YYYY-MM-DD HH:mm:ss')}}</td>
+                <td id="{{ nmap_task['task_id'].id }}" >{{momentjs(timestamp=nmap_task['created']).format('YYYY-MM-DD HH:mm:ss')}}</td>
                 <td id="{{ nmap_task['task_id'].id }}" > {{ nmap_task['comment'] }}</td>
                 <td id="{{ nmap_task['task_id'].id }}" class="taskstatus">{{ nmap_task['task_id'].status }}</td>
 
