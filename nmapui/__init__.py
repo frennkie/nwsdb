@@ -26,8 +26,10 @@ login_manager.init_app(app)
 login_manager.login_view = "ui.login"
 
 from nmapui.views import ui
+from nmapui.views import admin
 from nmapui.views import nmap
 app.register_blueprint(ui.appmodule)
+app.register_blueprint(admin.appmodule)
 app.register_blueprint(nmap.appmodule)
 
 # Set jinja template global

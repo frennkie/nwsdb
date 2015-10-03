@@ -51,18 +51,21 @@ class Users(object):
         return _user
 
     @classmethod
-    def add(cls, username=None, email=None, password=None):
+    def add(cls, username=None, email=None, clear_pw=None):
         """add new user to database"""
 
-        if not (username and email and password):
-            print("Error: username, email and password are all mandatory.")
-            raise ValueError("Neither username, email nor password can be None.")
+        if not (username and email and clear_pw):
+            print("Error: username, email and clear_pw are all mandatory.")
+            raise Exception("Neither username, email nor clear_pw can be None.")
 
         if len(Users.find(username=username)) > 0:
             print("Error: username already in use.")
-            raise ValueError("username in use.")
+            raise ValueError("Username already in use.")
         else:
-            new_user = User(username=username, email=email, password=password)
+
+            new_user = User(username=username,
+                            email=email,
+                            clear_pw=clear_pw)
             db.session.add(new_user)
             db.session.commit()
             return new_user
@@ -86,10 +89,11 @@ class User(db.Model, UserMixin):
                                   lazy='dynamic',
                                   backref=db.backref('users', lazy='dynamic'))
 
-    def __init__(self, id=None, username=None, email=None, password=None):
+    def __init__(self, id=None, username=None, email=None, clear_pw=None):
         self.id = id
         self.username = username
-        self.password = password
+        _pw = bcrypt.hashpw(clear_pw + app.config["PEPPER"], bcrypt.gensalt())
+        self.password = _pw
         self.email = email
 
     def __repr__(self):
@@ -108,8 +112,9 @@ class User(db.Model, UserMixin):
         return bcrypt.hashpw(_password.encode('utf-8') + app.config["PEPPER"],
                              _db_password_utf8) == _db_password_utf8
 
-    def change_password(self, _password):
-        db.session.query(User).filter(User.id == self.id).update({'password': _password})
+    def change_password(self, clear_pw=None):
+        _pw = bcrypt.hashpw(clear_pw + app.config["PEPPER"], bcrypt.gensalt())
+        db.session.query(User).filter(User.id == self.id).update({'password': _pw})
         db.session.commit()
 
     def has_permission(self, name):
@@ -143,31 +148,33 @@ class User(db.Model, UserMixin):
 class Permission(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     name = db.Column(db.String(20))
+    comment = db.Column(db.String(128))
 
-    def __init__(self, id=None, name=None):
+    def __init__(self, id=None, name=None, comment=None):
         self.id = id
         self.name = name
+        self.comment = comment
 
     def __repr__(self):
-        return "<{0} {1}: {2}>".format(self.__class__.__name__,
+        return "<{0} {1}: {2} ({3})>".format(self.__class__.__name__,
                                        self.id,
-                                       self.name)
+                                       self.name,
+                                       self.comment)
 
     @classmethod
-    def add(cls, id=None, name=None):
+    def add(cls, id=None, name=None, comment=None):
         """Add new permission"""
         if name is None:
             print("name is required!")
             raise("name is required!")
-            return None
-        if id:
-            # TODO check whether id is free
-            pass
+        if id and name != "admin":
+            print("Error: don't hardcode Permission IDs (except for admin).")
+            raise Exception("Don't hardcode Permission IDs (except for admin).")
 
-        _new_perm = Permission(id=id, name=name)
+        _new_perm = Permission(id=id, name=name, comment=comment)
         db.session.add(_new_perm)
         db.session.commit()
-        return _new_perm.id
+        return _new_perm
 
 class NmapTask(db.Model):
     """ NmapTask Class """

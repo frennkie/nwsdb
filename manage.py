@@ -1,6 +1,5 @@
 import getpass
 import sys
-import bcrypt
 from flask.ext.script import Manager, Server
 from flask.ext.migrate import Migrate, MigrateCommand
 from nmapui import app
@@ -39,8 +38,7 @@ def add_user(username, email):
     __p1 = getpass.getpass()
     __p2 = getpass.getpass("Confirm password:")
     if __p1 == __p2 and len(__p1):
-        __px = bcrypt.hashpw(__p1 + app.config["PEPPER"], bcrypt.gensalt())
-        return Users.add(username=username, email=email, password=__px)
+        return Users.add(username=username, email=email, clear_pw=__p1)
     else:
         print "Error: passwords do not match"
 
@@ -57,8 +55,7 @@ def change_password(user_id):
     __p1 = getpass.getpass()
     __p2 = getpass.getpass("Confirm password:")
     if __p1 == __p2 and len(__p1):
-        __px = bcrypt.hashpw(__p1 + app.config["PEPPER"], bcrypt.gensalt())
-        _user.change_password(__px)
+        _user.change_password(clear_pw=__p1)
     else:
         print("Error: passwords do not match")
 

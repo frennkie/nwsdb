@@ -66,7 +66,7 @@ def nmap_tasks():
 @appmodule.route('/tasks/<int:page>')
 @login_required
 def nmap_tasks_paged(page=1):
-    return abort(404)
+    abort(404)
 
 @appmodule.route('/jsontasks', methods=['GET', 'POST'])
 @login_required
@@ -226,15 +226,6 @@ def nmap_import():
     else:
         return render_template('nmap_import.html')
 
-
-@appmodule.route("/admin")
-@login_required
-def admin():
-    """admin page - used to manage user accounts and permissions"""
-    if not current_user.has_permission("admin"):
-        abort(403)
-
-    return render_template("nmap_admin.html")
 
 
 @appmodule.route("/profile")

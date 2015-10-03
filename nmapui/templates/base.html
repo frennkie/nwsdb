@@ -76,8 +76,20 @@
             </ul>
             <ul class="nav navbar-nav navbar-right">
                 {% if current_user.has_permission("admin") %}
-                    <li {% if request.path == '/nmap/admin' %}class="active"{% endif %}>
-                        <a href="/nmap/admin"><span class="glyphicon glyphicon-wrench"></span>&nbsp; Admin</a></li>
+                <li class="dropdown">
+                <a href="#" class="dropdown-toggle" data-toggle="dropdown" role="button" aria-haspopup="true" aria-expanded="false"><span class="glyphicon glyphicon-wrench"></span>&nbsp; Admin <span class="caret"></span></a>
+                    <ul class="dropdown-menu">
+
+                        <li {% if request.path == '/admin/' %}class="active"{% endif %}>
+                            <a href="/admin/"></span> Home</a></li>
+                        <li role="separator" class="divider"></li>
+                        <li {% if request.path == '/admin/users' %}class="active"{% endif %}>
+                            <a href="/admin/users"><span class="glyphicon glyphicon-user"></span> Users</a></li>
+                        <li {% if request.path == '/admin/permissions' %}class="active"{% endif %}>
+                            <a href="/admin/permissions"><span class="glyphicon glyphicon-pawn"></span> Permissions</a></li>
+
+                    </ul>
+                </li>
                 {% endif %}
                 <li {% if request.path == '/nmap/profile' %}class="active"{% endif %}>
                     <a href="/nmap/profile"><span class="glyphicon glyphicon-user"></span>&nbsp; {{ current_user.username }}</a></li>
