@@ -143,13 +143,16 @@ def nmap_report(report_id):
     return render_template('nmap_report.html', report=_report)
 
 @appmodule.route('/reports')
+@appmodule.route('/reports/<int:page>')
 @login_required
-def nmap_reports():
-    _nmap_report_meta_all = NmapReportMeta.get_report_meta()
+def nmap_reports(page=1):
+    _meta_all_page = NmapReportMeta.query.paginate(page,
+                                                   app.config["ITEMS_PER_PAGE"])
     _nmap_report_all = NmapReportMeta.getall_reports()
+
     return render_template('nmap_reports.html',
-                           reports=_nmap_report_all,
-                           nmap_report_meta_all=_nmap_report_meta_all)
+                           meta_all_page=_meta_all_page,
+                           reports=_nmap_report_all)
 
 @appmodule.route('/compare', methods=['GET', 'POST'])
 @login_required

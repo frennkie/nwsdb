@@ -32,6 +32,7 @@ app.register_blueprint(nmap.appmodule)
 
 # Set jinja template global
 app.jinja_env.globals['momentjs'] = momentjs
+app.jinja_env.add_extension('jinja2.ext.do')
 
 if __name__ == '__main__':
     app.run()

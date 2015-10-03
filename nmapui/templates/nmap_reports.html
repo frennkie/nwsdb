@@ -2,10 +2,14 @@
 {% block title %}Reports{% endblock %}
 {% block body %}
     <!--Body content-->
+
+        {% import '_helpers.html' as helpers %}
+
         <legend>Showing Reports from finished tasks</legend>
         <table id="tasktable" class="table table-striped">
           <th>ID</th><th>TaskID</th><th>Started</th><th>Inserted</th><th>Comment</th><th>Hosts_Up</th><th>Hosts_Total</th><th>Details</th>
-          {% for report_meta in nmap_report_meta_all %}
+
+          {% for report_meta in meta_all_page.items %}
             <tr>
                 <td id="{{ report_meta.id }}">{{ report_meta.id }}</td>
                 <td id="{{ report_meta.id }}">{{ report_meta.task_task_id }}</td>
@@ -19,4 +23,10 @@
             </tr>
           {% endfor %}
         </table>
+
+        {{ helpers.paginate(meta_all_page) }}
+
+
+
+
 {% endblock %}
