@@ -38,10 +38,7 @@ class Users(object):
         _users = []
         _dbusers = User.query.filter_by(**kwargs)
         for _dbuser in _dbusers:
-            _users.append(User(id=_dbuser.id,
-                          username=_dbuser.username,
-                          password=_dbuser.password,
-                          email=_dbuser.email))
+            _users.append(User.query.get(_dbuser.id)
         return _users
 
     @classmethod
@@ -50,10 +47,7 @@ class Users(object):
 
         _user = None
         _dbuser = User.query.get(user_id)
-        _user = User(id=_dbuser.id,
-                     username=_dbuser.username,
-                     password=_dbuser.password,
-                     email=_dbuser.email)
+        _user = User.query.get(_dbuser.id)
         return _user
 
     @classmethod
