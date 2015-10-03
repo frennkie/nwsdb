@@ -35,30 +35,15 @@ def celery_nmap_scan(targets, options):
 
 @task(name="tasks.nmap_store_report")
 def celery_nmap_store_report(task_id):
-    """ after scan is finished get report for scan from celery backend (db)
-        and insert into db """
+    """
+        after scan is finished get report for scan from celery backend (db)
+        and insert into db
+    """
 
     report_meta = NmapReportMeta(task_id=task_id)
     rc = report_meta.save_report(task_id=task_id)
     return {"rc": rc}
 
-    """
-    _report = NmapTask.get_report(task_id=task_id)
-
-    try:
-        db = BackendPluginFactory.create(plugin_name="sql",
-                                         url=LIBNMAP_DB_URI,
-                                         echo=False)
-
-        _id = _report.save(db)
-        r = Address.discover_from_report(report_id=_id)
-
-        return {"rc": 0}
-
-    except Exception as e:
-        print e
-        return {"rc": 1}
-    """
 
 # Class for a task
 class CleanupTask(Task):

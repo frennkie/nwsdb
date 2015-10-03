@@ -55,12 +55,12 @@ class Users(object):
         """add new user to database"""
 
         if not (username and email and password):
-            print("Error: username, email and password are all mandatory!")
-            raise ValueError("Neither username, email nor password can be None!")
+            print("Error: username, email and password are all mandatory.")
+            raise ValueError("Neither username, email nor password can be None.")
 
         if len(Users.find(username=username)) > 0:
-            print("Error: username already in use!")
-            raise ValueError("username in use")
+            print("Error: username already in use.")
+            raise ValueError("username in use.")
         else:
             new_user = User(username=username, email=email, password=password)
             db.session.add(new_user)
@@ -178,7 +178,7 @@ class NmapTask(db.Model):
     user_id = db.Column(db.Integer, db.ForeignKey("user.id"))
 
     def __init__(self, id=None, comment=None, task_id=None, user=None,
-                 created=datetime.datetime.utcnow()):
+                 created=None):
         self.id = id
         self.comment = comment
         self.task_id = task_id
@@ -192,25 +192,23 @@ class NmapTask(db.Model):
 
     @classmethod
     def find(cls, sort_asc=True, **kwargs):
-        _reports = []
+        _nmap_tasks = []
 
         if sort_asc is True:
-            _dbreports = NmapTask.query.filter_by(**kwargs).order_by(asc("id"))
+            _db_nmap_tasks = NmapTask.query.filter_by(**kwargs).order_by(asc("id")).all()
         else:
-            _dbreports = NmapTask.query.filter_by(**kwargs).order_by(desc("id"))
+            _db_nmap_tasks = NmapTask.query.filter_by(**kwargs).order_by(desc("id")).all()
 
-
-        for _dbreport in _dbreports:
-            _nmap_task = {'task_id': celery_pipe.AsyncResult(_dbreport.task_id),
-                          'comment': _dbreport.comment,
-                          'created': _dbreport.created,
-                          'user_id': int(_dbreport.user_id)}
-            _reports.append(_nmap_task)
-        return _reports
+        for _db_nmap_task in _db_nmap_tasks:
+            async_result = celery_pipe.AsyncResult(_db_nmap_task.task_id)
+            _db_nmap_task.async_result = async_result
+            _nmap_tasks.append(_db_nmap_task)
+        return _nmap_tasks
 
 
     @classmethod
     def get(cls, task_id):
+        """TODO """
         #print("DEBUG: nmaptask_get: " + str(task_id))
         _report = None
         if isinstance(task_id, str) or isinstance(task_id, unicode):
@@ -237,14 +235,22 @@ class NmapTask(db.Model):
 
     @classmethod
     def add(cls, user=None, task_id=None, comment=None):
-        rval = False
-        if user is not None and task_id is not None and comment is not None:
-            new_nmaptask = NmapTask(user=user,
-                                    task_id=task_id, comment=comment)
-            db.session.merge(new_nmaptask)
+        """TODO"""
+        if not (user and task_id):
+            print("Error: user and task_id are all mandatory.")
+            raise ValueError("Neither user nor task_id can be None.")
+        try:
+            _nmap_task = NmapTask(user=user,
+                                  task_id=task_id,
+                                  comment=comment,
+                                  created=datetime.datetime.utcnow())
+            db.session.merge(_nmap_task)
             db.session.commit()
-            rval = True
-        return rval
+            return _nmap_task
+        except:
+            print("Error: could not add scan task.")
+            raise Exception("Could not add scan task.")
+
 
     @classmethod
     def remove_task_by_id(cls, task_id=task_id):
@@ -379,6 +385,7 @@ class NmapReportMeta(db.Model):
     task_task_id = db.Column(db.String(36))
     task_comment = db.Column(db.String(128))
     task_created = db.Column(db.DateTime)
+    report_stored = db.Column(db.DateTime)
     task_user_id = db.Column(db.Integer, db.ForeignKey("user.id"))
 
 
@@ -428,24 +435,32 @@ class NmapReportMeta(db.Model):
     def save_report(self, task_id=None):
         """ TODO """
 
+        # TODO this is murks.. need to add a method to gets 1 NmapTask obj!
+        _nmap_task_list = NmapTask.find(task_id=task_id)
+        _nmap_task = _nmap_task_list[0]
+        #print(_nmap_task)
+
         _report = NmapTask.get_report(task_id=task_id)
+        #print(_report)
+
+        # save Meta information of Report
+        self.task_task_id = _nmap_task.task_id
+        self.task_comment = _nmap_task.comment
+        self.task_created = _nmap_task.created
+        self.task_user_id = _nmap_task.user_id
+        self.report_stored = datetime.datetime.utcnow()
 
         try:
             dbp = BackendPluginFactory.create(plugin_name="sql",
-                                            url=app.config["LIBNMAP_DB_URI"],
-                                            echo=False)
+                                              url=app.config["LIBNMAP_DB_URI"],
+                                              echo=False)
 
             _id = _report.save(dbp)
+
+            # call Address.discover which discovers and stores addresses
             r = Address.discover_from_report(report_id=_id)
 
-            # save Meta information of Report
-            self.task_task_id = task_id
-            self.task_created = datetime.datetime.utcnow()
-            # TODO this is murks.. need to add a method to gets 1 NmapTask obj!
-            _nmap_task = NmapTask.find(task_id=task_id)
-            self.task_comment = _nmap_task[0]["comment"]
-            self.task_user_id = _nmap_task[0]["user_id"]
-
+            # save new NmapReportMeta instance to db
             db.session.add(self)
             db.session.commit()
 
@@ -532,7 +547,7 @@ class Address(object):
 
     @classmethod
     def discover_from_report(cls, report_id):
-        """ discover hosts from report """
+        """discover hosts from report and store in db"""
 
         nmap_report = NmapReportMeta.get_report(report_id)
 

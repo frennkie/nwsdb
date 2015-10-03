@@ -71,16 +71,16 @@ def nmap_tasks_json():
 
     _jtarray = []
     for _ntask in _nmap_tasks:
-        tdict = {'id': _ntask['task_id'].id,
-                 'status': _ntask['task_id'].status,
+        tdict = {'id': _ntask.task_id,
+                 'status': _ntask.async_result.status,
                  'ready': 0}
-        if _ntask['task_id'].result and 'done' in _ntask['task_id'].result:
-            tdict.update({'progress': float(_ntask['task_id'].result['done'])})
-        elif _ntask['task_id'].result and 'report' in _ntask['task_id'].result:
+        if _ntask.async_result.result and 'done' in _ntask.async_result.result:
+            tdict.update({'progress': float(_ntask.async_result.result['done'])})
+        elif _ntask.async_result.result and 'report' in _ntask.async_result.result:
             tdict.update({'progress': 100})
         else:
             tdict.update({'progress': 0})
-        if _ntask['task_id'].status in READY_STATES:
+        if _ntask.async_result.status in READY_STATES:
             tdict.update({'ready': 1})
         _jtarray.append(tdict)
 
