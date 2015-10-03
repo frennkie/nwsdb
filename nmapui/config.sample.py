@@ -26,11 +26,3 @@ DATABASE_URI = "mysql://{DB_USER}:{DB_PASS}@{DB_ADDR}/{DB_NAME}".format(DB_USER=
 SQLALCHEMY_DATABASE_URI = "mysql+py" + DATABASE_URI
 LIBNMAP_DB_URI = DATABASE_URI
 
-# File upload config
-UPLOAD_FOLDER = basedir + 'nmapui/uploads'
-ALLOWED_EXTENSIONS= set(['xml'])
-MAX_CONTENT_LENGTH = 16 * 1024 * 1024
-
-# nmap-webgui specific config variables
-ROLE_USER = 2
-ROLE_ADMIN = 4
