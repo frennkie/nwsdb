@@ -75,8 +75,12 @@
 
             </ul>
             <ul class="nav navbar-nav navbar-right">
-                <li {% if request.path == '/profile' %}class="active"{% endif %}>
-                    <a href="/profile"><span class="glyphicon glyphicon-user"></span>&nbsp; {{ current_user.username }}</a></li>
+                {% if current_user.has_permission("admin") %}
+                    <li {% if request.path == '/nmap/admin' %}class="active"{% endif %}>
+                        <a href="/nmap/admin"><span class="glyphicon glyphicon-wrench"></span>&nbsp; Admin</a></li>
+                {% endif %}
+                <li {% if request.path == '/nmap/profile' %}class="active"{% endif %}>
+                    <a href="/nmap/profile"><span class="glyphicon glyphicon-user"></span>&nbsp; {{ current_user.username }}</a></li>
                 <li><a href="/logout"><span class="glyphicon glyphicon-off"></span>&nbsp; Logout</a>
             </ul>
             </div><!-- /.navbar-collapse -->

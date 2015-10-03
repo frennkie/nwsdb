@@ -93,7 +93,8 @@ class User(db.Model, UserMixin):
         self.email = email
 
     def __repr__(self):
-        return "<{0} {1}: {2}>".format(self.__class__.__name__,
+        return "<{0}[{1}]: {2} ({3})>".format(self.__class__.__name__,
+                                       self.id,
                                        self.username,
                                        self.email)
 

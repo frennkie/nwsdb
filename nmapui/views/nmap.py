@@ -2,7 +2,7 @@ from nmapui import app
 from nmapui.models import NmapTask, NmapReportDiffer, Contact, AddressDetail, Address
 from nmapui.models import NmapReportMeta
 from nmapui.tasks import celery_nmap_scan
-from flask import Blueprint, render_template, request, redirect, url_for, flash
+from flask import Blueprint, render_template, request, redirect, url_for, flash, abort
 from flask.ext.login import login_required, current_user
 from celery.states import READY_STATES
 import json
@@ -212,6 +212,23 @@ def nmap_import():
 
     else:
         return render_template('nmap_import.html')
+
+
+@appmodule.route("/admin")
+@login_required
+def admin():
+    """admin page - used to manage user accounts and permissions"""
+    if not current_user.has_permission("admin"):
+        abort(403)
+
+    return render_template("nmap_admin.html")
+
+
+@appmodule.route("/profile")
+@login_required
+def profile():
+    return render_template("nmap_profile.html")
+
 
 @appmodule.route('/test', methods=['GET', 'POST'])
 #@login_required

@@ -21,6 +21,7 @@ db = SQLAlchemy(app)
 login_serializer = URLSafeTimedSerializer(app.config["SECRET_KEY"])
 
 login_manager = LoginManager()
+login_manager.session_protection = "strong"
 login_manager.init_app(app)
 login_manager.login_view = "ui.login"
 

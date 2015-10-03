@@ -44,6 +44,9 @@
           </label>
         </div>
         <button class="btn btn-lg btn-primary btn-block" type="submit">Sign in</button>
+        {% if next_page %}
+            <input type="hidden" id="next_page" name="next_page" class="form-control" value="{{ next_page }}">
+        {% endif %}
       </form>
 
     </div> <!-- /container -->
