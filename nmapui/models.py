@@ -38,7 +38,7 @@ class Users(object):
         _users = []
         _dbusers = User.query.filter_by(**kwargs)
         for _dbuser in _dbusers:
-            _users.append(User.query.get(_dbuser.id)
+            _users.append(User.query.get(_dbuser.id))
         return _users
 
     @classmethod
