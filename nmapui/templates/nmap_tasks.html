@@ -2,9 +2,7 @@
 {% block title %}Tasks{% endblock %}
 {% block body %}
     <!--Body content-->
-    <form>
-    <fieldset>
-        <legend>NMAP Scans Status</legend>
+        <legend>Scans Tasks</legend>
         <table id="tasktable" class="table table-striped">
         <th>Tasks</th><th>Created (UTC)</th><th>Comment</th><th>Status</th><th>Progress</th><th>&nbsp;</th><th>Details</th><th>Delete</th>
         {% for nmap_task in tasks %}
@@ -44,8 +42,6 @@
             </tr>
         {% endfor %}
         </table>
-    </fieldset>
-    </form>
 {% endblock %}
 {% block javascript %}
     var interval_id = 0;

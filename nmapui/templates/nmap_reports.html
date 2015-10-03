@@ -19,7 +19,7 @@
                 <td id="{{ report_meta.id }}">{{ reports[report_meta.id - 1][1].hosts_up }}</td>
                 <td id="{{ report_meta.id }}">{{ reports[report_meta.id - 1][1].hosts_total }}</td>
                 <td id="{{ report_meta.id }}" class="detailslink">
-                    <a href="{{ url_for('nmap.nmap_report', report_id=report_meta.id) }}">Details</a></td>
+                    <a href="{{ url_for('nmap.nmap_report', report_id=report_meta.report_id) }}">Details</a></td>
             </tr>
           {% endfor %}
         </table>
