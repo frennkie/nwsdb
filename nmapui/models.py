@@ -46,7 +46,8 @@ class Users(object):
 
     @classmethod
     def get(cls, user_id):
-        """ """
+        """get excactly one user identified by ID"""
+
         _user = None
         _dbuser = User.query.get(user_id)
         _user = User(id=_dbuser.id,
@@ -57,12 +58,20 @@ class Users(object):
 
     @classmethod
     def add(cls, username=None, email=None, password=None):
-        """ """
-        if username is not None and email is not None and password is not None:
+        """add new user to database"""
+
+        if not (username and email and password):
+            print("Error: username, email and password are all mandatory!")
+            raise ValueError("Neither username, email nor password can be None!")
+
+        if len(Users.find(username=username)) > 0:
+            print("Error: username already in use!")
+            raise ValueError("username in use")
+        else:
             new_user = User(username=username, email=email, password=password)
             db.session.add(new_user)
             db.session.commit()
-        return new_user
+            return new_user
 
 """ permissions handles many-to-many relation of Permission and User Class """
 permissions = db.Table('permissions',
@@ -90,7 +99,9 @@ class User(db.Model, UserMixin):
         self.email = email
 
     def __repr__(self):
-        return "<User {0}> ({1})".format(self.username, self.email)
+        return "<{0} {1}: {2}>".format(self.__class__.__name__,
+                                       self.username,
+                                       self.email)
 
     def get_auth_token(self):
         """Encode a secure token for cookie"""
@@ -143,7 +154,9 @@ class Permission(db.Model):
         self.name = name
 
     def __repr__(self):
-        return "<Permission {0}: {1}>".format(self.id, self.name)
+        return "<{0} {1}: {2}>".format(self.__class__.__name__,
+                                       self.id,
+                                       self.name)
 
     @classmethod
     def add(cls, id=None, name=None):
@@ -177,6 +190,10 @@ class NmapTask(db.Model):
         self.user_id = user.id
         self.created = created
 
+    def __repr__(self):
+        return "<{0} {1}: {2}>".format(self.__class__.__name__,
+                                       self.id,
+                                       self.task_id)
 
     @classmethod
     def find(cls, sort_asc=True, **kwargs):
@@ -286,6 +303,9 @@ class NmapReportDiffer(object):
 
         self.do_diff(new_report, old_report)
         self.print_diff()
+
+    def __repr__(self):
+        return "<{0}>".format(self.__class__.__name__)
 
     def print_diff(self):
         """output for debug """
