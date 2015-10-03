@@ -10,19 +10,16 @@
             <th>ID</th><th>Name</th><th>Users assigned to this permission</th>
 
           {% for permission in permissions.items %}
-            {% if permission.name == "admin" %}
-            {% else %}
-                <tr>
-                    <td id="{{ permission.id }}">{{ permission.id }}</td>
-                    <td id="{{ permission.id }}">{{ permission.name }}</td>
+            <tr>
+                <td id="{{ permission.id }}">{{ permission.id }}</td>
+                <td id="{{ permission.id }}">{{ permission.name }}</td>
 
-                    <td id="{{ permission.id }}">
-                        {% for user in users %}
-                            {% if user.has_permission(permission.name) %} {{ user.username }} {% endif %}
-                        {% endfor %}
-                    </td>
-                </tr>
-            {% endif %}
+                <td id="{{ permission.id }}">
+                    {% for user in users %}
+                        {% if user.has_permission(permission.name) %} {{ user.username }} {% endif %}
+                    {% endfor %}
+                </td>
+            </tr>
           {% endfor %}
         </table>
 
