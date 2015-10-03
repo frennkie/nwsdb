@@ -5,25 +5,36 @@
 
         {% import '_helpers.html' as helpers %}
 
-        <legend>Permissions &nbsp;<a href="/admin/add_permission" data-toggle="tooltip" title="add permission"><span class="glyphicon glyphicon-plus" style="font-size: 15px"><span></a></legend>
-        <table id="permissiontable" class="table table-striped">
-            <th>ID</th><th>Name</th><th>Users assigned to this permission</th>
 
-          {% for permission in permissions.items %}
-            <tr>
-                <td id="{{ permission.id }}">{{ permission.id }}</td>
-                <td id="{{ permission.id }}">{{ permission.name }}</td>
+        <div class="row">
+          <div class="col-md-1"></div>
+          <div class="col-md-10">
+            <legend>Permissions &nbsp;<a href="/admin/add_permission" data-toggle="tooltip" title="add permission"><span class="glyphicon glyphicon-plus" style="font-size: 15px"><span></a></legend>
+            <table id="permissiontable" class="table table-striped">
+                <th></th><th>ID</th><th>Name</th><th>Users assigned to this permission</th>
 
-                <td id="{{ permission.id }}">
-                    {% for user in users %}
-                        {% if user.has_permission(permission.name) %} {{ user.username }} {% endif %}
-                    {% endfor %}
-                </td>
-            </tr>
-          {% endfor %}
-        </table>
+            {% for permission in permissions.items %}
+                <tr>
+                    {% if permission.name == "admin" %}
+                        <td id="{{ permission.id }}"><span class="glyphicon glyphicon-fire text-danger"></span></td>
+                    {% else %}
+                        <td id="{{ permission.id }}">&nbsp;</td>
+                    {% endif %}
 
-        {{ helpers.paginate(permissions) }}
+                    <td id="{{ permission.id }}">{{ permission.id }}</td>
+                    <td id="{{ permission.id }}">{{ permission.name }}</td>
+                    <td id="{{ permission.id }}">
+                        {% for user in users %}
+                            {% if user.has_permission(permission.name) %} {{ user.username }} {% endif %}
+                        {% endfor %}
+                    </td>
+                </tr>
+            {% endfor %}
+            </table>
 
+            {{ helpers.paginate(permissions) }}
+          </div>
+          <div class="col-md-1"></div>
+        </div>
 
 {% endblock %}
