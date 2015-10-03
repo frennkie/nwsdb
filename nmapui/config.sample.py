@@ -9,6 +9,7 @@ PEPPER = "<fill_me>"
 REMEMBER_COOKIE_DURATION = timedelta(days=30)
 
 # SQLAlchemy
+#SQLALCHEMY_ECHO = True
 SQLALCHEMY_ECHO = False
 
 # MySQL

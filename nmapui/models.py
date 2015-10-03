@@ -38,43 +38,53 @@ class Users(object):
         _users = []
         _dbusers = User.query.filter_by(**kwargs)
         for _dbuser in _dbusers:
-            _users.append(User(id=_dbuser.id,
-                          username=_dbuser.username,
-                          password=_dbuser.password,
-                          email=_dbuser.email))
+            _users.append(User.query.get(_dbuser.id))
         return _users
 
     @classmethod
     def get(cls, user_id):
-        """ """
+        """get excactly one user identified by ID"""
+
         _user = None
         _dbuser = User.query.get(user_id)
-        _user = User(id=_dbuser.id,
-                     username=_dbuser.username,
-                     password=_dbuser.password,
-                     email=_dbuser.email)
+        _user = User.query.get(_dbuser.id)
         return _user
 
     @classmethod
     def add(cls, username=None, email=None, password=None):
-        """ """
-        rval = False
-        if username is not None and email is not None and password is not None:
+        """add new user to database"""
+
+        if not (username and email and password):
+            print("Error: username, email and password are all mandatory!")
+            raise ValueError("Neither username, email nor password can be None!")
+
+        if len(Users.find(username=username)) > 0:
+            print("Error: username already in use!")
+            raise ValueError("username in use")
+        else:
             new_user = User(username=username, email=email, password=password)
             db.session.add(new_user)
             db.session.commit()
-            rval = True
-        return rval
+            return new_user
 
+""" permissions handles many-to-many relation of Permission and User Class """
+permissions = db.Table('permissions',
+    db.Column('permission_id', db.Integer, db.ForeignKey('permission.id')),
+    db.Column('user_id', db.Integer, db.ForeignKey('user.id'))
+)
 
 class User(db.Model, UserMixin):
-    """ User Class and SQL Table """
+    """User Class and SQL Table"""
     __table_args__ = {'sqlite_autoincrement': True}
     id = db.Column(db.Integer, primary_key=True)
     username = db.Column(db.String(128))
     password = db.Column(db.String(128))
     email = db.Column(db.String(128))
     nmaptasks = db.relationship('NmapTask', backref=db.backref('buser'))
+    permissions = db.relationship('Permission',
+                                  secondary=permissions,
+                                  lazy='dynamic',
+                                  backref=db.backref('users', lazy='dynamic'))
 
     def __init__(self, id=None, username=None, email=None, password=None):
         self.id = id
@@ -82,10 +92,13 @@ class User(db.Model, UserMixin):
         self.password = password
         self.email = email
 
+    def __repr__(self):
+        return "<{0} {1}: {2}>".format(self.__class__.__name__,
+                                       self.username,
+                                       self.email)
+
     def get_auth_token(self):
-        """
-        Encode a secure token for cookie
-        """
+        """Encode a secure token for cookie"""
         data = [str(self.id), self.password]
         return login_serializer.dumps(data)
 
@@ -98,9 +111,62 @@ class User(db.Model, UserMixin):
         db.session.query(User).filter(User.id == self.id).update({'password': _password})
         db.session.commit()
 
-    def __repr__(self):
-        return "<User {0}> ({1})".format(self.username, self.email)
+    def has_permission(self, name):
+        """Check out whether a user has a permission or not."""
+        permission = Permission.query.filter_by(name=name).first()
+        # if the permission does not exist or was not given to the user
+        if not permission or not permission in self.permissions:
+            return False
+        return True
 
+    def grant_permission(self, name):
+        """Grant a permission to a user."""
+        permission = Permission.query.filter_by(name=name).first()
+        if permission and permission in self.permissions:
+            return
+        if not permission:
+            permission = Permission()
+            permission.name = name
+            db.session.add(permission)
+            db.session.commit()
+        self.permissions.append(permission)
+
+    def revoke_permission(self, name):
+        """Revoke a given permission for a user."""
+        permission = Permission.query.filter_by(name=name).first()
+        if not permission or not permission in self.permissions:
+            return
+        self.permissions.remove(permission)
+
+
+class Permission(db.Model):
+    id = db.Column(db.Integer, primary_key=True)
+    name = db.Column(db.String(20))
+
+    def __init__(self, id=None, name=None):
+        self.id = id
+        self.name = name
+
+    def __repr__(self):
+        return "<{0} {1}: {2}>".format(self.__class__.__name__,
+                                       self.id,
+                                       self.name)
+
+    @classmethod
+    def add(cls, id=None, name=None):
+        """Add new permission"""
+        if name is None:
+            print("name is required!")
+            raise("name is required!")
+            return None
+        if id:
+            # TODO check whether id is free
+            pass
+
+        _new_perm = Permission(id=id, name=name)
+        db.session.add(_new_perm)
+        db.session.commit()
+        return _new_perm.id
 
 class NmapTask(db.Model):
     """ NmapTask Class """
@@ -118,6 +184,10 @@ class NmapTask(db.Model):
         self.user_id = user.id
         self.created = created
 
+    def __repr__(self):
+        return "<{0} {1}: {2}>".format(self.__class__.__name__,
+                                       self.id,
+                                       self.task_id)
 
     @classmethod
     def find(cls, sort_asc=True, **kwargs):
@@ -228,6 +298,9 @@ class NmapReportDiffer(object):
         self.do_diff(new_report, old_report)
         self.print_diff()
 
+    def __repr__(self):
+        return "<{0}>".format(self.__class__.__name__)
+
     def print_diff(self):
         """output for debug """
         print self.changed
@@ -323,14 +396,14 @@ class NmapReportMeta(db.Model):
 
     @classmethod
     def get_report_meta(cls, **kwargs):
-        """ get one NmapReport """
+        """get one NmapReport"""
 
         #NmapReportMeta.query.filter_by(**kwargs).order_by("id")
         return NmapReportMeta.query.filter_by(**kwargs).order_by(asc("id")).all()
 
     @classmethod
     def get_report(cls, report_id):
-        """ get one NmapReport """
+        """get one NmapReport"""
 
         dbp = BackendPluginFactory.create(plugin_name='sql',
                                           url=app.config["LIBNMAP_DB_URI"],
@@ -339,12 +412,12 @@ class NmapReportMeta(db.Model):
 
     @classmethod
     def get_report_by_task_id(cls, report_id=None, task_id=None):
-        """ TODO will probably only need either report or task id """
+        """TODO will probably only need either report or task id"""
         pass
 
     @classmethod
     def getall_reports(cls):
-        """ getall NmapReport """
+        """getall NmapReport"""
 
         dbp = BackendPluginFactory.create(plugin_name='sql',
                                           url=app.config["LIBNMAP_DB_URI"],
