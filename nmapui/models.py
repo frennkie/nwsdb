@@ -4,6 +4,7 @@ import json
 from flask.ext.login import UserMixin
 from flask.ext.sqlalchemy import SQLAlchemy
 from sqlalchemy_utils import IPAddressType
+from sqlalchemy import asc, desc
 from libnmap.parser import NmapParser, NmapParserException
 from libnmap.plugins.backendpluginFactory import BackendPluginFactory
 
@@ -57,23 +58,30 @@ class Users(object):
     @classmethod
     def add(cls, username=None, email=None, password=None):
         """ """
-        rval = False
         if username is not None and email is not None and password is not None:
             new_user = User(username=username, email=email, password=password)
             db.session.add(new_user)
             db.session.commit()
-            rval = True
-        return rval
+        return new_user
 
+""" permissions handles many-to-many relation of Permission and User Class """
+permissions = db.Table('permissions',
+    db.Column('permission_id', db.Integer, db.ForeignKey('permission.id')),
+    db.Column('user_id', db.Integer, db.ForeignKey('user.id'))
+)
 
 class User(db.Model, UserMixin):
-    """ User Class and SQL Table """
+    """User Class and SQL Table"""
     __table_args__ = {'sqlite_autoincrement': True}
     id = db.Column(db.Integer, primary_key=True)
     username = db.Column(db.String(128))
     password = db.Column(db.String(128))
     email = db.Column(db.String(128))
     nmaptasks = db.relationship('NmapTask', backref=db.backref('buser'))
+    permissions = db.relationship('Permission',
+                                  secondary=permissions,
+                                  lazy='dynamic',
+                                  backref=db.backref('users', lazy='dynamic'))
 
     def __init__(self, id=None, username=None, email=None, password=None):
         self.id = id
@@ -81,10 +89,11 @@ class User(db.Model, UserMixin):
         self.password = password
         self.email = email
 
+    def __repr__(self):
+        return "<User {0}> ({1})".format(self.username, self.email)
+
     def get_auth_token(self):
-        """
-        Encode a secure token for cookie
-        """
+        """Encode a secure token for cookie"""
         data = [str(self.id), self.password]
         return login_serializer.dumps(data)
 
@@ -97,9 +106,60 @@ class User(db.Model, UserMixin):
         db.session.query(User).filter(User.id == self.id).update({'password': _password})
         db.session.commit()
 
-    def __repr__(self):
-        return "<User {0}> ({1})".format(self.username, self.email)
+    def has_permission(self, name):
+        """Check out whether a user has a permission or not."""
+        permission = Permission.query.filter_by(name=name).first()
+        # if the permission does not exist or was not given to the user
+        if not permission or not permission in self.permissions:
+            return False
+        return True
 
+    def grant_permission(self, name):
+        """Grant a permission to a user."""
+        permission = Permission.query.filter_by(name=name).first()
+        if permission and permission in self.permissions:
+            return
+        if not permission:
+            permission = Permission()
+            permission.name = name
+            db.session.add(permission)
+            db.session.commit()
+        self.permissions.append(permission)
+
+    def revoke_permission(self, name):
+        """Revoke a given permission for a user."""
+        permission = Permission.query.filter_by(name=name).first()
+        if not permission or not permission in self.permissions:
+            return
+        self.permissions.remove(permission)
+
+
+class Permission(db.Model):
+    id = db.Column(db.Integer, primary_key=True)
+    name = db.Column(db.String(20))
+
+    def __init__(self, id=None, name=None):
+        self.id = id
+        self.name = name
+
+    def __repr__(self):
+        return "<Permission {0}: {1}>".format(self.id, self.name)
+
+    @classmethod
+    def add(cls, id=None, name=None):
+        """Add new permission"""
+        if name is None:
+            print("name is required!")
+            raise("name is required!")
+            return None
+        if id:
+            # TODO check whether id is free
+            pass
+
+        _new_perm = Permission(id=id, name=name)
+        db.session.add(_new_perm)
+        db.session.commit()
+        return _new_perm.id
 
 class NmapTask(db.Model):
     """ NmapTask Class """
@@ -119,11 +179,11 @@ class NmapTask(db.Model):
 
 
     @classmethod
-    def find(cls, asc=True, **kwargs):
+    def find(cls, sort_asc=True, **kwargs):
         _reports = []
 
-        if asc is True:
-            _dbreports = NmapTask.query.filter_by(**kwargs).order_by("id")
+        if sort_asc is True:
+            _dbreports = NmapTask.query.filter_by(**kwargs).order_by(asc("id"))
         else:
             _dbreports = NmapTask.query.filter_by(**kwargs).order_by(desc("id"))
 
@@ -131,7 +191,8 @@ class NmapTask(db.Model):
         for _dbreport in _dbreports:
             _nmap_task = {'task_id': celery_pipe.AsyncResult(_dbreport.task_id),
                           'comment': _dbreport.comment,
-                          'created': _dbreport.created}
+                          'created': _dbreport.created,
+                          'user_id': int(_dbreport.user_id)}
             _reports.append(_nmap_task)
         return _reports
 
@@ -142,6 +203,7 @@ class NmapTask(db.Model):
         _report = None
         if isinstance(task_id, str) or isinstance(task_id, unicode):
             try:
+                # TODO this shouldn't go look into AsyncResult.. or should it?
                 _resultdict = celery_pipe.AsyncResult(task_id).result
             except NmapParserException as e:
                 print e
@@ -175,14 +237,19 @@ class NmapTask(db.Model):
     @classmethod
     def remove_task_by_id(cls, task_id=task_id):
         """  """
-        result = False
 
-        if task_id is not None:
-            nt = NmapTask.query.filter(NmapTask.task_id == task_id).one()
-            db.session.delete(nt)
-            db.session.commit()
-            result = True
-        return result
+        try:
+            if task_id is not None:
+                nt = NmapTask.query.filter(NmapTask.task_id == task_id).one()
+                db.session.delete(nt)
+                db.session.commit()
+                return True
+            else:
+                return False
+
+        except Exception as e:
+            print("Error: " + str(e))
+            return False
 
     @classmethod
     def stop_task_by_id(cls, task_id=task_id):
@@ -201,7 +268,7 @@ class NmapTask(db.Model):
         return False
 
 
-class NmapDiffer(object):
+class NmapReportDiffer(object):
     """Foo"""
 
     def __init__(self, old_report=None, new_report=None):
@@ -294,7 +361,7 @@ class NmapReportMeta(db.Model):
 
     id = db.Column(db.Integer, primary_key=True)
     # "foreign key"/identifier is the NmapTask.task_id (faef323-afec3-a...)
-    task_task_id = db.Column(db.Integer)
+    task_task_id = db.Column(db.String(36))
     task_comment = db.Column(db.String(128))
     task_created = db.Column(db.DateTime)
     task_user_id = db.Column(db.Integer, db.ForeignKey("user.id"))
@@ -306,29 +373,19 @@ class NmapReportMeta(db.Model):
 
 
     def __repr__(self):
-        return "<{0} {1}> TaskID: ({2})".format(
+        return "<{0} {1}> TaskID: ({2}), UserID: {4}, Comment: ({3})".format(
                 self.__class__.__name__,
                 self.id,
-                self.task_id)
+                self.task_task_id,
+                self.task_comment,
+                self.task_user_id)
 
-    def save_report(self, task_id=None):
-        """ TODO """
+    @classmethod
+    def get_report_meta(cls, **kwargs):
+        """ get one NmapReport """
 
-        _report = NmapTask.get_report(task_id=task_id)
-
-        try:
-            dbp = BackendPluginFactory.create(plugin_name="sql",
-                                            url=app.config["LIBNMAP_DB_URI"],
-                                            echo=False)
-
-            _id = _report.save(dbp)
-            r = Address.discover_from_report(report_id=_id)
-            #print r
-            return {"rc": 0}
-
-        except Exception as e:
-            print e
-            return {"rc": 1}
+        #NmapReportMeta.query.filter_by(**kwargs).order_by("id")
+        return NmapReportMeta.query.filter_by(**kwargs).order_by(asc("id")).all()
 
     @classmethod
     def get_report(cls, report_id):
@@ -352,6 +409,36 @@ class NmapReportMeta(db.Model):
                                           url=app.config["LIBNMAP_DB_URI"],
                                           echo=False)
         return dbp.getall()
+
+    def save_report(self, task_id=None):
+        """ TODO """
+
+        _report = NmapTask.get_report(task_id=task_id)
+
+        try:
+            dbp = BackendPluginFactory.create(plugin_name="sql",
+                                            url=app.config["LIBNMAP_DB_URI"],
+                                            echo=False)
+
+            _id = _report.save(dbp)
+            r = Address.discover_from_report(report_id=_id)
+
+            # save Meta information of Report
+            self.task_task_id = task_id
+            self.task_created = datetime.datetime.utcnow()
+            # TODO this is murks.. need to add a method to gets 1 NmapTask obj!
+            _nmap_task = NmapTask.find(task_id=task_id)
+            self.task_comment = _nmap_task[0]["comment"]
+            self.task_user_id = _nmap_task[0]["user_id"]
+
+            db.session.add(self)
+            db.session.commit()
+
+            return {"rc": 0}
+
+        except Exception as e:
+            print e
+            return {"rc": 1}
 
     def create_scan_from_report(self):
         pass
