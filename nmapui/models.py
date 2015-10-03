@@ -175,15 +175,17 @@ class NmapTask(db.Model):
     task_id = db.Column(db.String(36))
     comment = db.Column(db.String(128))
     created = db.Column(db.DateTime)
+    completed = db.Column(db.SmallInteger)
     user_id = db.Column(db.Integer, db.ForeignKey("user.id"))
 
     def __init__(self, id=None, comment=None, task_id=None, user=None,
-                 created=None):
+                 created=None, completed=0):
         self.id = id
         self.comment = comment
         self.task_id = task_id
         self.user_id = user.id
         self.created = created
+        self.completed = completed
 
     def __repr__(self):
         return "<{0} {1}: {2}>".format(self.__class__.__name__,
@@ -200,6 +202,7 @@ class NmapTask(db.Model):
             _db_nmap_tasks = NmapTask.query.filter_by(**kwargs).order_by(desc("id")).all()
 
         for _db_nmap_task in _db_nmap_tasks:
+
             async_result = celery_pipe.AsyncResult(_db_nmap_task.task_id)
             _db_nmap_task.async_result = async_result
             _nmap_tasks.append(_db_nmap_task)
@@ -386,6 +389,7 @@ class NmapReportMeta(db.Model):
     task_comment = db.Column(db.String(128))
     task_created = db.Column(db.DateTime)
     report_stored = db.Column(db.DateTime)
+    report_id = db.Column(db.Integer)
     task_user_id = db.Column(db.Integer, db.ForeignKey("user.id"))
 
 
@@ -438,6 +442,10 @@ class NmapReportMeta(db.Model):
         # TODO this is murks.. need to add a method to gets 1 NmapTask obj!
         _nmap_task_list = NmapTask.find(task_id=task_id)
         _nmap_task = _nmap_task_list[0]
+
+        # mark nmap_task as done in table
+        _nmap_task.completed = 1
+        db.session.commit()
         #print(_nmap_task)
 
         _report = NmapTask.get_report(task_id=task_id)
@@ -456,6 +464,7 @@ class NmapReportMeta(db.Model):
                                               echo=False)
 
             _id = _report.save(dbp)
+            self.report_id = _id
 
             # call Address.discover which discovers and stores addresses
             r = Address.discover_from_report(report_id=_id)

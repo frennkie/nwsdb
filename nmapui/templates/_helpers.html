@@ -1,0 +1,26 @@
+{% macro paginate(paginator) %}
+    {# A generally pluggable pagination macro, just supply it with the pagination object #}
+    {# formatted for Bootstrap 3 #}
+
+    {% set view_args = request.view_args %}
+    {% do view_args.pop('page') %}
+
+    <div class="text-center">
+        <ul class="pagination pagination-lg">
+
+            {% if paginator.has_prev %}
+                <li class="active">
+                    <a href="{{ url_for(request.endpoint, page=paginator.prev_num, **view_args) }}">&laquo;</a>
+                </li>
+            {% else %}
+                  <li class="disabled"><a href="#">«</a></li>
+            {% endif %}
+
+            {% if paginator.has_next %}
+                <li><a href="{{ url_for(request.endpoint, page=paginator.next_num, **view_args) }}">&raquo;</a></li>
+            {% else %}
+                <li class="disabled"><a href="#">&raquo;</a></li>
+            {% endif %}
+        </ul>
+    </div>
+{% endmacro %}

@@ -61,8 +61,12 @@ def nmap_tasks():
         return redirect(url_for('nmap.nmap_tasks'))
 
     _nmap_tasks = NmapTask.find(user_id=current_user.id)
-
     return render_template('nmap_tasks.html', tasks=_nmap_tasks)
+
+@appmodule.route('/tasks/<int:page>')
+@login_required
+def nmap_tasks_paged(page=1):
+    return abort(404)
 
 @appmodule.route('/jsontasks', methods=['GET', 'POST'])
 @login_required
@@ -143,14 +147,23 @@ def nmap_report(report_id):
     return render_template('nmap_report.html', report=_report)
 
 @appmodule.route('/reports')
+@appmodule.route('/reports/')
 @login_required
 def nmap_reports():
-    _nmap_report_meta_all = NmapReportMeta.get_report_meta()
-    _nmap_report_all = NmapReportMeta.getall_reports()
-    return render_template('nmap_reports.html',
-                           reports=_nmap_report_all,
-                           nmap_report_meta_all=_nmap_report_meta_all)
+    return redirect("/nmap/reports/1")
 
+@appmodule.route('/reports/<int:page>')
+@login_required
+def nmap_reports_paged(page=1):
+    _meta_all_page = NmapReportMeta.query.paginate(page,
+                                                   app.config["ITEMS_PER_PAGE"])
+    _nmap_report_all = NmapReportMeta.getall_reports()
+
+    return render_template('nmap_reports.html',
+                           meta_all_page=_meta_all_page,
+                           reports=_nmap_report_all)
+
+# no pagination needed!
 @appmodule.route('/compare', methods=['GET', 'POST'])
 @login_required
 def nmap_compare():
