@@ -386,6 +386,26 @@ class NmapReportMeta(db.Model):
 
         #NmapReportMeta.query.filter_by(**kwargs).order_by("id")
         return NmapReportMeta.query.filter_by(**kwargs).order_by(asc("id")).all()
+                self.task_id)
+
+    def save_report(self, task_id=None):
+        """ TODO """
+
+        _report = NmapTask.get_report(task_id=task_id)
+
+        try:
+            dbp = BackendPluginFactory.create(plugin_name="sql",
+                                            url=app.config["LIBNMAP_DB_URI"],
+                                            echo=False)
+
+            _id = _report.save(dbp)
+            r = Address.discover_from_report(report_id=_id)
+            #print r
+            return {"rc": 0}
+
+        except Exception as e:
+            print e
+            return {"rc": 1}
 
     @classmethod
     def get_report(cls, report_id):
