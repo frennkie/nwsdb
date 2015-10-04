@@ -1,5 +1,6 @@
 from celery import Task, task, current_task
 from libnmap.process import NmapProcess
+from nmapui.celeryapp import celery_pipe as celery
 from nmapui.models import NmapReportMeta
 
 
