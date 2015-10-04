@@ -7,7 +7,7 @@ from flask.ext.login import login_required, current_user
 from celery.states import READY_STATES
 import json
 from nmapui.celeryconfig import CELERY_TASK_EXPIRES
-
+import datetime
 
 from xlsx import Workbook
 
@@ -62,7 +62,11 @@ def nmap_tasks():
                                               expires=CELERY_TASK_EXPIRES,
                                               countdown=120)
         """
-        _celery_task = celery_nmap_scan.apply_async(countdown=10,
+
+        """ use either eta OR countdown! """
+
+        _celery_task = celery_nmap_scan.apply_async(eta=datetime.timedelta(seconds=10),
+                                                    expires=CELERY_TASK_EXPIRES,
                                                     kwargs={'targets': str(targets),
                                                             'options': str(options)})
 
