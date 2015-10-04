@@ -6,11 +6,8 @@ from nmapui.models import NmapReportMeta
 
 @task(name="tasks.nmap_scan")
 def celery_nmap_scan(targets, options):
-    def status_callback(nmapscan=None, data=""):
-        print("nmapscan: ")
-        print(nmapscan)
-        print("data: ")
-        print(data)
+    def status_callback(nmapscan=None):
+
         try:
             current_task.update_state(state="PROGRESS",
                                       meta={"done": nmapscan.progress,
