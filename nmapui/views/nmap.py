@@ -6,6 +6,8 @@ from flask import Blueprint, render_template, request, redirect, url_for, flash,
 from flask.ext.login import login_required, current_user
 from celery.states import READY_STATES
 import json
+from nmapui.celeryconfig import CELERY_TASK_EXPIRES
+
 
 from xlsx import Workbook
 
@@ -50,12 +52,14 @@ def nmap_tasks():
         osdetect = "-O" if 'os' in request.form else ''
         bannerdetect = "-sV" if 'banner' in request.form else ''
         options = "{0} {1} {2} {3} {4}".format(scantypes[scani],
-                                                  portlist,
-                                                  noping,
-                                                  osdetect,
-                                                  bannerdetect)
+                                               portlist,
+                                               noping,
+                                               osdetect,
+                                               bannerdetect)
         _celery_task = celery_nmap_scan.delay(targets=str(targets),
-                                              options=str(options))
+                                              options=str(options),
+                                              expires=CELERY_TASK_EXPIRES,
+                                              countdown=120)
         NmapTask.add(user=current_user,
                      task_id=_celery_task.id,
                      comment=comment)

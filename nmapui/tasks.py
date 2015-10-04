@@ -2,7 +2,6 @@ from celery import Task, task, current_task
 from nmapui.celeryapp import celery_pipe as celery
 from libnmap.process import NmapProcess
 from nmapui.models import NmapReportMeta
-from nmapui.celeryconfig import CELERY_TASK_EXPIRES
 
 
 @task(name="tasks.nmap_scan")
@@ -18,8 +17,6 @@ def celery_nmap_scan(targets, options):
                                             "etc": nmapscan.etc})
         except Exception as e:
             print("status_callback error: " + e)
-
-    current_task.expires = CELERY_TASK_EXPIRES
 
     nm = NmapProcess(targets, options, event_callback=status_callback)
     rc = nm.run()
