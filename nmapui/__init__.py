@@ -5,7 +5,6 @@ __version__ = '0.1.1'
 
 # Initial code base by Ronald Bister (mini.pelle@gmail.com)
 
-import datetime
 from flask import Flask
 from flask.ext.sqlalchemy import SQLAlchemy
 from flask.ext.login import LoginManager

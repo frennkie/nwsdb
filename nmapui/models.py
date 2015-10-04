@@ -1,6 +1,5 @@
 import bcrypt
 import datetime
-import json
 from flask.ext.login import UserMixin
 from flask.ext.sqlalchemy import SQLAlchemy
 from sqlalchemy_utils import IPAddressType
@@ -8,7 +7,6 @@ from sqlalchemy import asc, desc
 from libnmap.parser import NmapParser, NmapParserException
 from libnmap.plugins.backendpluginFactory import BackendPluginFactory
 
-from bson.objectid import ObjectId
 from nmapui import app
 from nmapui import db
 from nmapui import login_serializer
@@ -105,9 +103,9 @@ class User(db.Model, UserMixin):
 
     def __repr__(self):
         return "<{0}[{1}]: {2} ({3})>".format(self.__class__.__name__,
-                                       self.id,
-                                       self.username,
-                                       self.email)
+                                              self.id,
+                                              self.username,
+                                              self.email)
 
     def get_auth_token(self):
         """Encode a secure token for cookie"""
@@ -240,7 +238,6 @@ class NmapTask(db.Model):
             _nmap_tasks.append(_db_nmap_task)
         return _nmap_tasks
 
-
     @classmethod
     def get(cls, task_id):
         """TODO """
@@ -285,7 +282,6 @@ class NmapTask(db.Model):
         except:
             print("Error: could not add scan task.")
             raise Exception("Could not add scan task.")
-
 
     @classmethod
     def remove_task_by_id(cls, task_id=task_id):
@@ -363,7 +359,6 @@ class NmapReportDiffer(object):
             rval = splitted
         return rval
 
-
     def do_diff_added(self, obj1, obj2, added):
         for akey in added:
             nested = self.nested_obj(akey)
@@ -406,6 +401,7 @@ class NmapReportDiffer(object):
 
 """ --- """
 
+
 class NmapReportMeta(db.Model):
     """ Meta Class for NmapReport
 
@@ -424,19 +420,16 @@ class NmapReportMeta(db.Model):
     report_id = db.Column(db.Integer)
     task_user_id = db.Column(db.Integer, db.ForeignKey("user.id"))
 
-
-    def __init__(self, task_id=None):
-        self.task_id = task_id
+    def __init__(self):
+        pass
         # TODO .. id ..?! sql.. ? db.session.add(self) + commit()?
 
-
     def __repr__(self):
-        return "<{0} {1}> TaskID: ({2}), UserID: {4}, Comment: ({3})".format(
-                self.__class__.__name__,
-                self.id,
-                self.task_task_id,
-                self.task_comment,
-                self.task_user_id)
+        return "<{0} {1}> TID:{2}, User:{4}".format(self.__class__.__name__,
+                                                    self.id,
+                                                    self.task_task_id,
+                                                    self.task_comment,
+                                                    self.task_user_id)
 
     @classmethod
     def get_report_meta(cls, **kwargs):
@@ -520,6 +513,7 @@ contacts = db.Table("contacts",
     db.Column('address_detail_id', db.Integer, db.ForeignKey('address_detail.id'))
 )
 
+
 class AddressDetail(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     created = db.Column(db.DateTime)
@@ -541,15 +535,14 @@ class AddressDetail(db.Model):
         self.report_id = report_id
 
     def __repr__(self):
-        return "<{0} {1}> ({5}) Name: ({3}) IP: {6}".format(
-                self.__class__.__name__,
-                self.id,
-                self.created,
-                self.name,
-                self.comment,
-                self.source,
-                self.ip_address,
-                self.report_id)
+        return "<{0} {1}> ({5}) N:({3}) IP: {6}".format(self.__class__.__name__,
+                                                        self.id,
+                                                        self.created,
+                                                        self.name,
+                                                        self.comment,
+                                                        self.source,
+                                                        self.ip_address,
+                                                        self.report_id)
 
 
 class Contact(db.Model):
@@ -561,7 +554,7 @@ class Contact(db.Model):
     address_detail = db.relationship("AddressDetail", secondary=contacts)
 
     def __init__(self, id=None, created=datetime.datetime.utcnow(), name=None,
-            email=None):
+                 email=None):
         self.id = id
         self.created = created
         self.name = name
@@ -575,16 +568,16 @@ class Contact(db.Model):
                 self.name,
                 self.email)
 
+
 class Address(object):
     """ Address class for modeling Scan Targets """
 
-    def __init__(address=None):
+    def __init__(self, address=None):
         self.address = address
 
     def __repr__(self):
-        return "<{0} {1}>".format(
-                self.__class__.__name__,
-                self.address)
+        return "<{0} {1}>".format(self.__class__.__name__,
+                                  self.address)
 
     @classmethod
     def discover_from_report(cls, report_id):
@@ -607,21 +600,20 @@ class Address(object):
             print "could not extract report"
             return False
 
-
     @classmethod
     def discover_from_reports(cls):
         """ discover hosts """
 
-        nmapreportList = NmapReportMeta.getall_reports()
+        nmap_report_list = NmapReportMeta.getall_reports()
 
         all_addresses = []
-        for report_id, report_obj in nmapreportList:
+        for report_id, report_obj in nmap_report_list:
             #print str(report_id) + ": " + str(report_obj)
             #print report_obj._hosts
             for host in report_obj._hosts:
-                all_addresses.append({"address": host.address, "report_id": report_id})
+                all_addresses.append({"address": host.address,
+                                      "report_id": report_id})
 
         print "\n---\n"
         print all_addresses
 
-#EOF

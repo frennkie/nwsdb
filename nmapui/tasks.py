@@ -1,16 +1,13 @@
 from celery import Task, task, current_task
 from libnmap.process import NmapProcess
-import json
-from libnmap.plugins.sql import NmapSqlPlugin
-from libnmap.plugins.backendpluginFactory import BackendPluginFactory
-from libnmap.objects.report import NmapReport
-from nmapui.models import NmapTask, Address, NmapReportMeta
-from nmapui.celeryapp import celery_pipe as celery
+from nmapui.models import NmapReportMeta
 
 
 @task(name="tasks.nmap_scan")
 def celery_nmap_scan(targets, options):
     def status_callback(nmapscan=None, data=""):
+        print nmapscan
+        print data
         try:
             current_task.update_state(state="PROGRESS",
                                       meta={"done": nmapscan.progress,
@@ -40,7 +37,7 @@ def celery_nmap_store_report(task_id):
         and insert into db
     """
 
-    report_meta = NmapReportMeta(task_id=task_id)
+    report_meta = NmapReportMeta()
     rc = report_meta.save_report(task_id=task_id)
     return {"rc": rc}
 
@@ -57,7 +54,7 @@ class CleanupTask(Task):
     # do not store result in backend
     ignore_result = True
 
-    def run(self,**kwargs):
+    def run(self, **kwargs):
         """ Run method of the class """
         # Cleanup here
         self.backend.cleanup()
