@@ -12,6 +12,9 @@ CELERY_RESULT_BACKEND = "db+" + DATABASE_URI
 
 CELERY_TIMEZONE = 'Europe/Berlin'
 
+# expire tasks that have not been executed yet
+CELERY_TASK_EXPIRES = timedelta(days=5)
+
 # 5-7 days might make sense here
 CELERY_TASK_RESULT_EXPIRES = timedelta(days=1)
 

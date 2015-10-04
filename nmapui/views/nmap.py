@@ -11,15 +11,18 @@ from xlsx import Workbook
 
 appmodule = Blueprint('nmap', __name__, url_prefix='/nmap')
 
+
 @appmodule.route('/')
 @login_required
 def nmap_index():
     return render_template('nmap_index.html')
 
+
 @appmodule.route('/scan')
 @login_required
 def nmap_scan():
     return render_template('nmap_scan.html')
+
 
 @appmodule.route('/tasks', methods=['GET', 'POST'])
 @login_required
@@ -36,9 +39,8 @@ def nmap_tasks():
         if 'comment' in request.form:
             comment = request.form["comment"]
         else:
-            pass
+            comment = ""
 
-        options = ""
         scani = int(request.form['scantype']) if 'scantype' in request.form else 0
         if 'ports' in request.form and len(request.form['ports']):
             portlist = "-p " + request.form['ports']
@@ -63,10 +65,12 @@ def nmap_tasks():
     _nmap_tasks = NmapTask.find(user_id=current_user.id)
     return render_template('nmap_tasks.html', tasks=_nmap_tasks)
 
+
 @appmodule.route('/tasks/<int:page>')
 @login_required
 def nmap_tasks_paged(page=1):
     abort(404)
+
 
 @appmodule.route('/jsontasks', methods=['GET', 'POST'])
 @login_required
@@ -89,6 +93,7 @@ def nmap_tasks_json():
         _jtarray.append(tdict)
 
     return json.dumps(_jtarray)
+
 
 @appmodule.route('/task/stop/<task_id>')
 @login_required
@@ -133,6 +138,7 @@ def nmap_task_delete(task_id):
               already deleted from Database. Task_id: " + task_id, 'danger')
         return redirect(url_for('nmap.nmap_tasks'))
 
+
 @appmodule.route('/report/<report_id>')
 @login_required
 def nmap_report(report_id):
@@ -146,11 +152,13 @@ def nmap_report(report_id):
 
     return render_template('nmap_report.html', report=_report)
 
+
 @appmodule.route('/reports')
 @appmodule.route('/reports/')
 @login_required
 def nmap_reports():
     return redirect("/nmap/reports/1")
+
 
 @appmodule.route('/reports/<int:page>')
 @login_required
@@ -163,10 +171,11 @@ def nmap_reports_paged(page=1):
                            meta_all_page=_meta_all_page,
                            reports=_nmap_report_all)
 
-# no pagination needed!
+
 @appmodule.route('/compare', methods=['GET', 'POST'])
 @login_required
 def nmap_compare():
+    """no pagination needed!"""
     if request.method == "POST":
         selected_reports = request.form.getlist('report_meta.id')
         if len(selected_reports) != 2:
@@ -190,6 +199,7 @@ def nmap_compare():
         _nmap_report_meta_all = NmapReportMeta.get_report_meta()
         return render_template('nmap_compare_select.html', nmap_report_meta_all=_nmap_report_meta_all)
 
+
 @appmodule.route('/db')
 @login_required
 def nmap_database():
@@ -200,10 +210,12 @@ def nmap_database():
 
     return render_template('nmap_database.html', ad=ad)
 
+
 @appmodule.route('/export')
 @login_required
 def nmap_export():
     return render_template('nmap_export.html')
+
 
 @appmodule.route('/import', methods=['GET', 'POST'])
 @login_required
@@ -227,17 +239,8 @@ def nmap_import():
         return render_template('nmap_import.html')
 
 
-
 @appmodule.route("/profile")
 @login_required
 def profile():
     return render_template("nmap_profile.html")
 
-
-@appmodule.route('/test', methods=['GET', 'POST'])
-#@login_required
-def test():
-    username = "{0}:{1} {2}".format(current_user.id, current_user.username, type(unicode(current_user.id)))
-#    if request.method == 'POST':
-#        username = request.args.get('username')
-    return render_template('test.html', username=username)
