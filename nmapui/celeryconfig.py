@@ -17,7 +17,7 @@ CELERY_TASK_EXPIRES = datetime.timedelta(days=5)
 # 5-7 days might make sense here
 CELERY_TASK_RESULT_EXPIRES = datetime.timedelta(days=1)
 
-# enabling/schedulung BEAT is required for mysql backend
+# enabling/scheduling BEAT is required for mysql backend
 # nmapui.tasks.CleanupTask might be redundant?!
 CELERYBEAT_SCHEDULE = {
     # Executes every day at 3:30 (local)

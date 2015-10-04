@@ -10,13 +10,12 @@ def celery_nmap_scan(targets, options):
 
     def status_callback(nmapscan=None):
         """status callback"""
-        print(celery.current_task.expires)
         try:
             current_task.update_state(state="PROGRESS",
                                       meta={"done": nmapscan.progress,
                                             "etc": nmapscan.etc})
         except Exception as e:
-            print("status_callback error: " + e)
+            print("status_callback error: " + str(e))
 
     nm = NmapProcess(targets, options, event_callback=status_callback)
     rc = nm.run()

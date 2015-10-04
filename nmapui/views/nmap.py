@@ -1,4 +1,5 @@
 from nmapui import app
+from nmapui.celeryconfig import CELERY_TASK_EXPIRES
 from nmapui.models import NmapTask, NmapReportDiffer, Contact, AddressDetail, Address
 from nmapui.models import NmapReportMeta
 from nmapui.tasks import celery_nmap_scan
@@ -6,8 +7,8 @@ from flask import Blueprint, render_template, request, redirect, url_for, flash,
 from flask.ext.login import login_required, current_user
 from celery.states import READY_STATES
 import json
-from nmapui.celeryconfig import CELERY_TASK_EXPIRES
 import datetime
+
 
 from xlsx import Workbook
 
@@ -43,6 +44,11 @@ def nmap_tasks():
         else:
             comment = ""
 
+        if 'run_now' in request.form:
+            run_now = True
+        else:
+            run_now = False
+
         scani = int(request.form['scantype']) if 'scantype' in request.form else 0
         if 'ports' in request.form and len(request.form['ports']):
             portlist = "-p " + request.form['ports']
@@ -56,17 +62,10 @@ def nmap_tasks():
                                                noping,
                                                osdetect,
                                                bannerdetect)
-        """
-        _celery_task = celery_nmap_scan.delay(targets=str(targets),
-                                              options=str(options),
-                                              expires=CELERY_TASK_EXPIRES,
-                                              countdown=120)
-        """
 
         """ use either eta OR countdown! """
-        _c_eta = datetime.datetime.utcnow() + datetime.timedelta(seconds=30)
+        _c_eta = datetime.datetime.utcnow() + datetime.timedelta(seconds=0)
         _c_exp = datetime.datetime.utcnow() + CELERY_TASK_EXPIRES
-
         _celery_task = celery_nmap_scan.apply_async(eta=_c_eta,
                                                     expires=_c_exp,
                                                     kwargs={'targets': str(targets),

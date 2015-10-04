@@ -6,6 +6,7 @@ from flask.ext.login import login_required, current_user
 
 appmodule = Blueprint('admin', __name__, url_prefix='/admin')
 
+
 @appmodule.route("/")
 @login_required
 def admin():
@@ -22,6 +23,7 @@ def admin():
 def users_redirect():
     return redirect("/admin/users/1")
 
+
 @appmodule.route("/users/<int:page>")
 @login_required
 def users(page=1):
@@ -29,9 +31,10 @@ def users(page=1):
     if not current_user.has_permission("admin"):
         abort(403)
 
-    _users = User.query.paginate(page,app.config["ITEMS_PER_PAGE"])
+    _users = User.query.paginate(page, app.config["ITEMS_PER_PAGE"])
     return render_template("admin_users.html",
                            users=_users)
+
 
 @appmodule.route("/add_user", methods=["GET", "POST"])
 @login_required
@@ -40,10 +43,10 @@ def add_user():
     if not current_user.has_permission("admin"):
         abort(403)
 
-    if (request.method == 'POST'):
+    if request.method == 'POST':
         # validate data
-        if ('username' in request.form and len(request.form['username']) and \
-            'password' in request.form and len(request.form['password']) and \
+        if ('username' in request.form and len(request.form['username']) and
+            'password' in request.form and len(request.form['password']) and
             'email' in request.form and len(request.form['email'])):
 
             # TODO is das hier fies?! hart nach str konvertieren?
@@ -51,7 +54,7 @@ def add_user():
             _password = str(request.form['password'])
             _email = str(request.form['email'])
 
-            if ('inactive' in request.form):
+            if 'inactive' in request.form:
                 inactive = 1
             else:
                 inactive = 0
@@ -62,7 +65,7 @@ def add_user():
                                      clear_pw=_password,
                                      inactive=inactive)
 
-                flash("Successfully created " + _username + " with ID " + \
+                flash("Successfully created " + _username + " with ID " +
                       str(new_user.id), 'success')
                 return redirect("/admin/users/1")
             except ValueError as ve:
@@ -75,6 +78,7 @@ def add_user():
     else:
         return render_template("admin_add_user.html")
 
+
 @appmodule.route("/user/<int:user_id>/change_password", methods=["GET", "POST"])
 @login_required
 def change_user_password(user_id):
@@ -84,11 +88,11 @@ def change_user_password(user_id):
 
     _user = User.query.get_or_404(user_id)
 
-    if (request.method == 'POST'):
+    if request.method == 'POST':
         # validate data
-        if not ('password' in request.form \
-                and len(request.form['password']) \
-                and 'password2' in request.form \
+        if not ('password' in request.form
+                and len(request.form['password'])
+                and 'password2' in request.form
                 and len(request.form['password2'])):
             flash("Something went wrong.", "danger")
             return redirect("/admin/users/1")
@@ -96,8 +100,7 @@ def change_user_password(user_id):
         _password = str(request.form['password'])
         _password2 = str(request.form['password2'])
 
-
-        if (_password != _password2):
+        if _password != _password2:
             flash("Entered Passwords do not match.", "danger")
             return redirect("/admin/users/1")
 
@@ -112,6 +115,7 @@ def change_user_password(user_id):
 
     return render_template("admin_change_user_pw.html", user=_user)
 
+
 @appmodule.route("/user/<int:user_id>/delete")
 @login_required
 def delete_user(user_id):
@@ -125,7 +129,7 @@ def delete_user(user_id):
     try:
         db.session.delete(_user)
         db.session.commit()
-        flash("Deleted User (" + str(user_id) + "): " + _u_username , "success")
+        flash("Deleted User (" + str(user_id) + "): " + _u_username, "success")
         return redirect("/admin/users/1")
 
     except:
@@ -139,17 +143,19 @@ def delete_user(user_id):
 def permissions_redirect():
     return redirect("/admin/permissions/1")
 
+
 @appmodule.route("/permissions/<int:page>")
 @login_required
 def permissions(page=1):
     """admin page - used to manage user accounts and permissions"""
     if not current_user.has_permission("admin"):
         abort(403)
-    _permissions = Permission.query.paginate(page,app.config["ITEMS_PER_PAGE"])
+    _permissions = Permission.query.paginate(page, app.config["ITEMS_PER_PAGE"])
     _users = User.query.all()
     return render_template("admin_permissions.html",
                            permissions=_permissions,
                            users=_users)
+
 
 @appmodule.route("/add_permission", methods=["GET", "POST"])
 @login_required
@@ -158,12 +164,12 @@ def add_permission():
     if not current_user.has_permission("admin"):
         abort(403)
 
-    if (request.method == 'POST'):
+    if request.method == 'POST':
         # validate data
-        if ('name' in request.form and len(request.form['name'])):
+        if 'name' in request.form and len(request.form['name']):
             # TODO is das hier fies?! hart nach str konvertieren?
             _name = str(request.form['name'])
-            if ('comment' in request.form and len(request.form['comment'])):
+            if 'comment' in request.form and len(request.form['comment']):
                 _comment = str(request.form['comment'])
             else:
                 _comment = None
@@ -172,8 +178,8 @@ def add_permission():
                 new_permission = Permission.add(name=_name,
                                                 comment=_comment)
 
-                flash("Successfully created " + _name + " with ID " + \
-                      str(new_permission.id), 'success')
+                flash("Successfully created " + _name + " with ID " +
+                      str(new_permission.id), "success")
                 return redirect("/admin/permissions/1")
             except Exception as e:
                 flash("Something went wrong.", "danger")
@@ -193,13 +199,13 @@ def delete_permission(permission_id):
     _permission = Permission.query.get_or_404(permission_id)
     _p_name = _permission.name
     if _permission.name == "admin" or _permission.id == 1:
-        flash("Admin permission can not be deleted." , "warning")
+        flash("Admin permission can not be deleted.", "warning")
         return redirect("/admin/permissions/1")
 
     try:
         db.session.delete(_permission)
         db.session.commit()
-        flash("Deleted Permission (" + str(permission_id)  + "): " + _p_name , "success")
+        flash("Deleted Permission (" + str(permission_id) + "): " + _p_name, "success")
         return redirect("/admin/permissions/1")
 
     except:
