@@ -176,6 +176,19 @@ class Permission(db.Model):
         db.session.commit()
         return _new_perm
 
+    def delete(self):
+        if self.name == "admin":
+            raise Exception("Group \"admin\" can not be deleted.")
+
+        try:
+            db.session.delete(self)
+            db.session.commit()
+            return True
+        except Exception as e:
+            print("Error: " + str(e))
+            return False
+
+
 class NmapTask(db.Model):
     """ NmapTask Class """
     id = db.Column(db.Integer, primary_key=True)

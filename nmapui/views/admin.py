@@ -1,4 +1,5 @@
 from nmapui import app
+from nmapui import db
 from nmapui.models import User, Users, Permission
 from flask import Blueprint, render_template, request, redirect, url_for, flash, abort
 from flask.ext.login import login_required, current_user
@@ -68,6 +69,63 @@ def add_user():
     else:
         return render_template("admin_add_user.html")
 
+@appmodule.route("/user/<int:user_id>/change_password", methods=["GET", "POST"])
+@login_required
+def change_user_password(user_id):
+    """change user password"""
+    if not current_user.has_permission("admin"):
+        abort(403)
+
+    _user = User.query.get_or_404(user_id)
+
+    if (request.method == 'POST'):
+        # validate data
+        if not ('password' in request.form \
+                and len(request.form['password']) \
+                and 'password2' in request.form \
+                and len(request.form['password2'])):
+            flash("Something went wrong.", "danger")
+            return redirect("/admin/users/1")
+
+        _password = str(request.form['password'])
+        _password2 = str(request.form['password2'])
+
+
+        if (_password != _password2):
+            flash("Entered Passwords do not match.", "danger")
+            return redirect("/admin/users/1")
+
+        try:
+            _user.change_password(clear_pw=_password)
+            flash("Successfully changed password for: " + _user.username,
+                  "success")
+            return redirect("/admin/users/1")
+        except Exception as e:
+            flash("Something went wrong.", "danger")
+            return redirect("/admin/users/1")
+
+    return render_template("admin_change_user_pw.html", user=_user)
+
+@appmodule.route("/user/<int:user_id>/delete")
+@login_required
+def delete_user(user_id):
+    """delete user"""
+    if not current_user.has_permission("admin"):
+        abort(403)
+
+    _user = User.query.get_or_404(user_id)
+    _u_username = _user.username
+
+    try:
+        db.session.delete(_user)
+        db.session.commit()
+        flash("Deleted User (" + str(user_id) + "): " + _u_username , "success")
+        return redirect("/admin/users/1")
+
+    except:
+        flash("Something went wrong.", "danger")
+        return redirect("/admin/users/1")
+
 
 @appmodule.route("/permissions")
 @appmodule.route("/permissions/")
@@ -118,4 +176,27 @@ def add_permission():
     else:
         return render_template("admin_add_permission.html")
 
+
+@appmodule.route("/permission/<int:permission_id>/delete")
+@login_required
+def delete_permission(permission_id):
+    """delete permission"""
+    if not current_user.has_permission("admin"):
+        abort(403)
+
+    _permission = Permission.query.get_or_404(permission_id)
+    _p_name = _permission.name
+    if _permission.name == "admin" or _permission.id == 1:
+        flash("Admin permission can not be deleted." , "warning")
+        return redirect("/admin/permissions/1")
+
+    try:
+        db.session.delete(_permission)
+        db.session.commit()
+        flash("Deleted Permission (" + str(permission_id)  + "): " + _p_name , "success")
+        return redirect("/admin/permissions/1")
+
+    except:
+        flash("Something went wrong.", "danger")
+        return redirect("/admin/permissions/1")
 
