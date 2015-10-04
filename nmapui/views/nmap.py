@@ -65,8 +65,8 @@ def nmap_tasks():
 
         """ use either eta OR countdown! """
 
-        _celery_task = celery_nmap_scan.apply_async(eta=datetime.timedelta(seconds=10),
-                                                    expires=CELERY_TASK_EXPIRES,
+        _celery_task = celery_nmap_scan.apply_async(eta=datetime.timedelta(seconds=30),
+                                                    expires=datetime.datetime.now() + CELERY_TASK_EXPIRES,
                                                     kwargs={'targets': str(targets),
                                                             'options': str(options)})
 

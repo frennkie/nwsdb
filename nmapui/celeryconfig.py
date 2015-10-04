@@ -1,5 +1,4 @@
-import os
-from datetime import timedelta
+import datetime
 from celery.schedules import crontab
 from nmapui.config import *
 basedir = os.path.abspath(os.path.dirname(__file__))
@@ -13,10 +12,10 @@ CELERY_RESULT_BACKEND = "db+" + DATABASE_URI
 CELERY_TIMEZONE = 'Europe/Berlin'
 
 # expire tasks that have not been executed yet
-CELERY_TASK_EXPIRES = timedelta(days=5)
+CELERY_TASK_EXPIRES = datetime.timedelta(days=5)
 
 # 5-7 days might make sense here
-CELERY_TASK_RESULT_EXPIRES = timedelta(days=1)
+CELERY_TASK_RESULT_EXPIRES = datetime.timedelta(days=1)
 
 # enabling/schedulung BEAT is required for mysql backend
 # nmapui.tasks.CleanupTask might be redundant?!
