@@ -16,10 +16,8 @@ from nmapui.celeryapp import celery_pipe
 from celery.task.control import revoke
 
 
-
-
 class Users(object):
-    """ """
+    """Users Class"""
 
     @classmethod
     def find(cls, **kwargs):
@@ -43,9 +41,8 @@ class Users(object):
 
     @classmethod
     def get(cls, user_id):
-        """get excactly one user identified by ID"""
+        """get exactly one user identified by ID"""
 
-        _user = None
         _dbuser = User.query.get(user_id)
         _user = User.query.get(_dbuser.id)
         return _user
@@ -76,6 +73,7 @@ permissions = db.Table('permissions',
     db.Column('permission_id', db.Integer, db.ForeignKey('permission.id')),
     db.Column('user_id', db.Integer, db.ForeignKey('user.id'))
 )
+
 
 class User(db.Model, UserMixin):
     """User Class and SQL Table"""
@@ -171,16 +169,16 @@ class Permission(db.Model):
 
     def __repr__(self):
         return "<{0} {1}: {2} ({3})>".format(self.__class__.__name__,
-                                       self.id,
-                                       self.name,
-                                       self.comment)
+                                             self.id,
+                                             self.name,
+                                             self.comment)
 
     @classmethod
     def add(cls, id=None, name=None, comment=None):
         """Add new permission"""
         if name is None:
             print("name is required!")
-            raise("name is required!")
+            raise Exception("name is required!")
         if id and name != "admin":
             print("Error: don't hardcode Permission IDs (except for admin).")
             raise Exception("Don't hardcode Permission IDs (except for admin).")
