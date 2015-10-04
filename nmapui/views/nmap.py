@@ -56,10 +56,16 @@ def nmap_tasks():
                                                noping,
                                                osdetect,
                                                bannerdetect)
+        """
         _celery_task = celery_nmap_scan.delay(targets=str(targets),
                                               options=str(options),
                                               expires=CELERY_TASK_EXPIRES,
                                               countdown=120)
+        """
+        _celery_task = celery_nmap_scan.apply_async(countdown=10,
+                                                    kwargs={'targets': str(targets),
+                                                            'options': str(options)})
+
         NmapTask.add(user=current_user,
                      task_id=_celery_task.id,
                      comment=comment)
