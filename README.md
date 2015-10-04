@@ -12,7 +12,7 @@ Work in Progress.. :-)
 
 ## clean out all reports
 
-...
+test
 
 ## Use cases
 nmap-webgui is a multi-user small web application based on flask to enable the user to:
