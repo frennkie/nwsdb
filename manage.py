@@ -4,17 +4,18 @@ from flask.ext.script import Manager, Server
 from flask.ext.migrate import Migrate, MigrateCommand
 from nmapui import app
 from nmapui import db
-from nmapui.models import Users, User, Permission
-from nmapui.config import SQLALCHEMY_DATABASE_URI
+from nmapui.models import Users, Permission
+
 
 manager = Manager(app)
 
-manager.add_command("runserver", Server(use_debugger = True,
-                                        use_reloader = True,
-                                        host = '0.0.0.0', port=80))
+manager.add_command("runserver", Server(use_debugger=True,
+                                        use_reloader=True,
+                                        host='0.0.0.0', port=80))
 
 migrate = Migrate(app, db)
 manager.add_command('db', MigrateCommand)
+
 
 @manager.command
 def add_admin(username, email):
@@ -32,6 +33,7 @@ def add_admin(username, email):
     _u.permissions.append(_admin_permission)
     db.session.commit()
 
+
 @manager.command
 def add_user(username, email):
     """Create a user"""
@@ -41,6 +43,7 @@ def add_user(username, email):
         return Users.add(username=username, email=email, clear_pw=__p1)
     else:
         print "Error: passwords do not match"
+
 
 @manager.option("user_id", help="numeric User ID")
 def change_password(user_id):
@@ -59,12 +62,13 @@ def change_password(user_id):
     else:
         print("Error: passwords do not match")
 
+
 @manager.command
 def create_db():
     """Create databases"""
 
     """ needed?!
-    https://stackoverflow.com/questions/21482817/alembic-flask-migrate-doesnt-recognise-database-structure
+    https://stackoverflow.com/questions/21482817/
     Do not call db.create_all() when you use Flask-Migrate/Alembic.
     The migration framework replaces that call.
     """
