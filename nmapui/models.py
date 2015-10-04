@@ -51,7 +51,7 @@ class Users(object):
         return _user
 
     @classmethod
-    def add(cls, username=None, email=None, clear_pw=None):
+    def add(cls, username=None, email=None, clear_pw=None, inactive=0):
         """add new user to database"""
 
         if not (username and email and clear_pw):
@@ -65,7 +65,8 @@ class Users(object):
 
             new_user = User(username=username,
                             email=email,
-                            clear_pw=clear_pw)
+                            clear_pw=clear_pw,
+                            inactive=inactive)
             db.session.add(new_user)
             db.session.commit()
             return new_user
@@ -83,18 +84,26 @@ class User(db.Model, UserMixin):
     username = db.Column(db.String(128))
     password = db.Column(db.String(128))
     email = db.Column(db.String(128))
+    inactive = db.Column(db.SmallInteger)
+    created = db.Column(db.DateTime)
+    last_login = db.Column(db.DateTime)
     nmaptasks = db.relationship('NmapTask', backref=db.backref('buser'))
     permissions = db.relationship('Permission',
                                   secondary=permissions,
                                   lazy='dynamic',
                                   backref=db.backref('users', lazy='dynamic'))
 
-    def __init__(self, id=None, username=None, email=None, clear_pw=None):
+    def __init__(self, id=None, username=None,
+                                email=None,
+                                clear_pw=None,
+                                inactive=0):
         self.id = id
         self.username = username
         _pw = bcrypt.hashpw(clear_pw + app.config["PEPPER"], bcrypt.gensalt())
         self.password = _pw
         self.email = email
+        self.inactive = inactive
+        self.created = datetime.datetime.utcnow()
 
     def __repr__(self):
         return "<{0}[{1}]: {2} ({3})>".format(self.__class__.__name__,

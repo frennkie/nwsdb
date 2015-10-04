@@ -46,15 +46,21 @@ def add_user():
             'password' in request.form and len(request.form['password']) and \
             'email' in request.form and len(request.form['email'])):
 
-            # TODO is das hier fies?! hard nach str konvertieren?
+            # TODO is das hier fies?! hart nach str konvertieren?
             _username = str(request.form['username'])
             _password = str(request.form['password'])
             _email = str(request.form['email'])
 
+            if ('inactive' in request.form):
+                inactive = 1
+            else:
+                inactive = 0
+
             try:
                 new_user = Users.add(username=_username,
                                      email=_email,
-                                     clear_pw=_password)
+                                     clear_pw=_password,
+                                     inactive=inactive)
 
                 flash("Successfully created " + _username + " with ID " + \
                       str(new_user.id), 'success')
@@ -155,7 +161,7 @@ def add_permission():
     if (request.method == 'POST'):
         # validate data
         if ('name' in request.form and len(request.form['name'])):
-            # TODO is das hier fies?! hard nach str konvertieren?
+            # TODO is das hier fies?! hart nach str konvertieren?
             _name = str(request.form['name'])
             if ('comment' in request.form and len(request.form['comment'])):
                 _comment = str(request.form['comment'])
