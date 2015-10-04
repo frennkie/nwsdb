@@ -70,6 +70,9 @@ def login():
                 app_user = app_users[0]
 
         if app_user and app_user.credentials_valid(password):
+            # refresh last_login in DB as this is a fresh login
+            app_user.update_last_login()
+
             if request.form.getlist("remember-me"):
                 login_user(app_user, remember=True)
             else:

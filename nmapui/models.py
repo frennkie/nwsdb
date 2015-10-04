@@ -126,6 +126,11 @@ class User(db.Model, UserMixin):
         db.session.query(User).filter(User.id == self.id).update({'password': _pw})
         db.session.commit()
 
+    def update_last_login(self):
+        self.last_login = datetime.datetime.utcnow()
+        db.session.add(self)
+        db.session.commit()
+
     def has_permission(self, name):
         """Check out whether a user has a permission or not."""
         permission = Permission.query.filter_by(name=name).first()
