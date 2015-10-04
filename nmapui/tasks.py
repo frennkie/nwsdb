@@ -7,12 +7,12 @@ from nmapui.models import NmapReportMeta
 @task(name="tasks.nmap_scan")
 def celery_nmap_scan(targets, options):
     def status_callback(nmapscan=None):
-
+        print(celery)
         try:
             current_task.update_state(state="PROGRESS",
                                       meta={"done": nmapscan.progress,
                                             "etc": nmapscan.etc})
-        except Exception, e:
+        except Exception as e:
             print("status_callback error: " + e)
 
     nm = NmapProcess(targets, options, event_callback=status_callback)
