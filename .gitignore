@@ -1,5 +1,7 @@
 *~
 *.pyc
+*.tmp
+*.bak
 config.py
 testtools/*
 build/
