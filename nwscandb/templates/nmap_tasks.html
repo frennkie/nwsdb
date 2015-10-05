@@ -27,7 +27,7 @@
 
                 {% if nmap_task.async_result.result and 'report' in nmap_task.async_result.result %}
                     <td class="detailslink" id="{{ nmap_task.task_id }}">
-                        <a href="{{ url_for('nmap.nmap_report', report_id=nmap_task.task_id) }}">Details</a></td>
+                        <a href="{{ url_for('nmap.nmap_report_task_id', task_id=nmap_task.task_id) }}">Details</a></td>
 
                 {% else %}
                     <td class="detailslink" id="{{ nmap_task.task_id }}">&nbsp;</td>
@@ -59,7 +59,7 @@
                 var pbarid = ntask.id + '.progress-bar';
                 var pstatusid = ntask.id + '.taskstatus';
                 var plinkid = ntask.id + '.detailslink';
-                var details_link = "<a href=\"/nmap/report/" + ntask.id + "\">Details</a>";
+                var details_link = "<a href=\"/nmap/report/task_id/" + ntask.id + "\">Details</a>";
                 var stop_link = "&nbsp"
                 if((ntask.ready == 1) && ($.inArray(ntask.id, tasks_done) == -1)){
                     document.getElementById('pb_' + ntask.id).className = 'progress-bar progress-bar-success';

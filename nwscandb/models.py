@@ -4,8 +4,10 @@ from flask.ext.login import UserMixin
 from flask.ext.sqlalchemy import SQLAlchemy
 from sqlalchemy_utils import IPAddressType
 from sqlalchemy import asc, desc
+
 from libnmap.parser import NmapParser, NmapParserException
 from libnmap.plugins.backendpluginFactory import BackendPluginFactory
+from libnmap.objects.report import NmapReport
 
 from nwscandb import app
 from nwscandb import db
@@ -19,7 +21,8 @@ class Users(object):
 
     @classmethod
     def find(cls, **kwargs):
-        """ find Users from database
+        """find Users from table: users
+
         Args:
             cls (Class):
             **kwargs: Optional
@@ -239,31 +242,41 @@ class NmapTask(db.Model):
         return _nmap_tasks
 
     @classmethod
-    def get(cls, task_id):
-        """TODO """
-        #print("DEBUG: nmaptask_get: " + str(task_id))
-        _report = None
-        if isinstance(task_id, str) or isinstance(task_id, unicode):
-            try:
-                # TODO this shouldn't go look into AsyncResult.. or should it?
-                _resultdict = celery_pipe.AsyncResult(task_id).result
-            except NmapParserException as e:
-                print e
-        #print("DEBUG: nmaptask_get resultdict: " + str(_resultdict))
-        return _resultdict
+    def get_by_task_id(cls, task_id=None):
+        """This classmethod gets a NmapTask object by it's task_id.
 
-    @classmethod
-    def get_report(cls, task_id):
-        #print("DEBUG: nmaptask_getreport: " + task_id)
-        _report = None
-        if isinstance(task_id, str) or isinstance(task_id, unicode):
-            try:
-                _resultdict = celery_pipe.AsyncResult(task_id).result
-                _resultxml = _resultdict['report']
-                _report = NmapParser.parse_fromstring(_resultxml)
-            except NmapParserException as e:
-                print e
-        return _report
+        Args:
+            cls (cls): The class itself (not an instance)
+            task_id (str): The task_id as a string (e.g faef323-afec3-a...)
+
+        :rtype : NmapTask
+        Returns:
+            Either exactly one NmapTask object or None
+
+        Raises:
+            Exception: If more than one result is found.
+
+        Examples:
+            >>> NmapTask.get_by_task_id(task_id="foo_bar") is None
+            True
+
+            >>> isinstance(NmapTask.get_by_task_id(
+                           task_id="98d8872b-c0ce-4bdc-ba72-d9cf98f8383e"), NmapTask)
+            True
+
+        """
+
+        _db_nmap_task_list = NmapTask.query.filter_by(task_id=task_id).all()
+        _length = len(_db_nmap_task_list)
+
+        if _length == 0:
+            return None
+        elif _length == 1:
+            return _db_nmap_task_list[0]
+        else:
+            print("Error: Found more that 1 result for Task ID: " + task_id)
+            raise Exception("Error: Found more that 1 result for Task ID: " + task_id)
+
 
     @classmethod
     def add(cls, user=None, task_id=None, comment=None):
@@ -283,27 +296,22 @@ class NmapTask(db.Model):
             print("Error: could not add scan task.")
             raise Exception("Could not add scan task.")
 
-    @classmethod
-    def remove_task_by_id(cls, task_id=task_id):
-        """  """
+    def delete(self):
+        """delete this NmapTask"""
 
         try:
-            if task_id is not None:
-                nt = NmapTask.query.filter(NmapTask.task_id == task_id).one()
-                db.session.delete(nt)
-                db.session.commit()
-                return True
-            else:
-                return False
-
+            db.session.delete(self)
+            db.session.commit()
+            return True
         except Exception as e:
             print("Error: " + str(e))
             return False
 
+
     @classmethod
     def stop_task_by_id(cls, task_id=task_id):
         """  """
-        print("This is not implemented1")
+        print("This is not implemented!")
         """
         print("trying to stop " + task_id)
         try:
@@ -402,11 +410,85 @@ class NmapReportDiffer(object):
 """ --- """
 
 
+class SubNmapReport(NmapReport):
+    """Sub Class to Report Class"""
+
+    @classmethod
+    def get_report_from_async_result(cls, task_id):
+        """This classmethod gets a NmapReport object by the task_id.
+
+        The NmapReport is constructed on demand from the AsyncResult object. This can
+        only produce a valid result if the Celery Task is finished already.
+
+        Args:
+            cls (cls): The class itself (not an instance)
+            task_id (str): task_id
+
+        Note:
+            This currently is a Sub-Class of NmapReport. Maybe this can be done more
+            transparently (what's with super?). TODO
+
+        Returns:
+            NmapReport object
+
+        """
+
+        try:
+            _resultdict = celery_pipe.AsyncResult(task_id).result
+            _resultxml = _resultdict['report']
+            _report = NmapParser.parse_fromstring(_resultxml)
+            return _report
+        except NmapParserException as e:
+            print e
+            return None
+
+
+    @classmethod
+    def get_all_reports(cls):
+        """This classmethod gets a list of all NmapReport.
+
+        This is done using the libnmap SQL Plugin.
+
+        Args:
+            cls (cls): The class itself (not an instance)
+
+        Returns:
+            List of NmapReport object
+
+        """
+
+        dbp = BackendPluginFactory.create(plugin_name='sql',
+                                          url=app.config["LIBNMAP_DB_URI"],
+                                          echo=False)
+        return dbp.getall()
+
+
+    @classmethod
+    def get_report(cls, report_id):
+        """This classmethod gets one NmapReport by report_id.
+
+        This is done using the libnmap SQL Plugin.
+
+        Args:
+            cls (cls): The class itself (not an instance)
+            report_id (int): report_id
+
+        Returns:
+            NmapReport object
+
+        """
+
+        dbp = BackendPluginFactory.create(plugin_name='sql',
+                                          url=app.config["LIBNMAP_DB_URI"],
+                                          echo=False)
+        return dbp.get(report_id=report_id)
+
+
 class NmapReportMeta(db.Model):
     """ Meta Class for NmapReport
 
         This class needs to copy data from NmapTask Table that can (and will be
-        removed from there.. therefore this can not be implemented as foreigen
+        removed from there.. therefore this can not be implemented as foreign
         key..
 
     """
@@ -433,48 +515,85 @@ class NmapReportMeta(db.Model):
 
     @classmethod
     def get_report_meta(cls, **kwargs):
-        """get one NmapReport"""
+        """This classmethod gets a list of all NmapReportMeta objects.
 
-        #NmapReportMeta.query.filter_by(**kwargs).order_by("id")
+        List can be filtered by using the keyword arguments. E.g. only db row for a
+        certain user_id can be requested.
+
+        Args:
+            **kwargs
+
+        Returns:
+            List of NmapReportMeta objects
+        """
+
         return NmapReportMeta.query.filter_by(**kwargs).order_by(asc("id")).all()
 
-    @classmethod
-    def get_report(cls, report_id):
-        """get one NmapReport"""
-
-        dbp = BackendPluginFactory.create(plugin_name='sql',
-                                          url=app.config["LIBNMAP_DB_URI"],
-                                          echo=False)
-        return dbp.get(report_id=report_id)
 
     @classmethod
-    def get_report_by_task_id(cls, report_id=None, task_id=None):
-        """TODO will probably only need either report or task id"""
-        pass
+    def get_report_id_by_task_id(cls, task_id=None):
+        """This classmethod get the report_id integer value for a task_id.
 
-    @classmethod
-    def getall_reports(cls):
-        """getall NmapReport"""
+        Args:
+            task_id (str): The task_id as a string (e.g faef323-afec3-a...)
 
-        dbp = BackendPluginFactory.create(plugin_name='sql',
-                                          url=app.config["LIBNMAP_DB_URI"],
-                                          echo=False)
-        return dbp.getall()
+        Returns:
+            report_id (int) or None
+
+        Raises:
+            Exception if more that one result is found for task_id
+
+        Examples:
+
+        """
+
+        _db_nmap_report_meta_list = NmapReportMeta.query.filter_by(task_task_id=task_id).all()
+        _length = len(_db_nmap_report_meta_list)
+
+        if _length == 0:
+            return None
+        elif _length == 1:
+            return _db_nmap_report_meta_list[0].report_id
+        else:
+            print("Error: Found more that 1 result for Task ID: " + task_id)
+            raise Exception("Error: Found more that 1 result for Task ID: " + task_id)
 
     def save_report(self, task_id=None):
-        """ TODO """
+        """This method stores the NmapReportMeta and NmapReport to db
 
-        # TODO this is murks.. need to add a method to gets 1 NmapTask obj!
-        _nmap_task_list = NmapTask.find(task_id=task_id)
-        _nmap_task = _nmap_task_list[0]
+        Call this method right after the Celery Task is finished.
+        It will
+        * get a NmapTask object (by the task_id) from db
+        * update the NmapTask completed field in the db to 1
+        * get a NmapReport object (created from AsyncResult)
+        * save that NmapReport to db table "reports"
+        * save the newly create NmapReportMeta object to db
+
+        Args:
+            task_id (str): The task_id as a string (e.g faef323-afec3-a...)
+
+        Returns:
+            True or False
+
+        Raises:
+
+        Examples:
+
+        """
+
+        try:
+            _nmap_task = NmapTask.get_by_task_id(task_id=task_id)
+        except:
+            return False
+
+        if _nmap_task is None:
+            return True
 
         # mark nmap_task as done in table
         _nmap_task.completed = 1
         db.session.commit()
-        #print(_nmap_task)
 
-        _report = NmapTask.get_report(task_id=task_id)
-        #print(_report)
+        _report = SubNmapReport.get_report_from_async_result(task_id=task_id)
 
         # save Meta information of Report
         self.task_task_id = _nmap_task.task_id
@@ -498,11 +617,11 @@ class NmapReportMeta(db.Model):
             db.session.add(self)
             db.session.commit()
 
-            return {"rc": 0}
+            return True
 
         except Exception as e:
             print e
-            return {"rc": 1}
+            return False
 
     def create_scan_from_report(self):
         pass
@@ -583,7 +702,7 @@ class Address(object):
     def discover_from_report(cls, report_id):
         """discover hosts from report and store in db"""
 
-        nmap_report = NmapReportMeta.get_report(report_id)
+        nmap_report = SubNmapReport.get_report(report_id)
 
         if nmap_report:
             for host in nmap_report._hosts:
@@ -604,12 +723,12 @@ class Address(object):
     def discover_from_reports(cls):
         """ discover hosts """
 
-        nmap_report_list = NmapReportMeta.getall_reports()
+        nmap_report_list = SubNmapReport.get_all_reports()
 
         all_addresses = []
         for report_id, report_obj in nmap_report_list:
-            #print str(report_id) + ": " + str(report_obj)
-            #print report_obj._hosts
+            # print str(report_id) + ": " + str(report_obj)
+            # print report_obj._hosts
             for host in report_obj._hosts:
                 all_addresses.append({"address": host.address,
                                       "report_id": report_id})

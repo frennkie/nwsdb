@@ -40,8 +40,12 @@ def celery_nmap_store_report(task_id):
     """
 
     report_meta = NmapReportMeta()
-    rc = report_meta.save_report(task_id=task_id)
-    return {"rc": rc}
+    res = report_meta.save_report(task_id=task_id)
+
+    if res is True:
+        return {"rc": 0}
+    else:
+        return {"rc": 1}
 
 
 # Class for a task
