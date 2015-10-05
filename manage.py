@@ -2,9 +2,9 @@ import getpass
 import sys
 from flask.ext.script import Manager, Server
 from flask.ext.migrate import Migrate, MigrateCommand
-from nmapui import app
-from nmapui import db
-from nmapui.models import Users, Permission
+from nwscandb import app
+from nwscandb import db
+from nwscandb.models import Users, Permission
 
 
 manager = Manager(app)

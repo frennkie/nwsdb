@@ -1,7 +1,7 @@
 from celery import Task, task, current_task
-from nmapui.celeryapp import celery_pipe as celery
+from nwscandb.celeryapp import celery_pipe as celery
 from libnmap.process import NmapProcess
-from nmapui.models import NmapReportMeta
+from nwscandb.models import NmapReportMeta
 
 
 @task(name="tasks.nmap_scan")
@@ -49,7 +49,7 @@ class CleanupTask(Task):
     """
     Examples:
 
-    >>> from nmapui.tasks import CleanupTask
+    >>> from nwscandb.tasks import CleanupTask
     >>> result = CleanupTask.delay()
 
     """

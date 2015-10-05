@@ -7,10 +7,10 @@ from sqlalchemy import asc, desc
 from libnmap.parser import NmapParser, NmapParserException
 from libnmap.plugins.backendpluginFactory import BackendPluginFactory
 
-from nmapui import app
-from nmapui import db
-from nmapui import login_serializer
-from nmapui.celeryapp import celery_pipe
+from nwscandb import app
+from nwscandb import db
+from nwscandb import login_serializer
+from nwscandb.celeryapp import celery_pipe
 from celery.task.control import revoke
 
 
@@ -330,8 +330,8 @@ class NmapReportDiffer(object):
             #pass
         else:
             print "no valid data.. taking dummy files from disk"
-            old_report = NmapParser.parse_fromfile('nmapui/test/1_hosts.xml')
-            new_report = NmapParser.parse_fromfile('nmapui/test/1_hosts_diff.xml')
+            old_report = NmapParser.parse_fromfile('nwscandb/test/1_hosts.xml')
+            new_report = NmapParser.parse_fromfile('nwscandb/test/1_hosts_diff.xml')
 
         self.do_diff(new_report, old_report)
         self.print_diff()

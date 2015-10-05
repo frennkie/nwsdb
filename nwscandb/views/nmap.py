@@ -1,8 +1,8 @@
-from nmapui import app
-from nmapui.celeryconfig import CELERY_TASK_EXPIRES
-from nmapui.models import NmapTask, NmapReportDiffer, Contact, AddressDetail, Address
-from nmapui.models import NmapReportMeta
-from nmapui.tasks import celery_nmap_scan
+from nwscandb import app
+from nwscandb.celeryconfig import CELERY_TASK_EXPIRES
+from nwscandb.models import NmapTask, NmapReportDiffer, Contact, AddressDetail, Address
+from nwscandb.models import NmapReportMeta
+from nwscandb.tasks import celery_nmap_scan
 from flask import Blueprint, render_template, request, redirect, url_for, flash, abort
 from flask.ext.login import login_required, current_user
 from celery.states import READY_STATES

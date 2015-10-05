@@ -1,6 +1,6 @@
-from nmapui import app
-from nmapui import db
-from nmapui.models import User, Users, Permission
+from nwscandb import app
+from nwscandb import db
+from nwscandb.models import User, Users, Permission
 from flask import Blueprint, render_template, request, redirect, url_for, flash, abort
 from flask.ext.login import login_required, current_user
 

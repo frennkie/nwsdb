@@ -1,86 +1,88 @@
-# nmap-webgui
+# nwscandb
+
+## Name
+
+What does nwscandb stand for?
+Possibly:
+* Nmap Web Scan DB or
+* NetWork Scan DB or
+* something else
+
 
 ## Code status
 
-This project is a fork of this repo: https://github.com/savon-noir/nmap-webgui
+Alpha.. just a bit more that POC.. but work in progess.. :-)
 
-Work in Progress.. :-)
 
-## Backup/Restore
+## Attribution
 
-...
+This project is based on the design and code writen by
+https://github.com/savon-noir for the (in his terms) "Proof-of-Concept":
+nmap-webgui currently located at https://github.com/savon-noir/nmap-webgui.
 
-## clean out all reports
+Big parts of the code and components were upgraded, changed out or removed
+but some of the core is still present and especially this project still makes
+heavy use of the python-libnmap library (also by savon-noir) which is
+absolutely awesome.
 
-test
 
-## Use cases
-nmap-webgui is a multi-user small web application based on flask to enable the user to:
-
-- launch nmap scans (DONE)
-- schedule periodic scans
-- review scan reports
-- diff and compare scan reports
-- display stats of scan reports
-
-nmap-webgui is relying on the following technologies:
-
+## Main components
 - flask
 - celery
+- mysql
 - rabbitmq
-- mongodb
 - python-libnmap
+- jQuery
+- Bootstrap
 
 ## Dependencies
 
-Following packages need to be installed:
+For anything you can (and need to) get from pip please check requirements.txt
+file
 
-- flask via pip
-- flask-login via pip
-- flask-pymongo via pip
-- flask-scripts via pip (optional)
+Following system packages need to be installed:
+
 - rabbitmq server (no specific config needed)
-- mongodb daemon (to store users data and celery tasks)
+- mysql
+
 
 ##Quick install
 
-This is a draft on how to install and run nmap-webgui:
+This is a draft on how to install and run nwsdb:
 
 ```bash
-    # install packages in a virtualenv or whatever
-    $ pip install Flask
-    $ pip install Flask-Login
-    $ pip install Flask-PyMongo
-    $ pip install Flask-Script
-    # for celery, ensure you are running chiastic slide (version > 3)
-    $ pip install celery
+# install packages in a virtualenv or whatever
+virtualenv venv
+source venv/bin/activate
 
-    # install mongodb and rabbitmq (the way you want it)
-    $ yum install mongod
-    $ yum install mongod-server
-    $ yum install rabbitmq-server
+pip install -U pip
+pip install -U requirements.txt
 
-    # start rabbitmq and mongodb
-    $ service mongod start
-    $ service rabbitmq-server start
+# install mongodb and rabbitmq (the way you want it)
+apt-get install mysql-server
+aptg-et install rabbitmq-server
 
-    # install nmap
-    $ yum install nmap
+# start rabbitmq and mongodb
+service mysqld start
+service rabbitmq-server start
 
-    # install python-libnmap
-    $ git clone https://github.com/savon-noir/python-libnmap.git
-    $ cd python-libnmap
-    $ python setup.py install
+# install nmap
+apt-get install nmap
 
-    # install the webgui
-    $ git clone https://savon_noir@bitbucket.org/savon_noir/nmap-webgui.git
-    $ cd nmap-webgui
-    $ python setup.py install
+# install python-libnmap
+git clone https://github.com/savon-noir/python-libnmap.git
+cd python-libnmap
+python setup.py install
 
-    # run celery
-    $ celery -A nmapui.tasks worker --loglevel=debug
+# install the nwsdb
+???
 
-    # add a user, start the web app in debug and login
-    $ python manage.py adduser <username> <email>
-    $ python manage.py runserver
+# Update configuration (config.py)
+
+# run celery
+celery -A nwscandb.tasks worker --loglevel=debug
+
+# add a user, start the web app in debug and login
+python manage.py add_user <username> <email>
+python manage.py runserver -p 80
 ```
