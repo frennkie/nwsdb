@@ -20,10 +20,6 @@ CELERY_TASK_RESULT_EXPIRES = datetime.timedelta(days=1)
 # enabling/scheduling BEAT is required for mysql backend
 # nwscandb.tasks.CleanupTask might be redundant?!
 CELERYBEAT_SCHEDULE = {
-    # Executes every day at 3:30 (local)
-    'add-every-morning': {
-        'task': 'nwscandb.tasks.CleanupTask',
-        'schedule': crontab(hour=4, minute=30),
-    },
+    # default clean up runs daily at 4am (local)
 }
 
