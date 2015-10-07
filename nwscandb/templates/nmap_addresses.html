@@ -7,24 +7,24 @@
 
         <legend>Showing Reports from finished tasks</legend>
         <table id="tasktable" class="table table-striped">
-          <th>ID</th><th>TaskID</th><th>Started</th><th>Inserted</th><th>Comment</th><th>Hosts_Up</th><th>Hosts_Total</th><th>Details</th>
+        <th>ID</th><th>IP</th><th>Created</th><th>Name</th><th>Comment</th><th>Source</th>
 
-          {% for report_meta in meta_all_page.items %}
+          {% for address_detail in address_detail_all_page.items %}
             <tr>
-                <td id="{{ report_meta.id }}">{{ report_meta.id }}</td>
-                <td id="{{ report_meta.id }}">{{ report_meta.task_task_id }}</td>
-                <td id="{{ report_meta.id }}">{{ momentjs(reports[report_meta.id - 1][1].started).format('YYYY-MM-DD HH:mm:ss') }}</td>
-                <td id="{{ report_meta.id }}">{{ momentjs(report_meta.task_created).format('YYYY-MM-DD HH:mm:ss') }}</td>
-                <td id="{{ report_meta.id }}">{{ report_meta.task_comment }}</td>
-                <td id="{{ report_meta.id }}">{{ reports[report_meta.id - 1][1].hosts_up }}</td>
-                <td id="{{ report_meta.id }}">{{ reports[report_meta.id - 1][1].hosts_total }}</td>
-                <td id="{{ report_meta.id }}" class="detailslink">
-                    <a href="{{ url_for('nmap.nmap_report', report_id=report_meta.report_id) }}">Details</a></td>
+                <td id="{{ address_detail.id }}">{{ address_detail.id }}</td>
+                <td id="{{ address_detail.id }}">{{ address_detail.ip_address }}</td>
+                <td id="{{ address_detail.id }}">{{ address_detail.created }}</td>
+                <td id="{{ address_detail.id }}">{{ address_detail.name }}</td>
+                <td id="{{ address_detail.id }}">{{ address_detail.comment }}</td>
+                <td id="{{ address_detail.id }}">{{ address_detail.source }}</td>
+
+                <td id="{{ address_detail.id }}" class="detailslink">
+                    <a href="{{ url_for('nmap.nmap_report', report_id=address_detail.report_id) }}">Details</a></td>
             </tr>
           {% endfor %}
         </table>
 
-        {{ helpers.paginate(meta_all_page) }}
+        {{ helpers.paginate(address_detail_all_page) }}
 
 
 

@@ -216,6 +216,23 @@ def nmap_reports_paged(page=1):
                            reports=_nmap_report_all)
 
 
+@appmodule.route('/address')
+@appmodule.route('/addresses/')
+@login_required
+def nmap_addresses():
+    return redirect("/nmap/addresses/1")
+
+
+@appmodule.route('/addresses/<int:page>')
+@login_required
+def nmap_addresses_paged(page=1):
+    _address_detail_all_page = AddressDetail.query.order_by("ip_address").paginate(page,
+                                                     app.config["ITEMS_PER_PAGE"])
+
+    return render_template('nmap_addresses.html',
+                           address_detail_all_page=_address_detail_all_page)
+
+
 @appmodule.route('/compare', methods=['GET', 'POST'])
 @login_required
 def nmap_compare():
