@@ -8,6 +8,8 @@ PEPPER = "<fill_me>"
 
 REMEMBER_COOKIE_DURATION = timedelta(days=30)
 
+SSO_GOLBAL_ENABLED = False
+
 # SQLAlchemy
 #SQLALCHEMY_ECHO = True
 SQLALCHEMY_ECHO = False

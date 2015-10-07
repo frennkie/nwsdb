@@ -87,6 +87,9 @@ class User(db.Model, UserMixin):
     inactive = db.Column(db.SmallInteger)
     created = db.Column(db.DateTime)
     last_login = db.Column(db.DateTime)
+    last_update = db.Column(db.DateTime, default=datetime.datetime.now,
+                         onupdate=datetime.datetime.now, nullable=False)
+    sso_enabled = db.Column(db.SmallInteger)
     nmaptasks = db.relationship('NmapTask', backref=db.backref('buser'))
     permissions = db.relationship('Permission',
                                   secondary=permissions,
@@ -96,13 +99,15 @@ class User(db.Model, UserMixin):
     def __init__(self, id=None, username=None,
                                 email=None,
                                 clear_pw=None,
-                                inactive=0):
+                                inactive=0,
+                                sso_enabled=0):
         self.id = id
         self.username = username
         _pw = bcrypt.hashpw(clear_pw + app.config["PEPPER"], bcrypt.gensalt())
         self.password = _pw
         self.email = email
         self.inactive = inactive
+        self.sso_enabled = sso_enabled
         self.created = datetime.datetime.utcnow()
 
     def __repr__(self):
