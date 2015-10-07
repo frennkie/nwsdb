@@ -70,7 +70,6 @@ def nmap_tasks():
                                                     expires=_c_exp,
                                                     kwargs={'targets': str(targets),
                                                             'options': str(options)})
-
         NmapTask.add(user=current_user,
                      task_id=_celery_task.id,
                      comment=comment)
@@ -95,17 +94,23 @@ def nmap_tasks_json():
     _jtarray = []
     for _ntask in _nmap_tasks:
         tdict = {'id': _ntask.task_id,
-                 'status': _ntask.async_result.status,
-                 'ready': 0}
-        if _ntask.async_result.result and 'done' in _ntask.async_result.result:
-            tdict.update({'progress': float(_ntask.async_result.result['done'])})
-        elif _ntask.async_result.result and 'report' in _ntask.async_result.result:
+                'status': _ntask.completed_status,
+                'ready': 0}
+        if _ntask.completed == 1:
+            tdict.update({'status': _ntask.completed_status})
             tdict.update({'progress': 100})
-        else:
-            tdict.update({'progress': 0})
-        if _ntask.async_result.status in READY_STATES:
             tdict.update({'ready': 1})
-        _jtarray.append(tdict)
+            _jtarray.append(tdict)
+        else:
+            if _ntask.async_result.result and 'done' in _ntask.async_result.result:
+                tdict.update({'progress': float(_ntask.async_result.result['done'])})
+            elif _ntask.async_result.result and 'report' in _ntask.async_result.result:
+                tdict.update({'progress': 100})
+            else:
+                tdict.update({'progress': 0})
+            if _ntask.completed_status in READY_STATES:
+                tdict.update({'ready': 1})
+            _jtarray.append(tdict)
 
     return json.dumps(_jtarray)
 

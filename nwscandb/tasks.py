@@ -17,14 +17,16 @@ def celery_nmap_scan(targets, options):
         except Exception as e:
             print("status_callback error: " + str(e))
 
+    # scan is not yet finished (or even started).
+    # But I need to do this before the NmapProcess is started because
+    # otherwise other tasks might be queued in front of this!
+    celery_nmap_store_report.delay(task_id=celery_nmap_scan.request.id)
+
     nm = NmapProcess(targets, options, event_callback=status_callback)
     rc = nm.run()
 
     if rc == 0 and nm.stdout:
         r = nm.stdout
-
-        # scan is finished. Now call task to insert Report into persistent db
-        celery_nmap_store_report.delay(task_id=celery_nmap_scan.request.id)
 
     else:
         r = None

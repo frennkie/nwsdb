@@ -14,6 +14,7 @@ from nwscandb import db
 from nwscandb import login_serializer
 from nwscandb.celeryapp import celery_pipe
 from celery.task.control import revoke
+from celery.states import READY_STATES, ALL_STATES
 
 
 class Users(object):
@@ -209,6 +210,7 @@ class NmapTask(db.Model):
     comment = db.Column(db.String(128))
     created = db.Column(db.DateTime)
     completed = db.Column(db.SmallInteger)
+    completed_status = db.Column(db.String(20))
     user_id = db.Column(db.Integer, db.ForeignKey("user.id"))
 
     def __init__(self, id=None, comment=None, task_id=None, user=None,
@@ -225,6 +227,43 @@ class NmapTask(db.Model):
                                        self.id,
                                        self.task_id)
 
+    def append_async_result(self):
+        """Will get the async_result information (if still there)
+
+        The AsyncResult object is the celery object that exists until the Task
+        is removed from the celery backend (usually after a few days).
+        As long as the AsyncResult inforamtion is still there this method will
+        retrieve it and add it as an attribute to the current NmapTask.
+        This can be called as soon as a Task was created, while the task is
+        running and for a short time after the Task is finished.
+
+        Args:
+            None
+
+        Returns:
+            True if "async_result" attr was set, False if not
+
+        """
+
+        async_result_obj = celery_pipe.AsyncResult(self.task_id)
+
+        self.async_result = async_result_obj
+
+        if async_result_obj.status == "PENDING":
+            print("PENDING State is suspicious.. but let's see ")
+            if self.completed == 1:
+                #self.async_result.status = "X_REMOVED"
+                self.completed_status = "REMOVED"
+            else:
+                self.completed_status = "PENDING"
+
+        else:
+            print("DEBUG: AsyncResult hmmm: " + str(async_result_obj.status))
+            self.completed_status = async_result_obj.status
+
+        return True
+
+
     @classmethod
     def find(cls, sort_asc=True, **kwargs):
         _nmap_tasks = []
@@ -235,10 +274,9 @@ class NmapTask(db.Model):
             _db_nmap_tasks = NmapTask.query.filter_by(**kwargs).order_by(desc("id")).all()
 
         for _db_nmap_task in _db_nmap_tasks:
-
-            async_result = celery_pipe.AsyncResult(_db_nmap_task.task_id)
-            _db_nmap_task.async_result = async_result
+            _db_nmap_task.append_async_result()
             _nmap_tasks.append(_db_nmap_task)
+
         return _nmap_tasks
 
     @classmethod
@@ -564,8 +602,8 @@ class NmapReportMeta(db.Model):
         Call this method right after the Celery Task is finished.
         It will
         * get a NmapTask object (by the task_id) from db
-        * update the NmapTask completed field in the db to 1
         * get a NmapReport object (created from AsyncResult)
+        * update the NmapTask completed (+ c_status) field in the db to 1
         * save that NmapReport to db table "reports"
         * save the newly create NmapReportMeta object to db
 
@@ -587,10 +625,12 @@ class NmapReportMeta(db.Model):
             return False
 
         if _nmap_task is None:
-            return True
+            return False
+
 
         # mark nmap_task as done in table
         _nmap_task.completed = 1
+        _nmap_task.append_async_result()
         db.session.commit()
 
         _report = SubNmapReport.get_report_from_async_result(task_id=task_id)
