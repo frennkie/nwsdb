@@ -48,13 +48,13 @@ def basic_auth():
 
 @appmodule.route('/')
 @login_required
-def nmap_index():
+def index():
     return render_template('nmap_index.html')
 
 
 @appmodule.route('/scan')
 @login_required
-def nmap_scan():
+def scan():
     return render_template('nmap_scan.html')
 
 
@@ -113,13 +113,13 @@ def nmap_tasks():
 
 @appmodule.route('/tasks/<int:page>')
 @login_required
-def nmap_tasks_paged(page=1):
+def tasks_paged(page=1):
     abort(404)
 
 
 @appmodule.route('/jsontasks', methods=['GET', 'POST'])
 @login_required
-def nmap_tasks_json():
+def tasks_json():
     _nmap_tasks = NmapTask.find(user_id=current_user.id)
 
     _jtarray = []
@@ -148,7 +148,7 @@ def nmap_tasks_json():
 
 @appmodule.route('/task/stop/<task_id>')
 @login_required
-def nmap_task_stop(task_id):
+def task_stop(task_id):
     """
     _nmap_task = NmapTask.get(task_id)
     if _nmap_task is None:
@@ -184,7 +184,7 @@ def nmap_task_stop(task_id):
 
 @appmodule.route('/task/delete/<task_id>')
 @login_required
-def nmap_task_delete(task_id):
+def task_delete(task_id):
     """task delete"""
 
     try:
@@ -207,7 +207,7 @@ def nmap_task_delete(task_id):
 
 @appmodule.route('/report/<int:report_id>')
 @login_required
-def nmap_report(report_id):
+def report(report_id):
     _report = SubNmapReport.get_report(report_id=report_id)
     if _report:
         return render_template("nmap_report.html", report=_report)
@@ -217,7 +217,7 @@ def nmap_report(report_id):
 
 @appmodule.route('/report/task_id/<task_id>')
 @login_required
-def nmap_report_task_id(task_id):
+def report_task_id(task_id):
 
     """
     _report = NmapTask.get_report(task_id=task_id)
@@ -231,13 +231,13 @@ def nmap_report_task_id(task_id):
 @appmodule.route('/reports')
 @appmodule.route('/reports/')
 @login_required
-def nmap_reports():
+def reports():
     return redirect("/nmap/reports/1")
 
 
 @appmodule.route('/reports/<int:page>')
 @login_required
-def nmap_reports_paged(page=1):
+def reports_paged(page=1):
     """reports_paged view """
 
     _items_per_page = app.config["ITEMS_PER_PAGE"]
@@ -258,13 +258,13 @@ def nmap_reports_paged(page=1):
 @appmodule.route('/address')
 @appmodule.route('/addresses/')
 @login_required
-def nmap_addresses():
+def addresses():
     return redirect("/nmap/addresses/1")
 
 
 @appmodule.route('/addresses/<int:page>')
 @login_required
-def nmap_addresses_paged(page=1):
+def addresses_paged(page=1):
     _address_detail_all_page = AddressDetail.query.order_by("ip_address").paginate(page,
                                                      app.config["ITEMS_PER_PAGE"])
 
@@ -274,7 +274,7 @@ def nmap_addresses_paged(page=1):
 
 @appmodule.route('/compare', methods=['GET', 'POST'])
 @login_required
-def nmap_compare():
+def compare():
     """no pagination needed!"""
     if request.method == "POST":
         selected_reports = request.form.getlist('report_meta.id')
@@ -301,7 +301,7 @@ def nmap_compare():
 
 @appmodule.route('/db')
 @login_required
-def nmap_database():
+def database():
     Address.discover_from_reports()
 
     ad = AddressDetail.query.get(4)
@@ -312,13 +312,13 @@ def nmap_database():
 
 @appmodule.route('/export')
 @login_required
-def nmap_export():
+def export():
     return render_template('nmap_export.html')
 
 
 @appmodule.route('/import', methods=['GET', 'POST'])
 @login_required
-def nmap_import():
+def importer():
     if request.method == "POST":
         import_file = request.files['file']
         if import_file:
