@@ -31,9 +31,14 @@ def users(page=1):
     if not current_user.has_permission("admin"):
         abort(403)
 
-    _users = User.query.paginate(page, app.config["ITEMS_PER_PAGE"])
-    return render_template("admin_users.html",
-                           users=_users)
+    _query = User.query
+    _items_per_page = app.config["ITEMS_PER_PAGE"]
+    _items_paged = _query.paginate(page, _items_per_page)
+
+    return render_template('admin_users.html',
+                           items_paged=_items_paged,
+                           endpoint=request.endpoint)
+
 
 
 @appmodule.route("/add_user", methods=["GET", "POST"])
@@ -67,13 +72,13 @@ def add_user():
 
                 flash("Successfully created " + _username + " with ID " +
                       str(new_user.id), 'success')
-                return redirect("/admin/users/1")
+                return redirect(url_for(admin.users, page=1))
             except ValueError as ve:
                 flash("Failed to add User: Username already in use.", "danger")
-                return redirect("/admin/users/1")
+                return redirect(url_for(admin.users, page=1))
             except Exception as e:
                 flash("Something went wrong.", "danger")
-                return redirect("/admin/users/1")
+                return redirect(url_for(admin.users, page=1))
 
     else:
         return render_template("admin_add_user.html")
@@ -95,23 +100,23 @@ def change_user_password(user_id):
                 and 'password2' in request.form
                 and len(request.form['password2'])):
             flash("Something went wrong.", "danger")
-            return redirect("/admin/users/1")
+            return redirect(url_for(admin.users, page=1))
 
         _password = str(request.form['password'])
         _password2 = str(request.form['password2'])
 
         if _password != _password2:
             flash("Entered Passwords do not match.", "danger")
-            return redirect("/admin/users/1")
+            return redirect(url_for(admin.users, page=1))
 
         try:
             _user.change_password(clear_pw=_password)
             flash("Successfully changed password for: " + _user.username,
                   "success")
-            return redirect("/admin/users/1")
+            return redirect(url_for(admin.users, page=1))
         except Exception as e:
             flash("Something went wrong.", "danger")
-            return redirect("/admin/users/1")
+            return redirect(url_for(admin.users, page=1))
 
     return render_template("admin_change_user_pw.html", user=_user)
 
@@ -134,7 +139,7 @@ def delete_user(user_id):
 
     except:
         flash("Something went wrong.", "danger")
-        return redirect("/admin/users/1")
+        return redirect(url_for(admin.users, page=1))
 
 
 @appmodule.route("/permissions")

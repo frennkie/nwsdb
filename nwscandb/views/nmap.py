@@ -60,7 +60,7 @@ def scan():
 
 @appmodule.route('/tasks', methods=['GET', 'POST'])
 @login_required
-def nmap_tasks():
+def tasks():
     scantypes = [ "-sT", "-sT", "-sS", "-sA", "-sW", "-sM",
             "-sN", "-sF", "-sX", "-sU" ]
 
@@ -105,7 +105,7 @@ def nmap_tasks():
                      task_id=_celery_task.id,
                      comment=comment)
 
-        return redirect(url_for('nmap.nmap_tasks'))
+        return redirect(url_for('nmap.tasks'))
 
     _nmap_tasks = NmapTask.find(user_id=current_user.id)
     return render_template('nmap_tasks.html', tasks=_nmap_tasks)
@@ -153,7 +153,7 @@ def task_stop(task_id):
     _nmap_task = NmapTask.get(task_id)
     if _nmap_task is None:
         flash("There is no entry for task_id: " + task_id, 'info')
-        return redirect(url_for('nmap.nmap_tasks'))
+        return redirect(url_for('nmap.tasks'))
 
     NmapTask.stop_task_by_id(task_id=task_id)
     """
@@ -162,23 +162,23 @@ def task_stop(task_id):
         _nmap_task = NmapTask.get_by_task_id(task_id=task_id)
     except Exception as e:
         flash(str(e), "warning")
-        return redirect(url_for("nmap.nmap_tasks"))
+        return redirect(url_for("nmap.tasks"))
 
     if _nmap_task.completed == 1:
         flash("Can not stop tasks that are already finished.", 'info')
-        return redirect(url_for('nmap.nmap_tasks'))
+        return redirect(url_for('nmap.tasks'))
 
     flash("Sorry.. This feature is not (yet?!) implemented", 'danger')
-    return redirect(url_for('nmap.nmap_tasks'))
+    return redirect(url_for('nmap.tasks'))
 
     """
     if NmapTask.stop_task_by_id(task_id=task_id):
         flash("Stopped task: " + task_id, 'success')
-        return redirect(url_for('nmap.nmap_tasks'))
+        return redirect(url_for('nmap.tasks'))
 
     else:
         flash("Stop failed?! for task_id: " + task_id, 'danger')
-        return redirect(url_for('nmap.nmap_tasks'))
+        return redirect(url_for('nmap.tasks'))
     """
 
 
@@ -191,18 +191,18 @@ def task_delete(task_id):
         _nmap_task = NmapTask.get_by_task_id(task_id=task_id)
     except Exception as e:
         flash(str(e), "warning")
-        return redirect(url_for("nmap.nmap_tasks"))
+        return redirect(url_for("nmap.tasks"))
 
     if _nmap_task is None:
         flash("There is no entry for task_id: " + task_id, "info")
-        return redirect(url_for("nmap.nmap_tasks"))
+        return redirect(url_for("nmap.tasks"))
 
     if _nmap_task.delete():
         flash("Deleted entry for task_id: " + task_id, "success")
-        return redirect(url_for("nmap.nmap_tasks"))
+        return redirect(url_for("nmap.tasks"))
     else:
         flash("Delete failed. Task_id: " + task_id, "danger")
-        return redirect(url_for("nmap.nmap_tasks"))
+        return redirect(url_for("nmap.tasks"))
 
 
 @appmodule.route('/report/<int:report_id>')
@@ -240,10 +240,8 @@ def reports():
 def reports_paged(page=1):
     """reports_paged view """
 
-    _items_per_page = app.config["ITEMS_PER_PAGE"]
     _query = NmapReportMeta.query
-
-    _items_total = len(_query.all())
+    _items_per_page = app.config["ITEMS_PER_PAGE"]
     _items_paged = _query.paginate(page, _items_per_page)
 
     # special:
@@ -338,8 +336,5 @@ def importer():
         return render_template('nmap_import.html')
 
 
-@appmodule.route("/profile")
-@login_required
-def profile():
-    return render_template("nmap_profile.html")
+
 

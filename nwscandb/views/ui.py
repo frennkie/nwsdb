@@ -46,9 +46,17 @@ def load_token(token):
         return user
     return None
 
+
 @login_manager.user_loader
 def load_user(user_id):
     return Users.get(user_id)
+
+
+@appmodule.route("/profile")
+@login_required
+def profile():
+    return render_template("profile.html")
+
 
 @appmodule.route("/login", methods=["GET", "POST"])
 def login():
@@ -82,7 +90,7 @@ def login():
                 next_page = request.form['next_page']
                 return redirect(next_page)
             except:
-                return redirect(url_for("nmap.nmap_index"))
+                return redirect(url_for("nmap.index"))
         else:
             flash("Login failed: Check Username and Password", "danger")
 

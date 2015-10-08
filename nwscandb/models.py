@@ -77,6 +77,12 @@ permissions = db.Table('permissions',
 )
 
 
+user_group_table = db.Table("user_group",
+                            db.Column('user_id', db.Integer, db.ForeignKey('user.id')),
+                            db.Column('group_id', db.Integer, db.ForeignKey('group.id'))
+)
+
+
 class User(db.Model, UserMixin):
     """User Class and SQL Table"""
     __table_args__ = {'sqlite_autoincrement': True}
@@ -88,9 +94,16 @@ class User(db.Model, UserMixin):
     created = db.Column(db.DateTime)
     last_login = db.Column(db.DateTime)
     last_update = db.Column(db.DateTime, default=datetime.datetime.utcnow(),
-                         onupdate=datetime.datetime.utcnow(), nullable=False)
+                            onupdate=datetime.datetime.utcnow(), nullable=False)
     sso_enabled = db.Column(db.SmallInteger)
+
     nmaptasks = db.relationship('NmapTask', backref=db.backref('buser'))
+
+    group_id = db.relationship('Group',
+                               secondary=user_group_table,
+                               lazy='dynamic',
+                               backref=db.backref('users', lazy='dynamic'))
+
     permissions = db.relationship('Permission',
                                   secondary=permissions,
                                   lazy='dynamic',
@@ -164,6 +177,29 @@ class User(db.Model, UserMixin):
         self.permissions.remove(permission)
 
 
+class Group(db.Model):
+    id = db.Column(db.Integer, primary_key=True)
+    name = db.Column(db.String(20))
+    comment = db.Column(db.String(128))
+
+    user_id = db.relationship('User',
+                              secondary=user_group_table,
+                              lazy='dynamic',
+                              backref=db.backref('groups', lazy='dynamic'))
+
+    def __init__(self, id=None, name=None, comment=None, user_id=None):
+        self.id = id
+        self.name = name
+        self.comment = comment
+        self.user_id = user_id
+
+    def __repr__(self):
+        return "<{0} {1}: {2} ({3})>".format(self.__class__.__name__,
+                                             self.id,
+                                             self.name,
+                                             self.comment)
+
+
 class Permission(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     name = db.Column(db.String(20))
@@ -226,6 +262,7 @@ class NmapTask(db.Model):
         self.user_id = user.id
         self.created = created
         self.completed = completed
+        self.async_result = None
 
     def __repr__(self):
         return "<{0} {1}: {2}>".format(self.__class__.__name__,
@@ -255,19 +292,15 @@ class NmapTask(db.Model):
         self.async_result = async_result_obj
 
         if async_result_obj.status == "PENDING":
-            print("PENDING State is suspicious.. but let's see ")
             if self.completed == 1:
-                #self.async_result.status = "X_REMOVED"
                 self.completed_status = "REMOVED"
             else:
                 self.completed_status = "PENDING"
 
         else:
-            print("DEBUG: AsyncResult hmmm: " + str(async_result_obj.status))
             self.completed_status = async_result_obj.status
 
         return True
-
 
     @classmethod
     def find(cls, sort_asc=True, **kwargs):
@@ -320,7 +353,6 @@ class NmapTask(db.Model):
             print("Error: Found more that 1 result for Task ID: " + task_id)
             raise Exception("Error: Found more that 1 result for Task ID: " + task_id)
 
-
     @classmethod
     def add(cls, user=None, task_id=None, comment=None):
         """TODO"""
@@ -349,7 +381,6 @@ class NmapTask(db.Model):
         except Exception as e:
             print("Error: " + str(e))
             return False
-
 
     @classmethod
     def stop_task_by_id(cls, task_id=task_id):
