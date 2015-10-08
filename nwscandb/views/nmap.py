@@ -238,12 +238,20 @@ def nmap_reports():
 @appmodule.route('/reports/<int:page>')
 @login_required
 def nmap_reports_paged(page=1):
-    _meta_all_page = NmapReportMeta.query.paginate(page,
-                                                   app.config["ITEMS_PER_PAGE"])
+    """reports_paged view """
+
+    _items_per_page = app.config["ITEMS_PER_PAGE"]
+    _query = NmapReportMeta.query
+
+    _items_total = len(_query.all())
+    _items_paged = _query.paginate(page, _items_per_page)
+
+    # special:
     _nmap_report_all = SubNmapReport.get_all_reports()
 
     return render_template('nmap_reports.html',
-                           meta_all_page=_meta_all_page,
+                           items_paged=_items_paged,
+                           endpoint=request.endpoint,
                            reports=_nmap_report_all)
 
 
@@ -276,8 +284,8 @@ def nmap_compare():
             return render_template('nmap_compare_select.html',
                                    nmap_report_meta_all=_nmap_report_meta_all)
         else:
-            old=SubNmapReport.get_report(report_id=selected_reports[0])
-            new=SubNmapReport.get_report(report_id=selected_reports[1])
+            old = SubNmapReport.get_report(report_id=selected_reports[0])
+            new = SubNmapReport.get_report(report_id=selected_reports[1])
             nd = NmapReportDiffer(old_report=old, new_report=new)
 
             return render_template('nmap_compare.html',

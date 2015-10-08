@@ -5,11 +5,11 @@
 
         {% import '_helpers.html' as helpers %}
 
-        <legend>Showing Reports from finished tasks</legend>
+        <legend>Showing Reports from finished tasks (Total: {{ items_paged.total }})</legend>
         <table id="tasktable" class="table table-striped">
           <th>ID</th><th>TaskID</th><th>Started</th><th>Inserted</th><th>Comment</th><th>Hosts_Up</th><th>Hosts_Total</th><th>Details</th>
 
-          {% for report_meta in meta_all_page.items %}
+          {% for report_meta in items_paged.items %}
             <tr>
                 <td id="{{ report_meta.id }}">{{ report_meta.id }}</td>
                 <td id="{{ report_meta.id }}">{{ report_meta.task_task_id }}</td>
@@ -24,9 +24,6 @@
           {% endfor %}
         </table>
 
-        {{ helpers.paginate(meta_all_page) }}
-
-
-
+        {{ helpers.render_pagination(items_paged, endpoint) }}
 
 {% endblock %}
