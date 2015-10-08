@@ -28,3 +28,10 @@
       </ul>
   </div>
 {% endmacro %}
+
+
+{% macro render_nav_link(title, icon, current_url_for) %}
+    <li >
+        <a href="{{current_url_for}}"><span class="glyphicon glyphicon-{{icon}}"></span>&nbsp; {{title}}</a>
+    </li>
+{% endmacro %}

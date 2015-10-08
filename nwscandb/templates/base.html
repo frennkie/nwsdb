@@ -31,72 +31,60 @@
 
   <body role="document">
 
+  {% import '_helpers.html' as helpers %}
+
     <!-- navbar fixed -->
     <nav class="navbar navbar-default navbar-fixed-top">
         <div class="container-fluid">
             <!-- Brand and toggle get grouped for better mobile display -->
             <div class="navbar-header">
-            <button type="button" class="navbar-toggle collapsed" data-toggle="collapse" data-target="#bs-example-navbar-collapse-1" aria-expanded="false">
-                <span class="sr-only">Toggle navigation</span>
-                <span class="icon-bar"></span>
-                <span class="icon-bar"></span>
-                <span class="icon-bar"></span>
-            </button>
-            <a class="navbar-brand" href="#">NMAP Web Tool</a>
+                <button type="button" class="navbar-toggle collapsed" data-toggle="collapse" data-target="#bs-example-navbar-collapse-1" aria-expanded="false">
+                    <span class="sr-only">Toggle navigation</span>
+                    <span class="icon-bar"></span>
+                    <span class="icon-bar"></span>
+                    <span class="icon-bar"></span>
+                </button>
+                <a class="navbar-brand" href="#">NWScanDB</a>
             </div>
 
             <!-- Collect the nav links, forms, and other content for toggling -->
             <div class="collapse navbar-collapse" id="bs-example-navbar-collapse-1">
-            <ul class="nav navbar-nav">
-                <li {% if request.path == '/nmap/' %}class="active"{% endif %}>
-                    <a href="/nmap/"><span class="glyphicon glyphicon-home"></span>&nbsp; Home</a></li>
-                <li {% if request.path == '/nmap/scan' %}class="active"{% endif %}>
-                    <a href="/nmap/scan"><span class="glyphicon glyphicon-fire"></span>&nbsp; Scan</a></li>
-                <li {% if request.path == '/nmap/tasks' %}class="active"{% endif %}>
-                    <a href="/nmap/tasks"><span class="glyphicon glyphicon-book"></span>&nbsp; Tasks</a></li>
-                <li {% if '/nmap/reports/' in request.path %}class="active"{% endif %}>
-                    <a href="/nmap/reports/1"><span class="glyphicon glyphicon-list-alt"></span>&nbsp; Reports</a></li>
-                <li {% if '/nmap/addresses/' in request.path %}class="active"{% endif %}>
-                    <a href="/nmap/addresses/1"><span class="glyphicon glyphicon-superscript"></span>&nbsp; Addresses</a></li>
-                <li {% if request.path == '/nmap/compare' %}class="active"{% endif %}>
-                    <a href="/nmap/compare"><span class="glyphicon glyphicon-random"></span>&nbsp; Compare</a></li>
+                <ul class="nav navbar-nav">
 
-                <li class="dropdown">
-                <a href="#" class="dropdown-toggle" data-toggle="dropdown" role="button" aria-haspopup="true" aria-expanded="false">Database <span class="caret"></span></a>
-                    <ul class="dropdown-menu">
-                        <li {% if request.path == '/nmap/db' %}class="active"{% endif %}>
-                            <a href="/nmap/db"><span class="glyphicon glyphicon-hdd"></span>&nbsp; Overview</a></li>
-                        <li role="separator" class="divider"></li>
-                        <li {% if request.path == '/nmap/export' %}class="active"{% endif %}>
-                            <a href="/nmap/export"><span class="glyphicon glyphicon-export"></span>&nbsp; Export</a></li>
-                        <li {% if request.path == '/nmap/import' %}class="active"{% endif %}>
-                            <a href="/nmap/import"><span class="glyphicon glyphicon-import"></span>&nbsp; Import</a></li>
-                    </ul>
-                </li>
+                    {{ helpers.render_nav_link("Home", "home", "/nmap/") }}
+                    {{ helpers.render_nav_link("Scan", "fire", "/nmap/scan") }}
+                    {{ helpers.render_nav_link("Tasks", "book", "/nmap/tasks") }}
+                    {{ helpers.render_nav_link("Reports", "list-alt", "/nmap/reports/1") }}
+                    {{ helpers.render_nav_link("Addresses", "superscript", "/nmap/addresses/1") }}
+                    {{ helpers.render_nav_link("Compare", "random", "/nmap/compare") }}
+
+                    <li class="dropdown">
+                    <a href="#" class="dropdown-toggle" data-toggle="dropdown" role="button" aria-haspopup="true" aria-expanded="false">Database <span class="caret"></span></a>
+                        <ul class="dropdown-menu">
+                            {{ helpers.render_nav_link("Overview", "hdd", "/nmap/db") }}
+                            <li role="separator" class="divider"></li>
+                            {{ helpers.render_nav_link("Export", "export", "/nmap/export") }}
+                            {{ helpers.render_nav_link("Import", "import", "/nmap/import") }}
+                        </ul>
+                    </li>
 
 
-            </ul>
-            <ul class="nav navbar-nav navbar-right">
-                {% if current_user.has_permission("admin") %}
-                <li class="dropdown">
-                <a href="#" class="dropdown-toggle" data-toggle="dropdown" role="button" aria-haspopup="true" aria-expanded="false"><span class="glyphicon glyphicon-wrench"></span>&nbsp; Admin <span class="caret"></span></a>
-                    <ul class="dropdown-menu">
-
-                        <li {% if request.path == '/admin/' %}class="active"{% endif %}>
-                            <a href="/admin/"><span class="glyphicon glyphicon-cog"></span> Settings</a></li>
-                        <li role="separator" class="divider"></li>
-                        <li {% if request.path == '/admin/users' %}class="active"{% endif %}>
-                            <a href="/admin/users"><span class="glyphicon glyphicon-user"></span> Users</a></li>
-                        <li {% if request.path == '/admin/permissions' %}class="active"{% endif %}>
-                            <a href="/admin/permissions"><span class="glyphicon glyphicon-pawn"></span> Permissions</a></li>
-
-                    </ul>
-                </li>
-                {% endif %}
-                <li {% if request.path == '/nmap/profile' %}class="active"{% endif %}>
-                    <a href="/nmap/profile"><span class="glyphicon glyphicon-user"></span>&nbsp; {{ current_user.username }}</a></li>
-                <li><a href="/logout"><span class="glyphicon glyphicon-off"></span>&nbsp; Logout</a>
-            </ul>
+                </ul>
+                <ul class="nav navbar-nav navbar-right">
+                    {% if current_user.has_permission("admin") %}
+                    <li class="dropdown">
+                    <a href="#" class="dropdown-toggle" data-toggle="dropdown" role="button" aria-haspopup="true" aria-expanded="false"><span class="glyphicon glyphicon-wrench"></span>&nbsp; Admin <span class="caret"></span></a>
+                        <ul class="dropdown-menu">
+                            {{ helpers.render_nav_link("Settings", "cog", "/admin/") }}
+                            <li role="separator" class="divider"></li>
+                            {{ helpers.render_nav_link("Users", "user", "/admin/users") }}
+                            {{ helpers.render_nav_link("Permissions", "pawn", "/admin/permissions") }}
+                        </ul>
+                    </li>
+                    {% endif %}
+                    {{ helpers.render_nav_link(current_user.username, "user", "/profile") }}
+                    {{ helpers.render_nav_link("Logout", "off", "/logout") }}
+                </ul>
             </div><!-- /.navbar-collapse -->
         </div><!-- /.container-fluid -->
     </nav><!-- /.navbar fixed -->

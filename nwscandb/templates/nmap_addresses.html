@@ -19,7 +19,7 @@
                 <td id="{{ address_detail.id }}">{{ address_detail.source }}</td>
 
                 <td id="{{ address_detail.id }}" class="detailslink">
-                    <a href="{{ url_for('nmap.nmap_report', report_id=address_detail.report_id) }}">Details</a></td>
+                    <a href="{{ url_for('nmap.report', report_id=address_detail.report_id) }}">Details</a></td>
             </tr>
           {% endfor %}
         </table>
