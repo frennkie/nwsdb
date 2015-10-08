@@ -54,8 +54,10 @@
                     <a href="/nmap/scan"><span class="glyphicon glyphicon-fire"></span>&nbsp; Scan</a></li>
                 <li {% if request.path == '/nmap/tasks' %}class="active"{% endif %}>
                     <a href="/nmap/tasks"><span class="glyphicon glyphicon-book"></span>&nbsp; Tasks</a></li>
-                <li {% if request.path == '/nmap/reports/1' %}class="active"{% endif %}>
+                <li {% if '/nmap/reports/' in request.path %}class="active"{% endif %}>
                     <a href="/nmap/reports/1"><span class="glyphicon glyphicon-list-alt"></span>&nbsp; Reports</a></li>
+                <li {% if '/nmap/addresses/' in request.path %}class="active"{% endif %}>
+                    <a href="/nmap/addresses/1"><span class="glyphicon glyphicon-superscript"></span>&nbsp; Addresses</a></li>
                 <li {% if request.path == '/nmap/compare' %}class="active"{% endif %}>
                     <a href="/nmap/compare"><span class="glyphicon glyphicon-random"></span>&nbsp; Compare</a></li>
 

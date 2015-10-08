@@ -87,8 +87,8 @@ class User(db.Model, UserMixin):
     inactive = db.Column(db.SmallInteger)
     created = db.Column(db.DateTime)
     last_login = db.Column(db.DateTime)
-    last_update = db.Column(db.DateTime, default=datetime.datetime.now,
-                         onupdate=datetime.datetime.now, nullable=False)
+    last_update = db.Column(db.DateTime, default=datetime.datetime.utcnow(),
+                         onupdate=datetime.datetime.utcnow(), nullable=False)
     sso_enabled = db.Column(db.SmallInteger)
     nmaptasks = db.relationship('NmapTask', backref=db.backref('buser'))
     permissions = db.relationship('Permission',
