@@ -79,10 +79,24 @@ python setup.py install
 
 # Update configuration (config.py)
 
-# run celery
-celery -A nwscandb.tasks worker --loglevel=debug
 
-# add a user, start the web app in debug and login
-python manage.py add_user <username> <email>
+```
+# Database setup
+```
+CREATE DATABASE nwscandb;
+GRANT ALL PRIVILEGES ON nwscandb.* TO nwscandb@localhost IDENTIFIED BY 'password';
+FLUSH PRIVILEGES;
+
+```
+
+# run celery
+```
+celery -A nwscandb.tasks worker --loglevel=debug
+```
+
+# add a admin start the web app in debug and login
+```
+
+python manage.py add_admin <username> <email>
 python manage.py runserver -p 80
 ```

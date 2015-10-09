@@ -1,10 +1,10 @@
 import getpass
-import sys
 from flask.ext.script import Manager, Server
 from flask.ext.migrate import Migrate, MigrateCommand
+from flask import Blueprint
 from nwscandb import app
 from nwscandb import db
-from nwscandb.models import Users, Permission
+from nwscandb.models import Users, UserGroup
 
 
 manager = Manager(app)
@@ -19,28 +19,50 @@ manager.add_command('db', MigrateCommand)
 
 @manager.command
 def add_admin(username, email):
-    """Create an admin user"""
-    _admin_permission = Permission.query.first()
-    if _admin_permission is None:
+    """Create a admin user interactively
+
+    This function creates an admin account and adds the account to the "admin"
+    group. If this group does not yet exist (with id==1) it will also be created.
+    During the creation the user will be prompted to enter a password twice.
+
+    Args:
+        username (str): Username
+        email (str): E-Mail Address
+
+    Returns:
+        True or False as the result of creating the admin user
+
+    """
+
+    _admin_group = UserGroup.query.first()
+    if _admin_group is None:
         try:
-            Permission.add(id=1, name="admin")
+            _admin_group = UserGroup.add(id=1, name="admin", comment="Admin Group (1)")
         except Exception as e:
-            print("Failed to add \"admin\" permission: " + str(e))
-            sys.exit()
-    # create user (using function defined below)
-    _u = add_user(username, email)
-    # now add permission to newly created user
-    _u.permissions.append(_admin_permission)
+            print("Failed to add \"admin\" group: " + str(e)) # TODO print
+            return False
+    elif _admin_group.name != "admin":
+        return False
+    else:
+        pass
+
+    # create user and add to admin group
+    _new_admin_user = add_user(username, email)
+    _admin_group.users.append(_new_admin_user)
     db.session.commit()
+    return True
 
 
 @manager.command
-def add_user(username, email):
+def add_user(username, user_group_name, email):
     """Create a user"""
     __p1 = getpass.getpass()
     __p2 = getpass.getpass("Confirm password:")
     if __p1 == __p2 and len(__p1):
-        return Users.add(username=username, email=email, clear_pw=__p1)
+        return Users.add(username=username,
+                         user_group_name=user_group_name,
+                         email=email,
+                         clear_pw=__p1)
     else:
         print "Error: passwords do not match"
 
@@ -74,6 +96,28 @@ def create_db():
     """
     db.create_all()
 
+
+def get_list_of_routes():
+    rules = []
+    for rule in app.url_map.iter_rules():
+        rules.append(rule.rule)
+    return rules
+
+
+def get_list_of_endpoints():
+    endpoints = []
+    for rule in app.url_map.iter_rules():
+        endpoints.append(rule.endpoint)
+    return endpoints
+
+
+
+
 if __name__ == "__main__":
+
+    #print(get_list_of_routes())
+    #print(get_list_of_endpoints())
+    # now call a function that adds all endpoints to the admin user
+
     manager.run()
 

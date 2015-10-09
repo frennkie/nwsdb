@@ -2,6 +2,7 @@ import bcrypt
 import datetime
 from flask.ext.login import UserMixin
 from flask.ext.sqlalchemy import SQLAlchemy
+from sqlalchemy.orm.exc import NoResultFound
 from sqlalchemy_utils import IPAddressType
 from sqlalchemy import asc, desc
 
@@ -50,42 +51,33 @@ class Users(object):
         return _user
 
     @classmethod
-    def add(cls, username=None, email=None, clear_pw=None, inactive=0):
+    def add(cls, username=None, user_group_name=None, email=None, clear_pw=None, inactive=0):
         """add new user to database"""
 
-        if not (username and email and clear_pw):
-            print("Error: username, email and clear_pw are all mandatory.")
-            raise Exception("Neither username, email nor clear_pw can be None.")
+        if not (username and user_group_name and email and clear_pw):
+            print("Error: username, group, email and clear_pw are all mandatory.")
+            raise Exception("Username, group, email and clear_pw are all mandatory.")
 
         if len(Users.find(username=username)) > 0:
             print("Error: username already in use.")
             raise ValueError("Username already in use.")
         else:
-
-            new_user = User(username=username,
-                            email=email,
-                            clear_pw=clear_pw,
-                            inactive=inactive)
-            db.session.add(new_user)
-            db.session.commit()
-            return new_user
-
-""" permissions handles many-to-many relation of Permission and User Class """
-permissions = db.Table('permissions',
-    db.Column('permission_id', db.Integer, db.ForeignKey('permission.id')),
-    db.Column('user_id', db.Integer, db.ForeignKey('user.id'))
-)
-
-
-user_group_table = db.Table("user_group",
-                            db.Column('user_id', db.Integer, db.ForeignKey('user.id')),
-                            db.Column('group_id', db.Integer, db.ForeignKey('group.id'))
-)
+            user_group = UserGroup.get_or_create_by_name(name=user_group_name)
+            if user_group is None:
+                raise Exception("Problem with UserGroup: " + user_group_name)
+            else:
+                new_user = User(username=username,
+                                email=email,
+                                clear_pw=clear_pw,
+                                inactive=inactive)
+                user_group.users.append(new_user)
+                db.session.add(new_user)
+                db.session.commit()
+                return new_user
 
 
 class User(db.Model, UserMixin):
     """User Class and SQL Table"""
-    __table_args__ = {'sqlite_autoincrement': True}
     id = db.Column(db.Integer, primary_key=True)
     username = db.Column(db.String(128))
     password = db.Column(db.String(128))
@@ -97,25 +89,25 @@ class User(db.Model, UserMixin):
                             onupdate=datetime.datetime.utcnow(), nullable=False)
     sso_enabled = db.Column(db.SmallInteger)
 
-    nmaptasks = db.relationship('NmapTask', backref=db.backref('buser'))
+    nmaptasks = db.relationship('NmapTask', backref=db.backref('nmaptask'))
 
-    group_id = db.relationship('Group',
-                               secondary=user_group_table,
-                               lazy='dynamic',
-                               backref=db.backref('users', lazy='dynamic'))
+    user_group_id = db.Column(db.Integer, db.ForeignKey('user_group.id'))
 
-    permissions = db.relationship('Permission',
-                                  secondary=permissions,
-                                  lazy='dynamic',
-                                  backref=db.backref('users', lazy='dynamic'))
+    def __init__(self, id=None,
+                 username=None,
+                 user_group_id=None,
+                 email=None,
+                 clear_pw=None,
+                 inactive=0,
+                 sso_enabled=0):
+        # TODO id should not be set.. but username, clear_pw (and maybe email) are mandatory!
 
-    def __init__(self, id=None, username=None,
-                                email=None,
-                                clear_pw=None,
-                                inactive=0,
-                                sso_enabled=0):
+        if username is None:
+            raise Exception("Username can not be empty")
+
         self.id = id
         self.username = username
+        self.user_group_id = user_group_id
         _pw = bcrypt.hashpw(clear_pw + app.config["PEPPER"], bcrypt.gensalt())
         self.password = _pw
         self.email = email
@@ -149,61 +141,16 @@ class User(db.Model, UserMixin):
         db.session.add(self)
         db.session.commit()
 
-    def has_permission(self, name):
-        """Check out whether a user has a permission or not."""
-        permission = Permission.query.filter_by(name=name).first()
-        # if the permission does not exist or was not given to the user
-        if not permission or not permission in self.permissions:
-            return False
+    def has_permission(self, name=None):
         return True
 
-    def grant_permission(self, name):
-        """Grant a permission to a user."""
-        permission = Permission.query.filter_by(name=name).first()
-        if permission and permission in self.permissions:
-            return
-        if not permission:
-            permission = Permission()
-            permission.name = name
-            db.session.add(permission)
-            db.session.commit()
-        self.permissions.append(permission)
 
-    def revoke_permission(self, name):
-        """Revoke a given permission for a user."""
-        permission = Permission.query.filter_by(name=name).first()
-        if not permission or not permission in self.permissions:
-            return
-        self.permissions.remove(permission)
-
-
-class Group(db.Model):
+class UserGroup(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     name = db.Column(db.String(20))
     comment = db.Column(db.String(128))
 
-    user_id = db.relationship('User',
-                              secondary=user_group_table,
-                              lazy='dynamic',
-                              backref=db.backref('groups', lazy='dynamic'))
-
-    def __init__(self, id=None, name=None, comment=None, user_id=None):
-        self.id = id
-        self.name = name
-        self.comment = comment
-        self.user_id = user_id
-
-    def __repr__(self):
-        return "<{0} {1}: {2} ({3})>".format(self.__class__.__name__,
-                                             self.id,
-                                             self.name,
-                                             self.comment)
-
-
-class Permission(db.Model):
-    id = db.Column(db.Integer, primary_key=True)
-    name = db.Column(db.String(20))
-    comment = db.Column(db.String(128))
+    users = db.relationship('User', backref=db.backref('user_group'))
 
     def __init__(self, id=None, name=None, comment=None):
         self.id = id
@@ -218,7 +165,7 @@ class Permission(db.Model):
 
     @classmethod
     def add(cls, id=None, name=None, comment=None):
-        """Add new permission"""
+        """Add new UserGroup"""
         if name is None:
             print("name is required!")
             raise Exception("name is required!")
@@ -226,22 +173,33 @@ class Permission(db.Model):
             print("Error: don't hardcode Permission IDs (except for admin).")
             raise Exception("Don't hardcode Permission IDs (except for admin).")
 
-        _new_perm = Permission(id=id, name=name, comment=comment)
-        db.session.add(_new_perm)
+        _new_user_group = UserGroup(id=id, name=name, comment=comment)
+        db.session.add(_new_user_group)
         db.session.commit()
-        return _new_perm
+        return _new_user_group
 
-    def delete(self):
-        if self.name == "admin":
-            raise Exception("Group \"admin\" can not be deleted.")
+    @classmethod
+    def get_or_create_by_name(cls, name=None):
+        """get or create a user group by name
+
+
+        Args:
+            cls: class itself
+            name (str): name of group that may of may not exist
+
+        Returns:
+            Object of Class UserGroup or None
+
+        """
 
         try:
-            db.session.delete(self)
-            db.session.commit()
-            return True
-        except Exception as e:
-            print("Error: " + str(e))
-            return False
+            res = UserGroup.query.filter_by(name=name).one()
+            return res
+        except NoResultFound:
+            return UserGroup.add(name=name, comment="_auto_created_")
+        except Exception as err:
+            print("Failed to get_or_create Group: " + str(err))
+            return None
 
 
 class NmapTask(db.Model):
@@ -703,7 +661,7 @@ class NmapReportMeta(db.Model):
         pass
 
 
-contacts = db.Table("contacts",
+contact_addressdetail_table = db.Table("contact_addressdetail",
     db.Column('contact_id', db.Integer, db.ForeignKey('contact.id')),
     db.Column('address_detail_id', db.Integer, db.ForeignKey('address_detail.id'))
 )
@@ -717,7 +675,7 @@ class AddressDetail(db.Model):
     source = db.Column(db.String(128))
     ip_address = db.Column(IPAddressType)
     report_id = db.Column(db.Integer)
-    contact = db.relationship("Contact", secondary=contacts)
+    contact = db.relationship("Contact", secondary=contact_addressdetail_table)
 
     def __init__(self, id=None, created=datetime.datetime.utcnow(), name=None,
                  comment=None, source=None, ip_address=None, report_id=None):
@@ -746,7 +704,7 @@ class Contact(db.Model):
     created = db.Column(db.DateTime)
     name = db.Column(db.String(128))
     email = db.Column(db.String(128))
-    address_detail = db.relationship("AddressDetail", secondary=contacts)
+    address_detail = db.relationship("AddressDetail", secondary=contact_addressdetail_table)
 
     def __init__(self, id=None, created=datetime.datetime.utcnow(), name=None,
                  email=None):

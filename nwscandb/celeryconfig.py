@@ -1,5 +1,4 @@
 import datetime
-from celery.schedules import crontab
 from nwscandb.config import *
 basedir = os.path.abspath(os.path.dirname(__file__))
 

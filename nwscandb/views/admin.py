@@ -1,6 +1,6 @@
 from nwscandb import app
 from nwscandb import db
-from nwscandb.models import User, Users, Permission
+from nwscandb.models import User, Users, UserGroup
 from flask import Blueprint, render_template, request, redirect, url_for, flash, abort
 from flask.ext.login import login_required, current_user
 
@@ -31,6 +31,8 @@ def users(page=1):
     if not current_user.has_permission("admin"):
         abort(403)
 
+    print(request.endpoint)
+
     _query = User.query
     _items_per_page = app.config["ITEMS_PER_PAGE"]
     _items_paged = _query.paginate(page, _items_per_page)
@@ -38,7 +40,6 @@ def users(page=1):
     return render_template('admin_users.html',
                            items_paged=_items_paged,
                            endpoint=request.endpoint)
-
 
 
 @appmodule.route("/add_user", methods=["GET", "POST"])
@@ -72,13 +73,13 @@ def add_user():
 
                 flash("Successfully created " + _username + " with ID " +
                       str(new_user.id), 'success')
-                return redirect(url_for(admin.users, page=1))
+                return redirect(url_for("admin.users", page=1))
             except ValueError as ve:
                 flash("Failed to add User: Username already in use.", "danger")
-                return redirect(url_for(admin.users, page=1))
+                return redirect(url_for("admin.users", page=1))
             except Exception as e:
                 flash("Something went wrong.", "danger")
-                return redirect(url_for(admin.users, page=1))
+                return redirect(url_for("admin.users", page=1))
 
     else:
         return render_template("admin_add_user.html")
@@ -100,23 +101,23 @@ def change_user_password(user_id):
                 and 'password2' in request.form
                 and len(request.form['password2'])):
             flash("Something went wrong.", "danger")
-            return redirect(url_for(admin.users, page=1))
+            return redirect(url_for("admin.users", page=1))
 
         _password = str(request.form['password'])
         _password2 = str(request.form['password2'])
 
         if _password != _password2:
             flash("Entered Passwords do not match.", "danger")
-            return redirect(url_for(admin.users, page=1))
+            return redirect(url_for("admin.users", page=1))
 
         try:
             _user.change_password(clear_pw=_password)
             flash("Successfully changed password for: " + _user.username,
                   "success")
-            return redirect(url_for(admin.users, page=1))
+            return redirect(url_for("admin.users", page=1))
         except Exception as e:
             flash("Something went wrong.", "danger")
-            return redirect(url_for(admin.users, page=1))
+            return redirect(url_for("admin.users", page=1))
 
     return render_template("admin_change_user_pw.html", user=_user)
 
@@ -139,9 +140,61 @@ def delete_user(user_id):
 
     except:
         flash("Something went wrong.", "danger")
-        return redirect(url_for(admin.users, page=1))
+        return redirect(url_for("admin.users", page=1))
+
+"""start"""
 
 
+@appmodule.route('/user_groups/')
+@login_required
+def read_user_groups():
+    return redirect(url_for("admin.read_user_groups_paged", page=1))
+
+
+@appmodule.route('/user_groups/<int:page>')
+@login_required
+def read_user_groups_paged(page=1):
+    """user_groups_paged view """
+
+    print(request.endpoint)
+
+    _query = UserGroup.query
+    _items_per_page = app.config["ITEMS_PER_PAGE"]
+    _items_paged = _query.paginate(page, _items_per_page)
+
+    return render_template('admin_user_groups.html',
+                           items_paged=_items_paged,
+                           endpoint=request.endpoint)
+
+
+@appmodule.route("/user_group/<int:user_group_id>/create")
+@login_required
+def create_user_group(user_group_id):
+    pass
+
+
+@appmodule.route("/user_group/<int:user_group_id>")
+@appmodule.route("/user_group/<int:user_group_id>/read")
+@login_required
+def read_user_group(user_group_id):
+    return redirect(url_for("admin.user_groups_paged", page=1))
+
+
+@appmodule.route("/user_group/<int:user_group_id>/update", methods=['GET', 'POST'])
+@login_required
+def update_user_group(user_group_id):
+    pass
+
+
+@appmodule.route("/user_group/<int:user_group_id>/delete")
+@login_required
+def delete_user_group(user_group_id):
+    pass
+
+
+"""end"""
+
+"""
 @appmodule.route("/permissions")
 @appmodule.route("/permissions/")
 @login_required
@@ -152,7 +205,7 @@ def permissions_redirect():
 @appmodule.route("/permissions/<int:page>")
 @login_required
 def permissions(page=1):
-    """admin page - used to manage user accounts and permissions"""
+    """ """ admin page - used to manage user accounts and permissions """ """
     if not current_user.has_permission("admin"):
         abort(403)
     _permissions = Permission.query.paginate(page, app.config["ITEMS_PER_PAGE"])
@@ -165,7 +218,7 @@ def permissions(page=1):
 @appmodule.route("/add_permission", methods=["GET", "POST"])
 @login_required
 def add_permission():
-    """add permission"""
+    """ """add permission """ """
     if not current_user.has_permission("admin"):
         abort(403)
 
@@ -197,7 +250,7 @@ def add_permission():
 @appmodule.route("/permission/<int:permission_id>/delete")
 @login_required
 def delete_permission(permission_id):
-    """delete permission"""
+    """ """ delete permission """ """
     if not current_user.has_permission("admin"):
         abort(403)
 
@@ -217,3 +270,4 @@ def delete_permission(permission_id):
         flash("Something went wrong.", "danger")
         return redirect("/admin/permissions/1")
 
+"""
