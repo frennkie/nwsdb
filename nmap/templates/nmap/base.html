@@ -9,30 +9,31 @@
 
     <title>{% block title %}{% endblock %} - Web Nmap</title>
 
+    {% load staticfiles %}
+    {% load sniplates %}
+    {% load_widgets widgets_base="nmap/widgets_base.html" %}
+
     <!-- Bootstrap -->
     <!-- Latest compiled and minified CSS -->
-    <link rel="stylesheet" href="/static/css/bootstrap.min.css">
+    <link rel="stylesheet" href="/static/nmap/css/bootstrap.min.css">
     <!-- Optional theme -->
-    <!--<link rel="stylesheet" href="/static/css/bootstrap-theme.min.css">-->
+    <!--<link rel="stylesheet" href="/static/nmap/css/bootstrap-theme.min.css">-->
 
     <!-- custom css -->
-    <link rel="stylesheet" href="/static/css/custom-base.css">
+    <link rel="stylesheet" href="/static/nmap/css/custom-base.css">
 
     <!-- jQuery (necessary for Bootstrap's JavaScript plugins) -->
-    <script src="/static/js/jquery-1.11.3.min.js"></script>
+    <script src="/static/nmap/js/jquery-1.11.3.min.js"></script>
 
     <!-- Latest compiled and minified JavaScript -->
-    <script src="/static/js/bootstrap.min.js"></script>
+    <script src="/static/nmap/js/bootstrap.min.js"></script>
 
     <!-- Latest compiled and minified JavaScript -->
-    <script src="/static/js/moment-with-locales.min.js"></script
+    <script src="/static/nmap/js/moment-with-locales.min.js"></script
 
   </head>
 
   <body role="document">
-
-  {% load sniplates %}
-  {% load_widgets widgets_base="widgets_base.html" %
 
     <!-- navbar fixed -->
     <nav class="navbar navbar-default navbar-fixed-top">
@@ -53,41 +54,42 @@
                 <ul class="nav navbar-nav">
 
                     {% widget "widgets_base:render_nav_link" title="Home" icon="home" link="/nmap/" %}
-                    {{ helpers.render_nav_link("Home", "home", "/nmap/") }}
-                    {{ helpers.render_nav_link("Scan", "fire", "/nmap/scan") }}
-                    {{ helpers.render_nav_link("Tasks", "book", "/nmap/tasks") }}
-                    {{ helpers.render_nav_link("Reports", "list-alt", "/nmap/reports/1") }}
-                    {{ helpers.render_nav_link("Addresses", "superscript", "/nmap/addresses/1") }}
-                    {{ helpers.render_nav_link("Compare", "random", "/nmap/compare") }}
+                    {% widget "widgets_base:render_nav_link" title="Scan" icon="fire" link="/nmap/scan" %}
+                    {% widget "widgets_base:render_nav_link" title="Tasks" icon="book" link="/nmap/tasks" %}
+                    {% widget "widgets_base:render_nav_link" title="Reports" icon="alt" link="/nmap/reports/1" %}
+                    {% widget "widgets_base:render_nav_link" title="Addresses" icon="superscript" link="/nmap/addresses1" %}
+                    {% widget "widgets_base:render_nav_link" title="Compare" icon="random" link="/nmap/compare" %}
+
 
                     <li class="dropdown">
                     <a href="#" class="dropdown-toggle" data-toggle="dropdown" role="button" aria-haspopup="true" aria-expanded="false">Database <span class="caret"></span></a>
                         <ul class="dropdown-menu">
-                            {{ helpers.render_nav_link("Overview", "hdd", "/nmap/db") }}
+                            {% widget "widgets_base:render_nav_link" title="Overview" icon="hdd" link="/nmap/db" %}
                             <li role="separator" class="divider"></li>
-                            {{ helpers.render_nav_link("Export", "export", "/nmap/export") }}
-                            {{ helpers.render_nav_link("Import", "import", "/nmap/import") }}
+                            {% widget "widgets_base:render_nav_link" title="Export" icon="export" link="/nmap/export" %}
+                            {% widget "widgets_base:render_nav_link" title="Import" icon="import" link="/nmap/import" %}
                         </ul>
                     </li>
 
 
                 </ul>
                 <ul class="nav navbar-nav navbar-right">
-                    {% if current_user.has_permission("admin") %}
+                    {% if "foo" == "bar" %} <!-- current_user.has_permission("admin") -->
+
                     <li class="dropdown">
                     <a href="#" class="dropdown-toggle" data-toggle="dropdown" role="button" aria-haspopup="true" aria-expanded="false"><span class="glyphicon glyphicon-wrench"></span>&nbsp; Admin <span class="caret"></span></a>
                         <ul class="dropdown-menu">
-                            {{ helpers.render_nav_link("Settings", "cog", "/admin/") }}
+                            {% widget "widgets_base:render_nav_link" title="Settings" icon="cog" link="/admin" %}
                             <li role="separator" class="divider"></li>
-                            {{ helpers.render_nav_link("Users", "user", "/admin/users") }}
-                            {{ helpers.render_nav_link("User Groups", "user", "/admin/user_groups") }}
-                            {{ helpers.render_nav_link("Roles", "user", "/admin/roles") }}
-                            {{ helpers.render_nav_link("Abilities", "pawn", "/admin/abilities") }}
+                            {% widget "widgets_base:render_nav_link" title="Users" icon="user" link="/admin/users" %}
+                            {% widget "widgets_base:render_nav_link" title="User Groups" icon="user" link="/admin/user_groups" %}
+                            {% widget "widgets_base:render_nav_link" title="Roles" icon="user" link="/admin/roles" %}
+                            {% widget "widgets_base:render_nav_link" title="Abilities" icon="pawn" link="/admin/abilities" %}
                         </ul>
                     </li>
                     {% endif %}
-                    {{ helpers.render_nav_link(current_user.username, "user", "/profile") }}
-                    {{ helpers.render_nav_link("Logout", "off", "/logout") }}
+                    {% widget "widgets_base:render_nav_link" title=current_user.username icon="user" link="/profile" %}
+                    {% widget "widgets_base:render_nav_link" title="Logout" icon="off" link="/logout" %}
                 </ul>
             </div><!-- /.navbar-collapse -->
         </div><!-- /.container-fluid -->
@@ -99,17 +101,25 @@
       <div class="page-header">
         <!-- Display flashed messages -->
         <!-- possible values: alert alert-[success|info|warning|danger] -->
-        {% with messages = get_flashed_messages(with_categories=true) %}
-          {% if messages %}
+        <!-- with messages = get_flashed_messages(with_categories=true) -->
+
             <!-- Need this blank line otherwise the flashed message would overlap
                 with the navigation bar. -->
-            {% for category, message in messages %}
+             <!-- for category, message in messages -->
+                <!--
                 <div class="alert alert-{{ category }}">{{ message }}
                     <button type="button" class="close" data-dismiss="alert" aria-label="Close"><span aria-hidden="true">&times;</span></button>
                 </div>
-            {% endfor %}
+                -->
+
+          {% if messages %}
+          <ul class="messages">
+              {% for message in messages %}
+              <li {% if message.tags %} class="{{ message.tags }}" {% endif %} > {{ message }}</li>
+              {% endfor %}
+          </ul>
           {% endif %}
-        {% endwith %}
+
       </div>
 
       <div class="jumbotron" style="padding-bottom: 25px">
