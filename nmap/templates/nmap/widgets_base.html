@@ -1,0 +1,7 @@
+
+{% block render_nav_link %}
+    <li >
+        <a href="{{ link }}"><span class="glyphicon glyphicon-{{ icon }}"></span>&nbsp; {{ title|default:'default' }}</a>
+    </li>
+{% endblock %}
+

@@ -1,0 +1,32 @@
+{% extends "base.html" %}
+{% block title %}Addresses{% endblock %}
+{% block body %}
+    <!--Body content-->
+
+        {% import '_helpers.html' as helpers %}
+
+        <legend>Showing Reports from finished tasks</legend>
+        <table id="tasktable" class="table table-striped">
+        <th>ID</th><th>IP</th><th>Created</th><th>Name</th><th>Comment</th><th>Source</th>
+
+          {% for address_detail in address_detail_all_page.items %}
+            <tr>
+                <td id="{{ address_detail.id }}">{{ address_detail.id }}</td>
+                <td id="{{ address_detail.id }}">{{ address_detail.ip_address }}</td>
+                <td id="{{ address_detail.id }}">{{ address_detail.created }}</td>
+                <td id="{{ address_detail.id }}">{{ address_detail.name }}</td>
+                <td id="{{ address_detail.id }}">{{ address_detail.comment }}</td>
+                <td id="{{ address_detail.id }}">{{ address_detail.source }}</td>
+
+                <td id="{{ address_detail.id }}" class="detailslink">
+                    <a href="{{ url_for('nmap.report', report_id=address_detail.report_id) }}">Details</a></td>
+            </tr>
+          {% endfor %}
+        </table>
+
+        {{ helpers.paginate(address_detail_all_page) }}
+
+
+
+
+{% endblock %}
