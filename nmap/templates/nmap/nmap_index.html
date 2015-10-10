@@ -4,4 +4,22 @@
     <!--Body content-->
     <legend>NMAP Web Tool</legend>
     <p>Bla desc bla</p>
+
+
+    {% if contacts %}
+        <ul>
+        {% for contact in contacts %}
+            <li>{{ contact }}, {{ contact.email }} </li>
+        {% endfor %}
+        </ul>
+    {% else %}
+        <p>No polls are available.</p>
+    {% endif %}
+
+    {% if user.is_authenticated %}
+        <p>Welcome, {{ user.username }}. Thanks for logging in.</p>
+    {% else %}
+        <p>Welcome, new user. Please log in.</p>
+    {% endif %}
+
 {% endblock %}

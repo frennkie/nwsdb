@@ -4,6 +4,7 @@ from django.utils import timezone
 
 # Create your models here.
 
+
 class Contact(models.Model):
     """Class for Contact
 

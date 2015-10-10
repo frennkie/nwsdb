@@ -15,21 +15,21 @@
 
     <!-- Bootstrap -->
     <!-- Latest compiled and minified CSS -->
-    <link rel="stylesheet" href="/static/nmap/css/bootstrap.min.css">
+    <link rel="stylesheet" href="/static/css/bootstrap.min.css">
     <!-- Optional theme -->
     <!--<link rel="stylesheet" href="/static/nmap/css/bootstrap-theme.min.css">-->
 
-    <!-- custom css -->
+    <!-- custom nmap css -->
     <link rel="stylesheet" href="/static/nmap/css/custom-base.css">
 
     <!-- jQuery (necessary for Bootstrap's JavaScript plugins) -->
-    <script src="/static/nmap/js/jquery-1.11.3.min.js"></script>
+    <script src="/static/js/jquery-1.11.3.min.js"></script>
 
     <!-- Latest compiled and minified JavaScript -->
-    <script src="/static/nmap/js/bootstrap.min.js"></script>
+    <script src="/static/js/bootstrap.min.js"></script>
 
     <!-- Latest compiled and minified JavaScript -->
-    <script src="/static/nmap/js/moment-with-locales.min.js"></script
+    <script src="/static/js/moment-with-locales.min.js"></script
 
   </head>
 
@@ -54,42 +54,42 @@
                 <ul class="nav navbar-nav">
 
                     {% widget "widgets_base:render_nav_link" title="Home" icon="home" link="/nmap/" %}
-                    {% widget "widgets_base:render_nav_link" title="Scan" icon="fire" link="/nmap/scan" %}
-                    {% widget "widgets_base:render_nav_link" title="Tasks" icon="book" link="/nmap/tasks" %}
+                    {% widget "widgets_base:render_nav_link" title="Scan" icon="fire" link="/nmap/scan/" %}
+                    {% widget "widgets_base:render_nav_link" title="Tasks" icon="book" link="/nmap/tasks/" %}
                     {% widget "widgets_base:render_nav_link" title="Reports" icon="alt" link="/nmap/reports/1" %}
-                    {% widget "widgets_base:render_nav_link" title="Addresses" icon="superscript" link="/nmap/addresses1" %}
-                    {% widget "widgets_base:render_nav_link" title="Compare" icon="random" link="/nmap/compare" %}
+                    {% widget "widgets_base:render_nav_link" title="Addresses" icon="superscript" link="/nmap/addresses/1" %}
+                    {% widget "widgets_base:render_nav_link" title="Compare" icon="random" link="/nmap/compare/" %}
 
 
                     <li class="dropdown">
                     <a href="#" class="dropdown-toggle" data-toggle="dropdown" role="button" aria-haspopup="true" aria-expanded="false">Database <span class="caret"></span></a>
                         <ul class="dropdown-menu">
-                            {% widget "widgets_base:render_nav_link" title="Overview" icon="hdd" link="/nmap/db" %}
+                            {% widget "widgets_base:render_nav_link" title="Overview" icon="hdd" link="/nmap/db/" %}
                             <li role="separator" class="divider"></li>
-                            {% widget "widgets_base:render_nav_link" title="Export" icon="export" link="/nmap/export" %}
-                            {% widget "widgets_base:render_nav_link" title="Import" icon="import" link="/nmap/import" %}
+                            {% widget "widgets_base:render_nav_link" title="Export" icon="export" link="/nmap/export/" %}
+                            {% widget "widgets_base:render_nav_link" title="Import" icon="import" link="/nmap/import/" %}
                         </ul>
                     </li>
 
 
                 </ul>
                 <ul class="nav navbar-nav navbar-right">
-                    {% if "foo" == "bar" %} <!-- current_user.has_permission("admin") -->
+                    {% if "foo" == "foo" %} <!-- current_user.has_permission("admin") -->
 
                     <li class="dropdown">
                     <a href="#" class="dropdown-toggle" data-toggle="dropdown" role="button" aria-haspopup="true" aria-expanded="false"><span class="glyphicon glyphicon-wrench"></span>&nbsp; Admin <span class="caret"></span></a>
                         <ul class="dropdown-menu">
-                            {% widget "widgets_base:render_nav_link" title="Settings" icon="cog" link="/admin" %}
+                            {% widget "widgets_base:render_nav_link" title="Settings" icon="cog" link="/admin/" %}
                             <li role="separator" class="divider"></li>
-                            {% widget "widgets_base:render_nav_link" title="Users" icon="user" link="/admin/users" %}
-                            {% widget "widgets_base:render_nav_link" title="User Groups" icon="user" link="/admin/user_groups" %}
-                            {% widget "widgets_base:render_nav_link" title="Roles" icon="user" link="/admin/roles" %}
-                            {% widget "widgets_base:render_nav_link" title="Abilities" icon="pawn" link="/admin/abilities" %}
+                            {% widget "widgets_base:render_nav_link" title="Users" icon="user" link="/admin/users/" %}
+                            {% widget "widgets_base:render_nav_link" title="User Groups" icon="user" link="/admin/user_groups/" %}
+                            {% widget "widgets_base:render_nav_link" title="Roles" icon="user" link="/admin/roles/" %}
+                            {% widget "widgets_base:render_nav_link" title="Abilities" icon="pawn" link="/admin/abilities/" %}
                         </ul>
                     </li>
                     {% endif %}
-                    {% widget "widgets_base:render_nav_link" title=current_user.username icon="user" link="/profile" %}
-                    {% widget "widgets_base:render_nav_link" title="Logout" icon="off" link="/logout" %}
+                    {% widget "widgets_base:render_nav_link" title=user.username icon="user" link="/accounts/"|add:user.username|add:"/" %}
+                    {% widget "widgets_base:render_nav_link" title="Logout" icon="off" link="/accounts/logout/" %}
                 </ul>
             </div><!-- /.navbar-collapse -->
         </div><!-- /.container-fluid -->

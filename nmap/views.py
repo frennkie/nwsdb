@@ -1,9 +1,13 @@
 from django.shortcuts import render
-from django.http import HttpResponse
+from django.contrib.auth.decorators import permission_required
 from .models import Contact
 
 
+#@permission_required('polls.can_vote', login_url='/login/')
 def index(request):
-    contacts = Contact.objects
-    context = {'contacts': contacts}
+    _contacts = Contact.objects.all()
+    context = {'contacts': _contacts}
+    # settings.LOGIN_URL
     return render(request, 'nmap/nmap_index.html', context)
+
+

@@ -15,9 +15,13 @@ Including another URLconf
 """
 from django.conf.urls import include, url
 from django.contrib import admin
+import nmap
 from nmap import urls as nmap_urls
+from accounts import urls as accounts_urls
 
 urlpatterns = [
-    url(r'^nmap/', include(nmap_urls)),
     url(r'^admin/', include(admin.site.urls)),
+    url(r'^$', nmap.views.index, name='Nmap Home'),
+    url(r'^nmap/', include(nmap_urls)),
+    url(r'^accounts/', include(accounts_urls)),
 ]

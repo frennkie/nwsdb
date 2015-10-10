@@ -39,8 +39,15 @@ INSTALLED_APPS = (
     'django.contrib.staticfiles',
     'django_extensions',
     'sniplates',
+    'accounts',
     'nmap',
 )
+
+LOGIN_URL = '/accounts/login'
+LOGOUT_URL = '/accounts/logout'
+LOGIN_REDIRECT_URL = '/nmap'
+
+SESSION_EXPIRE_AT_BROWSER_CLOSE = True
 
 MIDDLEWARE_CLASSES = (
     'django.contrib.sessions.middleware.SessionMiddleware',
@@ -105,4 +112,8 @@ USE_TZ = True
 # Static files (CSS, JavaScript, Images)
 # https://docs.djangoproject.com/en/1.8/howto/static-files/
 
+# Use base_dir + /static/ for general files
+STATICFILES_DIRS = [BASE_DIR + '/common-static/', ]
+
+# User dir: app_name + /static/ + app_name for app specific!
 STATIC_URL = '/static/'
