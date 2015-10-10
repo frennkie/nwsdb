@@ -47,8 +47,7 @@ def add_admin(username, email):
         pass
 
     # create user and add to admin group
-    _new_admin_user = add_user(username, email)
-    _admin_group.users.append(_new_admin_user)
+    add_user(username, _admin_group.name, email)
     db.session.commit()
     return True
 
