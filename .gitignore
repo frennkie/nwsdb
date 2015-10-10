@@ -6,4 +6,5 @@ config.py
 testtools/*
 build/
 dump/
+migrations/versions/*
 celerybeat-schedule
