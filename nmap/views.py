@@ -14,8 +14,8 @@ import datetime
 #from django.contrib.auth.decorators import login_required
 
 # start import from my models
-from .models import Contact, NmapTask
 from nmap.tasks import celery_nmap_scan
+from .models import Contact, NmapTask, NmapReportMeta
 
 
 @login_required
@@ -140,6 +140,25 @@ class TaskDelete(LoginRequiredMixin, TemplateView):
             print("does not exist")
 
         return redirect('/nmap/tasks/')
+
+
+class NmapReportView(LoginRequiredMixin, TemplateView):
+    """NmapReport View"""
+
+    def get(self, request, task_id):
+        _nmap_report = NmapReportMeta.get_nmap_report_by_task_id(task_id)
+        print(_nmap_report)
+        context = {'report': _nmap_report}
+        return render(request, 'nmap/report.html', context)
+
+
+class NmapReportIDView(LoginRequiredMixin, TemplateView):
+    """NmapReportID View - same as NmapReportView but takes id instead of task_id """
+
+    def get(self, request, id):
+        _nmap_report = NmapReportMeta.get_nmap_report_by_id(id)
+        context = {'report': _nmap_report}
+        return render(request, 'nmap/report.html', context)
 
 
 """

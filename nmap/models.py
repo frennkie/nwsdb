@@ -3,7 +3,8 @@ from django.db import models
 from django.utils import timezone
 
 from nwscandb.celery import app
-
+from libnmap.parser import NmapParser
+from libnmap.objects import NmapReport
 
 #from nwscandb.celeryapp import celery_pipe
 from celery.states import READY_STATES
@@ -31,6 +32,7 @@ class NmapTask(models.Model):
     updated = models.DateTimeField('date update', auto_now=True)
     completed = models.BooleanField(default=False)
     completed_status = models.CharField(max_length=20)
+
     #user_id = db.Column(db.Integer, db.ForeignKey("user.id"))
 
     def __repr__(self):
@@ -176,7 +178,8 @@ class NmapReportMeta(models.Model):
     updated = models.DateTimeField('date update', auto_now=True)
 
     report_stored = models.BooleanField(default=False)
-    report_id = models.IntegerField(null=True)
+    #report_id = models.IntegerField(null=True)
+    report = models.TextField(null=True)
     #task_user_id = db.Column(db.Integer, db.ForeignKey("user.id"))
 
     def __repr__(self):
@@ -205,24 +208,14 @@ class NmapReportMeta(models.Model):
         return NmapReportMeta.objects.filter(**kwargs).order_by('created')
 
     @classmethod
-    def get_report_id_by_task_id(cls, task_id=None):
-        """This classmethod get the report_id integer value for a task_id.
+    def get_nmap_report_by_id(cls, nmap_report_meta_id):
+        _nrm = NmapReportMeta.objects.get(task_id=nmap_report_meta_id)
+        return NmapParser.parse_fromstring(str(_nrm.report))
 
-        Args:
-            task_id (str): The task_id as a string (e.g faef323-afec3-a...)
-
-        Returns:
-            report_id (int) or None
-
-        Raises:
-            Exception if more that one result is found for task_id
-
-        Examples:
-
-        """
-
-        _db_nmap_report_meta_list = NmapReportMeta.objects.get(task_id=task_id)
-        return _db_nmap_report_meta_list.report_id
+    @classmethod
+    def get_nmap_report_by_task_id(cls, nmap_task_id):
+        _nrm = NmapReportMeta.objects.get(task_id=nmap_task_id)
+        return NmapParser.parse_fromstring(str(_nrm.report))
 
     @classmethod
     def save_report(cls, task_id=None):
@@ -231,8 +224,8 @@ class NmapReportMeta(models.Model):
         Call this method right after the Celery Task is finished.
         It will
         * get a NmapTask object (by the task_id) from db
-        * get a task result and create NmapReport object from result string
-        * save that NmapReport to db table "reports"
+        * get the task result and create NmapReport object from result string
+        * save that NmapReport to
         * update the NmapTask completed (+ c_status) field in the db to 1
         * save the newly create NmapReportMeta object to db
 
@@ -251,15 +244,20 @@ class NmapReportMeta(models.Model):
         """
 
         _nmap_task = NmapTask.objects.get(task_id=task_id)
-
-        print("status")
         _status = NmapTask.get_tasks_status_as_dict(task_id=task_id)[0]['status']
-        print(_status)
+        _result = str(_nmap_task.get_task_result())
+        try:
+            _nmap_report = NmapParser.parse_fromstring(_result)
 
-        print("result")
-        print(_nmap_task.get_task_result())
+            if isinstance(_nmap_report, NmapReport):
+                print("Debug: NmapReport:")
+                print(_nmap_report)
+            else:
+                print("Error: Did not produce a valid NmapReport!")
 
-        # mark nmap_task as done in table
+        except Exception as err:
+            print("Parse Report - Something went wrong: " + str(err))
+
         _nmap_task.completed = 1
         _nmap_task.completed_status = _status
         _nmap_task.save()
@@ -267,8 +265,8 @@ class NmapReportMeta(models.Model):
         report_meta = NmapReportMeta(task_id=_nmap_task.task_id,
                                      task_comment=_nmap_task.comment,
                                      task_created=_nmap_task.created,
-                                     report_stored=0,
-                                     report_id=0)
+                                     report_stored=1,
+                                     report=_result)
         report_meta.save()
 
         """
@@ -278,16 +276,6 @@ class NmapReportMeta(models.Model):
 
         return True
 
-        """
-        try:
-            dbp = BackendPluginFactory.create(plugin_name="sql",
-                                              url=app.config["LIBNMAP_DB_URI"],
-                                              echo=False)
-
-            _id = _report.save(dbp)
-            self.report_id = _id
-
-        """
 
     def create_scan_from_report(self):
         pass

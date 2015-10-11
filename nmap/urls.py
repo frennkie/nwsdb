@@ -2,6 +2,7 @@ from django.conf.urls import url, patterns
 
 from . import views
 from .views import ScanView, TasksJsonView, TasksView, TaskDelete
+from .views import NmapReportView, NmapReportIDView
 
 urlpatterns = patterns('',
     url(r'^$', views.index, name='index'),
@@ -9,6 +10,9 @@ urlpatterns = patterns('',
     url(r'^jsontasks/$', TasksJsonView.as_view(), name='jsontasks'),
     url(r'^tasks/$', TasksView.as_view(), name='tasks'),
     url(r'^task/delete/([-\w]+)$', TaskDelete.as_view(), name='task_delete'),
+    url(r'^report/([-\w]+)$', NmapReportView.as_view(), name='nmapreport_view'),
+    url(r'^report/task_id/([-\w]+)$', NmapReportView.as_view(), name='nmapreport_view'),
+    url(r'^report/id/([-\w]+)$', NmapReportIDView.as_view(), name='nmapreport_id_view'),
 )
 
 """
