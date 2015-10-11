@@ -40,14 +40,14 @@ def celery_nmap_scan(targets, options):
     else:
         r = None
 
-    return {"rc": rc, "report": r}
+    return r
 
 
-def get_scan_task_result(task_id):
+def get_scan_task_result(nmap_task_id):
     """get scan task result"""
 
     # If you have a task_id, this is how you query that task
-    task = celery_nmap_scan.AsyncResult(task_id)
+    task = celery_nmap_scan.AsyncResult(nmap_task_id)
     try:
         if task.ready():
             return task.result
@@ -58,15 +58,15 @@ def get_scan_task_result(task_id):
         return False
 
 
-def get_scan_task_status(task_id):
+def get_scan_task_status(nmap_task_id):
     """get scan task status"""
 
     # If you have a task_id, this is how you query that task
-    task = celery_nmap_scan.AsyncResult(task_id)
+    task = celery_nmap_scan.AsyncResult(nmap_task_id)
     _status = task.status
 
     if _status == "PENDING":
-        return {'id': str(task_id),
+        return {'id': str(nmap_task_id),
                 'status': _status,
                 'progress': 0,
                 'ready': 0,
@@ -90,7 +90,7 @@ def get_scan_task_status(task_id):
             _etc = task.info['etc']
             _progress = task.info['progress']
 
-        return {'id': str(task_id),
+        return {'id': str(nmap_task_id),
                 'status': _status,
                 'progress': _progress,
                 'ready': _ready,
