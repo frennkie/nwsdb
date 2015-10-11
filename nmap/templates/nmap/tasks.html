@@ -1,108 +1,118 @@
 {% extends "base.html" %}
 {% block title %}Tasks{% endblock %}
 {% block body %}
-    <!--Body content-->
-        <legend>Scans Tasks</legend>
-        <table id="tasktable" class="table table-striped">
-        <th>Tasks</th><th>Created (UTC)</th><th>Comment</th><th>Status</th><th>Progress</th><th>&nbsp;</th><th>Details</th><th>Delete</th>
-        {% for nmap_task in tasks %}
-            <tr>
-                <td>{{ nmap_task.task_id }}</td>
-                <td id="{{ nmap_task.task_id }}" >{{momentjs(timestamp=nmap_task.created).format('YYYY-MM-DD HH:mm:ss')}}</td>
-                <td id="{{ nmap_task.task_id }}" > {{ nmap_task.comment }}</td>
+<!--Body content-->
+
+<legend>Scans Tasks</legend>
+<table id="tasktable" class="table table-striped">
+    <th>Tasks</th><th>Created (UTC)</th><th>Comment</th><th>Status</th><th>Progress</th><th>&nbsp;</th><th>Details</th><th>Delete</th>
+    {% if nmap_tasks %}
+        {% for nmap_task in nmap_tasks %}
+        <tr>
+            <td id="{{ nmap_task.task_id }}">{{ nmap_task.task_id }}</td>
+            <td id="{{ nmap_task.task_id }}">{{ nmap_task.created }}</td>
+            <td id="{{ nmap_task.task_id }}">{{ nmap_task.comment }}</td>
+
+
+            {% if nmap_task.completed == 0 %}
                 <td id="{{ nmap_task.task_id }}" class="taskstatus">{{ nmap_task.completed_status }}</td>
-
-                {% if "REMOVED" in nmap_task.completed_status %}
-                    <td>
-                        <div class="progress">
-                            <div id="pb_{{ nmap_task.task_id }}" class="progress-bar"
-                                role="progressbar" aria-valuenow="0" aria-valuemin="0" aria-valuemax="100"></div>
-                        </div>
-                    </td>
-                {% else %}
-                    <td>
-                        <div class="progress">
-                            <div id="pb_{{ nmap_task.task_id }}" class="progress-bar"
-                                role="progressbar" aria-valuenow="0" aria-valuemin="0" aria-valuemax="100"></div>
-                        </div>
-                    </td>
-
-                {% endif %}
-
-                <td class="stoplink">
-                    <div class="stoplink" id="stop_{{ nmap_task.task_id }}">
-                        <a href="/nmap/task/stop/{{ nmap_task.task_id }}"><span class="glyphicon glyphicon-remove text-danger"></span></a>
+                <td id="{{ nmap_task.task_id }}">
+                    <div class="progress">
+                        <div id="pb_{{ nmap_task.task_id }}" class="progress-bar" role="progressbar" aria-valuenow="0" aria-valuemin="0" aria-valuemax="100"></div>
                     </div>
                 </td>
-
-                {% if nmap_task.async_result.result and "report" in nmap_task.async_result.result %}
-                    <td class="detailslink" id="{{ nmap_task.task_id }}">
-                        <a href="{{ url_for('nmap.report_task_id', task_id=nmap_task.task_id) }}">Details</a></td>
-
-                {% elif "REMOVED" in nmap_task.completed_status %}
-                    <td class="detailslink" id="{{ nmap_task.task_id }}">
-                        <a href="{{ url_for('nmap.report_task_id', task_id=nmap_task.task_id) }}">Details</a></td>
-
-                {% else %}
-                    <td class="detailslink" id="{{ nmap_task.task_id }}">&nbsp;</td>
-
-                {% endif %}
-
-                <td class="deletelink">
-                    <a href="/nmap/task/delete/{{ nmap_task.task_id }}">
-                        <span class="glyphicon glyphicon-trash"></span></a>
+                <td>
+                    <div id="stop_{{ nmap_task.task_id }}" class="stoplink"><a href="/nmap/task/stop/{{ nmap_task.task_id }}"><span class="glyphicon glyphicon-remove text-danger"></span></a></div>
                 </td>
+                <td id="{{ nmap_task.task_id }}" class="detailslink">&nbsp;</td>
 
-            </tr>
+            {% elif "REMOVED" in nmap_task.completed_status %}
+                <td id="{{ nmap_task.task_id }}" class="taskstatus">{{ nmap_task.completed_status }}</td>
+                <td id="{{ nmap_task.task_id }}">
+                    <div class="progress">
+                        <div id="pb_{{ nmap_task.task_id }}" class="progress-bar" role="progressbar" aria-valuenow="0" aria-valuemin="0" aria-valuemax="100"></div>
+                    </div>
+                </td>
+                <td id="stop_{{ nmap_task.task_id }}" class="stoplink">&nbsp;</td>
+                <td id="{{ nmap_task.task_id }}" class="detailslink"><a href="/nmap/report/{{ task_id }}">Details</a></td>
+
+            {% else %}
+                <td id="{{ nmap_task.task_id }}" class="taskstatus">{{ nmap_task.completed_status }}</td>
+                <td id="{{ nmap_task.task_id }}">
+                    <div class="progress">
+                        <div id="pb_{{ nmap_task.task_id }}" class="progress-bar" role="progressbar" aria-valuenow="0" aria-valuemin="0" aria-valuemax="100"></div>
+                    </div>
+                </td>
+                <td id="stop_{{ nmap_task.task_id }}" class="stoplink">&nbsp;</td>
+                <td id="{{ nmap_task.task_id }}" class="detailslink"><a href="/nmap/report/{{ task_id }}">Details</a></td>
+
+            {% endif %}
+
+            <td class="deletelink">
+                <a href="/nmap/task/delete/{{ nmap_task.task_id }}"><span class="glyphicon glyphicon-trash"></span></a>
+            </td>
+
+        </tr>
         {% endfor %}
-        </table>
+    {% else %}
+        <td colspan="8">No Tasks available.</td><th>Created (UTC)</th><th>Comment</th><th>Status</th><th>Progress</th><th>&nbsp;</th><th>Details</th><th>Delete</th>
+    {% endif %}
+</table>
+
+
+
 {% endblock %}
 {% block javascript %}
     var interval_id = 0;
     var tasks_done = new Array();
 
     ajax_handler = function(){
-        $.ajax({ url: "/nmap/jsontasks",
+        $.ajax({ url: "/nmap/jsontasks/",
                  success: task_update_handler
         });
     }
     task_update_handler = function(jsontasks) {
-            var tasklist = $.parseJSON(jsontasks);
-            var all_done = true;
-            $.each(tasklist, function(index, ntask){
-                var pbarid = ntask.id + '.progress-bar';
-                var pstatusid = ntask.id + '.taskstatus';
-                var plinkid = ntask.id + '.detailslink';
-                var details_link = "<a href=\"/nmap/report/task_id/" + ntask.id + "\">Details</a>";
-                var stop_link = "&nbsp"
-                if((ntask.ready == 1) && ($.inArray(ntask.id, tasks_done) == -1)){
-                    document.getElementById('pb_' + ntask.id).className = 'progress-bar progress-bar-success';
-                    document.getElementById('stop_' + ntask.id).innerHTML = stop_link;
+        var all_done = true;
+        $.each(jsontasks, function(index, ntask){
+            var pbarid = ntask.id + '.progress-bar';
+            var pstatusid = ntask.id + '.taskstatus';
+            var plinkid = ntask.id + '.detailslink';
+            var details_link = "<a href=\"/nmap/report/task_id/" + ntask.id + "\">Details</a>";
+            var stop_link = '&nbsp';
 
-                    if(ntask.status != "REMOVED"){
-                        $('#pb_' + pbarid).css('width', ntask.progress+'%').attr('aria-valuenow', ntask.progress);
-                    }
-                    $('#' + pstatusid).text(ntask.status);
-                    if(ntask.status == "SUCCESS"){
-                        $('#' + plinkid).html(details_link);
-                    }
-                    tasks_done.push(ntask.id);
-                    all_done = false;
-                }
-                else if(ntask.ready == 0) {
-                    document.getElementById('pb_' + ntask.id).className = 'progress-bar progress-bar-striped active';
+            //console.log(ntask.status)
+
+            if((ntask.ready == 1) && ($.inArray(ntask.id, tasks_done) == -1)){
+                document.getElementById('pb_' + ntask.id).className = 'progress-bar progress-bar-success';
+                document.getElementById('stop_' + ntask.id).innerHTML = stop_link;
+
+                if(ntask.status != "REMOVED"){
                     $('#pb_' + pbarid).css('width', ntask.progress+'%').attr('aria-valuenow', ntask.progress);
-                    all_done = false;
                 }
-                else if($.inArray(ntask.id, tasks_done) == -1){
-                    $('#' + pbarid).css('width', ntask.progress+'%').attr('aria-valuenow', ntask.progress);
-                    $('#' + pstatusid).text(ntask.status);
-                    all_done = false;
+
+                $('#' + pstatusid).text(ntask.status);
+
+                if(ntask.status == "SUCCESS"){
+                    $('#' + plinkid).html(details_link);
                 }
-            });
-            if(all_done){
-                clearInterval(interval_id);
+                tasks_done.push(ntask.id);
+                all_done = false;
             }
+            else if(ntask.ready == 0) {
+                document.getElementById('pb_' + ntask.id).className = 'progress-bar progress-bar-striped active';
+                $('#pb_' + pbarid).css('width', ntask.progress+'%').attr('aria-valuenow', ntask.progress);
+                $('#' + pstatusid).text(ntask.status);
+                all_done = false;
+            }
+            else if($.inArray(ntask.id, tasks_done) == -1){
+                $('#' + pbarid).css('width', ntask.progress+'%').attr('aria-valuenow', ntask.progress);
+                $('#' + pstatusid).text(ntask.status);
+                all_done = false;
+            }
+        });
+        if(all_done){
+            clearInterval(interval_id);
+        }
     };
 
     $(function () {

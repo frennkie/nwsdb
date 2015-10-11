@@ -5,6 +5,7 @@ from django.contrib.auth import authenticate, login, logout
 from django.contrib.auth.decorators import login_required
 from django.conf import settings
 
+
 def index(request):
     return redirect('login')
 
@@ -33,7 +34,11 @@ def user_login(request):
                 # If the account is valid and active, we can log the user in.
                 # We'll send the user back to the homepage.
                 login(request, user)
-                return redirect('/nmap/')
+                _next = request.POST.get('next')
+                if _next:
+                    return redirect(_next)
+                else:
+                    return redirect(settings.LOGIN_REDIRECT_URL)
             else:
                 # An inactive account was used - no logging in!
                 return HttpResponse("This account is disabled.")
