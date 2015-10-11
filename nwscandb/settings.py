@@ -39,13 +39,14 @@ INSTALLED_APPS = (
     'django.contrib.staticfiles',
     'django_extensions',
     'sniplates',
+    'djcelery',
     'accounts',
     'nmap',
 )
 
-LOGIN_URL = '/accounts/login'
-LOGOUT_URL = '/accounts/logout'
-LOGIN_REDIRECT_URL = '/nmap'
+LOGIN_URL = '/accounts/login/'
+LOGOUT_URL = '/accounts/logout/'
+LOGIN_REDIRECT_URL = '/nmap/'
 
 SESSION_EXPIRE_AT_BROWSER_CLOSE = True
 
@@ -117,3 +118,5 @@ STATICFILES_DIRS = [BASE_DIR + '/common-static/', ]
 
 # User dir: app_name + /static/ + app_name for app specific!
 STATIC_URL = '/static/'
+
+CELERY_RESULT_BACKEND='djcelery.backends.database:DatabaseBackend'
