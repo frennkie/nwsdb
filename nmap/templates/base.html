@@ -81,15 +81,15 @@
                         <ul class="dropdown-menu">
                             {% widget "widgets_base:render_nav_link" title="Settings" icon="cog" link="/admin/" %}
                             <li role="separator" class="divider"></li>
-                            {% widget "widgets_base:render_nav_link" title="Users" icon="user" link="/admin/users/" %}
-                            {% widget "widgets_base:render_nav_link" title="User Groups" icon="user" link="/admin/user_groups/" %}
-                            {% widget "widgets_base:render_nav_link" title="Roles" icon="user" link="/admin/roles/" %}
-                            {% widget "widgets_base:render_nav_link" title="Abilities" icon="pawn" link="/admin/abilities/" %}
+                            {% widget "widgets_base:render_nav_link" title="Users" icon="user" link="/admin/users" %}
+                            {% widget "widgets_base:render_nav_link" title="User Groups" icon="user" link="/admin/user_groups" %}
+                            {% widget "widgets_base:render_nav_link" title="Roles" icon="user" link="/admin/roles" %}
+                            {% widget "widgets_base:render_nav_link" title="Abilities" icon="pawn" link="/admin/abilities" %}
                         </ul>
                     </li>
                     {% endif %}
                     {% widget "widgets_base:render_nav_link" title=user.username icon="user" link="/accounts/"|add:user.username|add:"/" %}
-                    {% widget "widgets_base:render_nav_link" title="Logout" icon="off" link="/accounts/logout/" %}
+                    {% widget "widgets_base:render_nav_link" title="Logout" icon="off" link="/accounts/logout" %}
                 </ul>
             </div><!-- /.navbar-collapse -->
         </div><!-- /.container-fluid -->
