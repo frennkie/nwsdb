@@ -16,26 +16,27 @@ import datetime
 # start import from my models
 from nmap.tasks import celery_nmap_scan
 from .models import Contact, NmapTask, NmapReportMeta
+from django import forms
 
-
-@login_required
+#@login_required
 def index(request):
     _contacts = Contact.objects.all()
+
     context = {'contacts': _contacts}
     return render(request, 'nmap/index.html', context)
 
 
 class ScanView(LoginRequiredMixin, TemplateView):
     """Scan View"""
-    template_name = "nmap/scan.html" \
+    template_name = "nmap/scan.html"
 
-    def get(self, request):
+    def get(self, request, *args, **kwargs):
         if request.user.is_authenticated():
             print("Welcome " + str(request.user))
         else:
             print("you will need to login")
 
-        return render(request, 'nmap/scan.html')
+        return render(request, 'nmap/scan.html', {'form': forms.Form})
 
 
 class TasksJsonView(LoginRequiredMixin, TemplateView):

@@ -4,7 +4,7 @@
 <!--Body content-->
     <form method="POST" action="/nmap/tasks/" accept-charset="utf-8">
     {{ form.as_p }}
-    {% csrf_token %}
+    {{ csrf_token }}
 
     <fieldset>
         <div>

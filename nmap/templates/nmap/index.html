@@ -16,28 +16,17 @@
         <p>No polls are available.</p>
     {% endif %}
 
-    {% if user.is_authenticated %}
-        <p>Welcome, {{ user.username }}. Thanks for logging in.</p>
+    {% if request.user.is_authenticated() %}
+        <p>Welcome, {{ request.user.username }}. Thanks for logging in.</p>
     {% else %}
         <p>Welcome, new user. Please log in.</p>
     {% endif %}
 
-    Your Permissions:
-        {{ perms }}<br/>
+    <br/>Permission for "foo.add_bar"
+    {{ request.user.has_perm('foo.add_bar') }}
 
-    Your Permissions on Nmap:
-        {{ perms.nmap }}<br/>
-
-    Your Permissions on nmap.delete_contact:
-        {{ perms.nmap.delete_contact }}<br/>
-
-    {% if perms.nmap %}
-        At least one permission
-    {% else %}
-        No permissions
-    {% endif %}
-
-
+    <br/>Permission for "nmap.delete_contact"
+    {{ request.user.has_perm('nmap.delete_contact') }}
 
 
 {% endblock %}

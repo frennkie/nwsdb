@@ -4,6 +4,7 @@ from django.template import RequestContext
 from django.contrib.auth import authenticate, login, logout
 from django.contrib.auth.decorators import login_required
 from django.conf import settings
+from .forms import LoginForm
 
 
 def index(request):
@@ -14,8 +15,10 @@ def user_login(request):
     # Needed?
     context = RequestContext(request)
 
+    print("Hallo")
     # If the request is a HTTP POST, try to pull out the relevant information.
     if request.method == 'POST':
+        print(request)
         # Gather the username and password provided by the user.
         # This information is obtained from the login form.
         username = request.POST['username']
@@ -34,7 +37,9 @@ def user_login(request):
                 # If the account is valid and active, we can log the user in.
                 # We'll send the user back to the homepage.
                 login(request, user)
-                _next = request.POST.get('next')
+
+                #_next = request.POST.get('next')
+                _next = False
                 if _next:
                     return redirect(_next)
                 else:
@@ -52,7 +57,8 @@ def user_login(request):
     else:
         # No context variables to pass to the template system, hence the
         # blank dictionary object...
-        return render(request, 'accounts/login.html', context)
+        return render(request, 'accounts/login.html', {'form': LoginForm()})
+
 
 
 # Use the login_required() decorator to ensure only those logged in can access the view.
@@ -63,3 +69,22 @@ def user_logout(request):
 
     # Take the user back to the homepage.
     return redirect('/accounts/login/')
+
+"""
+class MyFormView(View):
+    form_class = MyForm
+    initial = {'key': 'value'}
+    template_name = 'form_template.html'
+
+    def get(self, request, *args, **kwargs):
+        form = self.form_class(initial=self.initial)
+        return render(request, self.template_name, {'form': form})
+
+    def post(self, request, *args, **kwargs):
+        form = self.form_class(request.POST)
+        if form.is_valid():
+            # <process form cleaned data>
+            return HttpResponseRedirect('/success/')
+
+        return render(request, self.template_name, {'form': form})
+"""

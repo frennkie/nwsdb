@@ -11,8 +11,8 @@
                 {% for scanned_host in report.hosts %}
                 <tr>
                     <td> {{ scanned_host.address }} </td>
-                    <td> {{ momentjs(scanned_host.starttime).format('YYYY-MM-DD HH:mm:ss') }} </td>
-                    <td> {{ momentjs(scanned_host.endtime).format('YYYY-MM-DD HH:mm:ss') }} </td>
+                    <td> {{ scanned_host.starttime }} </td>
+                    <td> {{ scanned_host.endtime }} </td>
                     <td> {{ scanned_host.status }} </td>
                     <td> {{ scanned_host.get_open_ports()|count }} </td>
                     <td>
