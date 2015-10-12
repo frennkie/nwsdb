@@ -16,17 +16,30 @@
         <p>No polls are available.</p>
     {% endif %}
 
-    {% if request.user.is_authenticated() %}
-        <p>Welcome, {{ request.user.username }}. Thanks for logging in.</p>
-    {% else %}
-        <p>Welcome, new user. Please log in.</p>
-    {% endif %}
+    <br/><br/>User: <br/>
+    {{ user }}
+    <br/><br/>User: <br/>
+    {{ perms }}
 
-    <br/>Permission for "foo.add_bar"
-    {{ request.user.has_perm('foo.add_bar') }}
+    <br/><br/>User Authenticated: <br/>
+    {{ user.is_authenticated }}
 
-    <br/>Permission for "nmap.delete_contact"
-    {{ request.user.has_perm('nmap.delete_contact') }}
+    <br/><br/>Permission for "foo.add_bar":<br/>
+    {{ perms.foo.add_bar }}
 
+    <br/><br/>Permission for "nmap.delete_contact":<br/>
+    {{ perms.nmap.delete_contact }}
+
+    <br/><br/>Permission for "nmap.stop_task":<br/>
+    {{ perms.nmap.stop_task }}
+
+    <br/><br/>Permission for "nmap.view_task":<br/>
+    {{ perms.nmap.view_task }}
+
+    <br/><br/>Url (nmapreport_task_id_view):<br/>
+    {% url 'nmapreport_task_id_view' "f23f-sd1" %}
+
+    <br/><br/>Url (nmapreport_view):<br/>
+    {% url 'nmapreport_view' "1" %}
 
 {% endblock %}

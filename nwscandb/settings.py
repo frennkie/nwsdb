@@ -38,6 +38,7 @@ INSTALLED_APPS = (
     'django.contrib.messages',
     'django.contrib.staticfiles',
     'django_extensions',
+    'django.contrib.humanize',
     'django_jinja',
     'sniplates',
     'djcelery',
@@ -69,12 +70,12 @@ TEMPLATES = [
         "BACKEND": "django_jinja.backend.Jinja2",
         "APP_DIRS": True,
         "OPTIONS": {
-            # "match_extension": ".jinja",
+            "match_extension": ".jinja",
 
             # Match the template names ending in .html but not the ones in the admin folder.
-            "match_extension": ".html",
-            "match_regex": r"^(?!admin/).*",
-            "app_dirname": "templates",
+            #"match_extension": ".html",
+            #"match_regex": r"^(?!admin/).*",
+            #"app_dirname": "templates",
 
             # Can be set to "jinja2.Undefined" or any other subclass.
             "undefined": None,
@@ -154,4 +155,4 @@ STATICFILES_DIRS = [BASE_DIR + '/common-static/', ]
 # User dir: app_name + /static/ + app_name for app specific!
 STATIC_URL = '/static/'
 
-CELERY_RESULT_BACKEND='djcelery.backends.database:DatabaseBackend'
+CELERY_RESULT_BACKEND = 'djcelery.backends.database:DatabaseBackend'

@@ -11,7 +11,7 @@ urlpatterns = patterns('',
     url(r'^tasks/$', TasksView.as_view(), name='tasks'),
     url(r'^task/delete/([-\w]+)$', TaskDelete.as_view(), name='task_delete'),
     url(r'^report/([-\w]+)$', NmapReportView.as_view(), name='nmapreport_view'),
-    url(r'^report/task_id/([-\w]+)$', NmapReportView.as_view(), name='nmapreport_view'),
+    url(r'^report/task_id/([-\w]+)$', NmapReportView.as_view(), name='nmapreport_task_id_view'),
     url(r'^report/id/([-\w]+)$', NmapReportIDView.as_view(), name='nmapreport_id_view'),
 )
 

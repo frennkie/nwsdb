@@ -3,6 +3,8 @@
 {% block body %}
 <!--Body content-->
 
+    {% load humanize %}
+
 <legend>Scans Tasks</legend>
 <table id="tasktable" class="table table-striped">
     <th>Tasks</th><th>Created (UTC)</th><th>Comment</th><th>Status</th><th>Progress</th><th>&nbsp;</th><th>Details</th><th>Delete</th>
@@ -10,7 +12,7 @@
         {% for nmap_task in nmap_tasks %}
         <tr>
             <td id="{{ nmap_task.task_id }}">{{ nmap_task.task_id }}</td>
-            <td id="{{ nmap_task.task_id }}">{{ nmap_task.created }}</td>
+            <td id="{{ nmap_task.task_id }}">{{ nmap_task.created }} ({{ nmap_task.created|naturaltime }})</td>
             <td id="{{ nmap_task.task_id }}">{{ nmap_task.comment }}</td>
 
 

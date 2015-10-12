@@ -2,14 +2,14 @@ from django.views.generic import TemplateView
 from braces.views import LoginRequiredMixin
 from django.contrib.auth.decorators import login_required
 from django.http import HttpResponse
-from django.template import RequestContext
 from django.db.models import ObjectDoesNotExist
-
-
 from django.shortcuts import render, redirect
+from django.core.urlresolvers import resolve
+
 import json
 import datetime
-#from django.template import RequestContext
+
+
 
 #from django.contrib.auth.decorators import login_required
 
@@ -18,12 +18,33 @@ from nmap.tasks import celery_nmap_scan
 from .models import Contact, NmapTask, NmapReportMeta
 from django import forms
 
-#@login_required
+
+"""
+This is the standard layout for a authenticated view to a html template.
+call with: url(r'^some/$', SomeView.as_view(), name='some_view'), :
+
+class SomeView(LoginRequiredMixin, TemplateView):
+    def get(self, request):
+
+        some = SomeClass.objects.all()
+        other_stuff = OtherStuff.objects.all()
+
+        r_data = {}
+        r_data.update({"some": some,
+                       "other_stuff": other_stuff})
+        return render(request, 'nmap/index.html', r_data)
+"""
+
+
+# @login_required
 def index(request):
+    """index"""
+
     _contacts = Contact.objects.all()
 
-    context = {'contacts': _contacts}
-    return render(request, 'nmap/index.html', context)
+    r_data = {}
+    r_data.update({"contacts": _contacts})
+    return render(request, 'nmap/index.html', r_data)
 
 
 class ScanView(LoginRequiredMixin, TemplateView):
@@ -36,7 +57,10 @@ class ScanView(LoginRequiredMixin, TemplateView):
         else:
             print("you will need to login")
 
-        return render(request, 'nmap/scan.html', {'form': forms.Form})
+        r_data = {}
+        r_data.update({"form": forms.Form})
+        return render(request, 'nmap/scan.html', r_data)
+
 
 
 class TasksJsonView(LoginRequiredMixin, TemplateView):
@@ -63,19 +87,19 @@ class TasksView(LoginRequiredMixin, TemplateView):
 
     def get(self, request):
         """get"""
-        #_nmap_tasks = NmapTask.find(user_id=user.id)
 
-        context = {'nmap_tasks': NmapTask.find()}
-        #return render_template('tasks.html', tasks=_nmap_tasks)
+        # _nmap_tasks = NmapTask.find(user_id=user.id)
+        _nmap_task = NmapTask.find()
 
-        return render(request, 'nmap/tasks.html', context)
+        r_data = {}
+        r_data.update({"nmap_tasks": _nmap_task})
+        return render(request, 'nmap/tasks.html', r_data)
 
     def post(self, request):
         """post"""
 
         scantypes = [ "-sT", "-sT", "-sS", "-sA", "-sW", "-sM",
                 "-sN", "-sF", "-sX", "-sU" ]
-
 
         if request.POST['targets']:
             targets = request.POST["targets"]
@@ -144,23 +168,33 @@ class TaskDelete(LoginRequiredMixin, TemplateView):
 
 
 class NmapReportView(LoginRequiredMixin, TemplateView):
-    """NmapReport View"""
+    """NmapReport View takes task_id"""
 
     def get(self, request, task_id):
+
         _nmap_report = NmapReportMeta.get_nmap_report_by_task_id(task_id)
-        print(_nmap_report)
-        context = {'report': _nmap_report}
-        return render(request, 'nmap/report.html', context)
+        for scanned_host in _nmap_report.hosts:
+
+            scanned_host.datetime_starttime = datetime.datetime.fromtimestamp(int(scanned_host.starttime))
+            scanned_host.datetime_endtime = datetime.datetime.fromtimestamp(int(scanned_host.endtime))
+
+            scanned_host.get_open_ports_count = len(scanned_host.get_open_ports())
+
+        r_data = {}
+        r_data.update({"report": _nmap_report})
+        return render(request, 'nmap/report.html', r_data)
 
 
 class NmapReportIDView(LoginRequiredMixin, TemplateView):
     """NmapReportID View - same as NmapReportView but takes id instead of task_id """
 
     def get(self, request, id):
-        _nmap_report = NmapReportMeta.get_nmap_report_by_id(id)
-        context = {'report': _nmap_report}
-        return render(request, 'nmap/report.html', context)
 
+        _nmap_report = NmapReportMeta.get_nmap_report_by_id(id)
+
+        r_data = {}
+        r_data.update({"report": _nmap_report})
+        return render(request, 'nmap/report.html', r_data)
 
 """
 #@login_required
