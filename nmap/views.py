@@ -1,10 +1,11 @@
 from django.views.generic import TemplateView
-from braces.views import LoginRequiredMixin
+from braces.views import MessageMixin, LoginRequiredMixin
 from django.contrib.auth.decorators import login_required
 from django.http import HttpResponse
 from django.db.models import ObjectDoesNotExist
 from django.shortcuts import render, redirect
 from django.core.urlresolvers import resolve
+from django.contrib import messages
 
 import json
 import datetime
@@ -33,6 +34,7 @@ class SomeView(LoginRequiredMixin, TemplateView):
         r_data.update({"some": some,
                        "other_stuff": other_stuff})
         return render(request, 'nmap/index.html', r_data)
+
 """
 
 
@@ -40,10 +42,49 @@ class SomeView(LoginRequiredMixin, TemplateView):
 def index(request):
     """index"""
 
+    view_name = request.resolver_match.url_name
+    print(view_name)
+
+
+    print(request.META)
+
+    try:
+        remote_user = request.META['REMOTE_USER']
+    except:
+        remote_user =None
+
+    print("user: ")
+    print(remote_user)
+    print("..")
+
+    print(request.user)
+    print(request.user.is_authenticated())
+    print(request.user.is_superuser)
+    print(request.user.groups.count())
+
+    if request.user.is_authenticated():
+        if request.user.is_superuser:
+            print("you can do and see anything")
+            _contacts = Contact.objects.all()
+        else:
+
+            if request.user.groups.count() == 0:
+                print("no groups assigned")
+            elif request.user.groups.count() == 1:
+                print("exactly one group.. that's normal (=nice)")
+            else:
+                print("hm.. why do you have more than one group?!")
+    else:
+        print("non-auth")
+
+
+
+    #print(request.user)
+
     _contacts = Contact.objects.all()
 
     r_data = {}
-    r_data.update({"contacts": _contacts})
+    r_data.update({"contacts": _contacts, 'view_name': view_name})
     return render(request, 'nmap/index.html', r_data)
 
 
@@ -52,15 +93,15 @@ class ScanView(LoginRequiredMixin, TemplateView):
     template_name = "nmap/scan.html"
 
     def get(self, request, *args, **kwargs):
+
         if request.user.is_authenticated():
-            print("Welcome " + str(request.user))
+            messages.success(request, "Welcome " + str(request.user))
         else:
-            print("you will need to login")
+            messages.error(request, "You do not have permission to access this site!")
 
         r_data = {}
         r_data.update({"form": forms.Form})
         return render(request, 'nmap/scan.html', r_data)
-
 
 
 class TasksJsonView(LoginRequiredMixin, TemplateView):
@@ -72,7 +113,7 @@ class TasksJsonView(LoginRequiredMixin, TemplateView):
 
     """
 
-    def get(self, request):
+    def get(self, request, *args, **kwargs):
         """TODO: get current user/group for filter"""
         _result = NmapTask.get_tasks_status_as_dict()
         return HttpResponse(json.dumps(_result), content_type="application/json")
@@ -85,8 +126,21 @@ class TasksView(LoginRequiredMixin, TemplateView):
 
     """
 
-    def get(self, request):
+    def get(self, request, *args, **kwargs):
         """get"""
+
+        current_view = resolve(request.path)[0]
+        print(current_view)
+
+
+
+        #if not request.user.has_perm("nmap.view_task"):
+        if not request.user.has_perm("nmap.stop_task"):
+            messages.error(request, "You do not have permission to ")
+            return render(request, 'nmap/tasks.html', {})
+            #return redirect('/nmap/')
+
+
 
         # _nmap_tasks = NmapTask.find(user_id=user.id)
         _nmap_task = NmapTask.find()
@@ -162,7 +216,8 @@ class TaskDelete(LoginRequiredMixin, TemplateView):
             _nmap_task = NmapTask.objects.get(task_id=task_id)
             _nmap_task.delete()
         except ObjectDoesNotExist:
-            print("does not exist")
+            messages.error(request, "does not exist!")
+            return render(request, 'accounts/login.html', r_data)
 
         return redirect('/nmap/tasks/')
 

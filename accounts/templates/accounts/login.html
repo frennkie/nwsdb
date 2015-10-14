@@ -21,24 +21,38 @@
 
     <div class="container">
 
-
-        <!-- Display flashed messages -->
-        <!-- possible values: alert alert-[success|info|warning|danger] -->
+        <!-- Bootstrap display flashed messages -->
+        <!-- possible values: alert alert-[info|success|warning|danger] -->
         <!--
-        with messages = get_flashed_messages(with_categories=true)
-        for category, message in messages
-        <div class="alert alert-{{ category }}">{{ message }}</div>
+        # django shortcut level methods
+        [x] messages.info(request, 'All items on this page have free shipping.')
+        [x] messages.success(request, 'Email sent successfully.')
+        [x] messages.warning(request, 'You will need to change your password in one week.')
+        [!] messages.error(request, 'We could not process your request at this time.'
+        # Debug messages ignored by default
+        [ ] messages.debug(request, 'The following SQL statements were executed: %s' % sqlqueries)
 
+        # use in html:
+        messages.info(request, "info: Invalid credentials!")
+        messages.success(request, "success: Invalid credentials!")
+        messages.warning(request, "warning: Invalid credentials!")
+        messages.error(request, "error: Invalid credentials!")
+        # Debug messages ignored by default settings.py: MESSAGE_LEVEL = message_constants.DEBUG
+        messages.debug(request, "debug: Invalid credentials!")
         -->
 
         {% if messages %}
-        <ul class="messages">
             {% for message in messages %}
-            <li {% if message.tags %} class="{{ message.tags }}" {% endif %} > {{ message }}</li>
+                <div
+                        {% if message.tags and message.tags == "error" %}
+                                class="alert alert-danger"
+                        {% elif message.tags %}
+                                class="alert alert-{{ message.tags }}"
+                        {% endif %} >
+                        {{ message }}
+                </div>
             {% endfor %}
-        </ul>
         {% endif %}
-
 
         <form class="form-log-in" method="POST" action="/accounts/login/" accept-charset="utf-8">
             <h2 class="form-log-in-heading">Please log in</h2>

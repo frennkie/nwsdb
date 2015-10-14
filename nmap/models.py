@@ -287,8 +287,8 @@ class Contact(models.Model):
     """
 
     name = models.CharField(max_length=200)
-    email = models.CharField(max_length=200)
-    comment = models.CharField(max_length=200)
+    email = models.CharField(max_length=200, blank=True)
+    comment = models.CharField(max_length=200, blank=True)
     created = models.DateTimeField('date created', auto_now_add=True)
     updated = models.DateTimeField('date update', auto_now=True)
     #address_detail = db.relationship("AddressDetail", secondary=contact_addressdetail_table)

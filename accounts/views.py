@@ -3,6 +3,7 @@ from django.http import HttpResponse
 from django.template import RequestContext
 from django.contrib.auth import authenticate, login, logout
 from django.contrib.auth.decorators import login_required
+from django.contrib import messages
 from django.conf import settings
 from .forms import LoginForm
 
@@ -12,9 +13,6 @@ def index(request):
 
 
 def user_login(request, form=None):
-
-
-
     # If the request is a HTTP POST, try to pull out the relevant information.
     if request.method == 'POST':
 
@@ -56,12 +54,25 @@ def user_login(request, form=None):
                         return redirect(settings.LOGIN_REDIRECT_URL)
 
                 else:
-                    # An inactive account was used - no logging in!
-                    return HttpResponse("This account is disabled.")
+                    # An inactive account was used
+                    messages.error(request, "This account is disabled.")
+                    return render(request, 'accounts/login.html', r_data)
             else:
                 # Bad login details were provided. So we can't log the user in.
-                print "Invalid login credentials for user: {0}".format(username)
+                messages.error(request, "error: Invalid credentials!")
+
+                try:
+                    r_data = {'form': LoginForm(initial={'next': request.GET['next']})}
+                except:
+                    r_data = {'form': LoginForm()}
+
+                return render(request, 'accounts/login.html', r_data)
+
+                """
+                print "Invalid credentials for user: {0}".format(username)
                 return HttpResponse("Invalid login details supplied.")
+                """
+
         else:
             # Check whether a POST contains a value for 'next' (next site)
             try:
