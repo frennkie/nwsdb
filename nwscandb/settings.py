@@ -123,10 +123,9 @@ WSGI_APPLICATION = 'nwscandb.wsgi.application'
 
 DATABASES = {
     'default': {
-        'PASSWORD': '34qgw3g3awes4',
         'ENGINE': 'django.db.backends.mysql',
         'OPTIONS': {
-            'read_default_file': 'nwscandb/my.cnf',
+            'read_default_file': '/home/robbie/work/nmap_tool/nwsdb/nwscandb/my.cnf',
         },
     }
 }
@@ -149,10 +148,13 @@ USE_TZ = True
 # Static files (CSS, JavaScript, Images)
 # https://docs.djangoproject.com/en/1.8/howto/static-files/
 
-# Use base_dir + /static/ for general files
-STATICFILES_DIRS = [BASE_DIR + '/common-static/', ]
 
 # User dir: app_name + /static/ + app_name for app specific!
 STATIC_URL = '/static/'
+
+# Use base_dir + /static/ for general files
+#STATICFILES_DIRS = [BASE_DIR + '/common-static/', ]
+
+STATIC_ROOT = os.path.join(BASE_DIR, "common-static/")
 
 CELERY_RESULT_BACKEND = 'djcelery.backends.database:DatabaseBackend'
