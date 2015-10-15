@@ -1,7 +1,9 @@
 from django.contrib import admin
 
 # Import then Register your models here.
-from .models import Contact, NmapTask, OrgUnit, Membership
+from .models import Membership, OrgUnit
+from .models import Contact
+from .models import NmapTask, NmapReportMeta
 
 
 class MembershipInline(admin.TabularInline):
@@ -24,6 +26,13 @@ class ContactAdmin(admin.ModelAdmin):
 class NmapTaskAdmin(admin.ModelAdmin):
     pass
 
+
+class NmapReportMetaAdmin(admin.ModelAdmin):
+    pass
+
+# registers
+admin.site.register(OrgUnit, OrgUnitAdmin)
 admin.site.register(Contact, ContactAdmin)
 admin.site.register(NmapTask, NmapTaskAdmin)
-admin.site.register(OrgUnit, OrgUnitAdmin)
+admin.site.register(NmapReportMeta, NmapReportMetaAdmin)
+

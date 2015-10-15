@@ -82,6 +82,9 @@ class NmapTask(models.Model):
                                        self.id,
                                        self.task_id)
 
+    def __unicode__(self): # __str__ on Python 3
+        return self.task_id
+
     @classmethod
     def find(cls, sort_desc=False, **kwargs):
         """Get NmapTask object and add async_result before returning
@@ -230,6 +233,9 @@ class NmapReportMeta(models.Model):
                                                     self.task_id,
                                                     self.task_comment)
                                                     # self.task_user_id)
+
+    def __unicode__(self): # __str__ on Python 3
+        return self.task_id
 
     @classmethod
     def get_report_meta(cls, **kwargs):
