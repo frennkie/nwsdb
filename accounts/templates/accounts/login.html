@@ -55,17 +55,9 @@
         {% endif %}
 
         <form class="form-log-in" method="POST" action="/accounts/login/" accept-charset="utf-8">
-            <h2 class="form-log-in-heading">Please log in</h2>
+            <h2 class="form-log-in-heading">Local(!) log in</h2>
             {% csrf_token %}
             {{ form.as_p }}
-            <!-- override hidden remember_me checkbox -->
-            <!--
-            <div class="checkbox">
-              <label>
-                <input type="checkbox" id="id_remember_me" name="remember_me"> Remember me
-              </label>
-            </div>
-            -->
             <button class="btn btn-lg btn-primary btn-block" type="submit" value="Login">Log in</button>
         </form>
 

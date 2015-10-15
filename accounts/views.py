@@ -5,14 +5,35 @@ from django.contrib.auth import authenticate, login, logout
 from django.contrib.auth.decorators import login_required
 from django.contrib import messages
 from django.conf import settings
-from .forms import LoginForm
 
+from django.http import HttpResponseForbidden
+
+from .forms import LoginForm
 
 def index(request):
     return redirect('login')
 
+"""
+def remote_user_login(request, remote_user, next=None):
+    login(request, remote_user)
+    return True
+"""
 
 def user_login(request, form=None):
+
+    view_name = request.resolver_match.url_name
+    print(view_name)
+    print("full url: " + str(request.build_absolute_uri()))
+
+    try:
+        remote_user = request.META['REMOTE_USER']
+    except KeyError:
+        remote_user = None
+
+    print("user: " + str(request.user))
+    print("remote_user: " + str(remote_user))
+
+
     # If the request is a HTTP POST, try to pull out the relevant information.
     if request.method == 'POST':
 
@@ -45,6 +66,7 @@ def user_login(request, form=None):
                     # If the account is valid and active, we can log the user in.
                     # We'll send the user back to the homepage.
                     login(request, user)
+                    print("logged in user: " + str(user))
 
                     # Check whether a POST contains a value for 'next' (next site)
                     try:
@@ -96,13 +118,36 @@ def user_login(request, form=None):
 
 
 # Use the login_required() decorator to ensure only those logged in can access the view.
-@login_required
-def user_logout(request):
-    # Since we know the user is logged in, we can now just log them out.
-    logout(request)
+#@login_required
+def remote_user_logout(request):
+    """
+    user_logout(request)
+    """
 
-    # Take the user back to the homepage.
-    return redirect('/accounts/login/')
+    try:
+        remote_user = request.META['REMOTE_USER']
+    except KeyError:
+        remote_user = None
+
+    if not request.user.is_authenticated():
+        print("not authenticated.. what are you doing here?!")
+        #return HttpResponseForbidden()
+        return HttpResponse("Sorry - 403 Forbidden")
+
+    if not remote_user:
+        print("not remote user.. regular log out")
+
+        logout(request)
+        return redirect("{0}://{1}/".format(request.scheme, request.get_host()))
+
+    else:
+        print("remote user.. log out 'invalid'")
+        return redirect("{0}://log_out_user:@{1}/nmap/logged_out".format(request.scheme,
+                                                                         request.get_host()))
+
+
+def remote_user_logged_out(request):
+    return HttpResponse("logged out..  go to: foo")
 
 """
 class MyFormView(View):

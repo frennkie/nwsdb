@@ -21,8 +21,4 @@ class LoginForm(forms.Form):
                                widget=forms.PasswordInput(attrs={'class': 'form-control',
                                                                  'placeholder': 'Password'}))
 
-    """remember_me checkbox does not look nice..therefore adding it manually
-    remember_me = forms.BooleanField(label='remember_me', required=False, widget=forms.HiddenInput())
-    """
-
     next = forms.CharField(label='next', required=False, widget=forms.HiddenInput())
