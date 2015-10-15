@@ -83,15 +83,7 @@
 
                     {% widget "widgets_base:render_nav_link" title=user.username icon="user" link="/nmap/profile/"|add:user.username|add:"/" %}
 
-                    {% if remote_user %} <!-- __ remote_user __ -->
-                        {% widget "widgets_base:render_nav_link" title="Log out" icon="off" link="/nmap/logout/" %}
-
-                    {% else %} <!-- is None. -->
-                        {% widget "widgets_base:render_nav_link" title="Log out" icon="off" link="/logout/" %}
-
-                    {% endif %}
-
-
+                    {% widget "widgets_base:render_nav_link" title="Log out" icon="off" link="/nmap/logout/" %}
                 </ul>
 
 
