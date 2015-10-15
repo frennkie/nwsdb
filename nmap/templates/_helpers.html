@@ -31,7 +31,13 @@
 
 
 {% macro render_nav_link(title, icon, current_url_for) %}
-    <li >
-        <a href="{{current_url_for}}"><span class="glyphicon glyphicon-{{icon}}"></span>&nbsp; {{title}}</a>
-    </li>
+    {% if user.is_superuser %}
+        <li >
+            <a href="{{current_url_for}}"><span class="glyphicon glyphicon-{{icon}}"></span>&nbsp; {{title}}</a>
+        </li>
+    {% elif perms.nmap.view_task %}
+        <li >
+            <a href="{{current_url_for}}"><span class="glyphicon glyphicon-{{icon}}"></span>&nbsp; {{title}}</a>
+        </li>
+    {% endif %}
 {% endmacro %}
