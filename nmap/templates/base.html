@@ -11,7 +11,7 @@
 
     {% load staticfiles %}
     {% load sniplates %}
-    {% load_widgets widgets_base="nmap/widgets_base.html" %}
+    {% load_widgets widgets_base="widgets_base.html" %}
 
     <!-- Bootstrap -->
     <!-- Latest compiled and minified CSS -->
@@ -81,7 +81,7 @@
                         {% widget "widgets_base:render_nav_link" title="Admin Page" icon="cog" link="/admin/" %}
                     {% endif %}
 
-                    {% widget "widgets_base:render_nav_link" title=user.username icon="user" link="/accounts/"|add:user.username|add:"/" %}
+                    {% widget "widgets_base:render_nav_link" title=user.username icon="user" link="/nmap/profile/"|add:user.username|add:"/" %}
 
                     {% if remote_user %} <!-- __ remote_user __ -->
                         {% widget "widgets_base:render_nav_link" title="Log out" icon="off" link="/nmap/logout/" %}

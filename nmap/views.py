@@ -83,9 +83,15 @@ def remote_user_logged_out(request):
     return redirect("{0}://{1}/".format(request.scheme, request.get_host()))
 
 
-def profile(request):
-    """profile"""
-    return HttpResponse("Profile..")
+class Profile(LoginRequiredMixin, TemplateView):
+    """Tasks Delete"""
+
+    def get(self, request, username):
+        """get"""
+
+        r_data = {}
+        r_data.update({"username": username})
+        return render(request, 'nmap/profile.html', r_data)
 
 
 def index(request):
