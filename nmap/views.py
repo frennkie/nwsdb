@@ -1,6 +1,5 @@
 from django.views.generic import TemplateView
 from braces.views import MessageMixin, LoginRequiredMixin
-from django.contrib.auth.decorators import login_required
 from django.http import HttpResponse
 from django.db.models import ObjectDoesNotExist
 from django.shortcuts import render, redirect
@@ -10,10 +9,6 @@ from django.contrib.auth import logout
 
 import json
 import datetime
-
-
-
-#from django.contrib.auth.decorators import login_required
 
 # start import from my models
 from nmap.tasks import celery_nmap_scan
@@ -37,6 +32,51 @@ class SomeView(LoginRequiredMixin, TemplateView):
         return render(request, 'nmap/index.html', r_data)
 
 """
+
+
+def index(request):
+    """index"""
+
+    view_name = request.resolver_match.url_name
+    print(view_name)
+
+    try:
+        remote_user = request.META['REMOTE_USER']
+    except KeyError:
+        remote_user = None
+
+    """ DEBUG INFO """
+    print("user: " + str(request.user))
+    print("remote_user: " + str(remote_user))
+    print("Authenticated: " +  str(request.user.is_authenticated()))
+    print("Superuser: "  + str(request.user.is_superuser))
+    print("Groups: "  + str(request.user.groups.count()))
+    """ /DEBUG INFO """
+
+    if request.user.is_authenticated():
+        if request.user.is_superuser:
+            print("you can do and see anything")
+            # _contacts = Contact.objects.all()
+        else:
+
+            if request.user.groups.count() == 0:
+                print("no groups assigned")
+            elif request.user.groups.count() == 1:
+                print("exactly one group.. that's normal (=nice)")
+            else:
+                print("hm.. why do you have more than one group?!")
+    else:
+        print("non-auth")
+
+    _contacts = Contact.objects.all()
+
+    r_data = {}
+
+    r_data.update({"remote_user": remote_user,
+                   "contacts": _contacts,
+                   "view_name": view_name})
+    return render(request, 'nmap/index.html', r_data)
+
 
 def remote_user_logout(request):
     """remoe_user_logout(request)"""
@@ -82,6 +122,8 @@ def remote_user_logged_out(request):
     print("logged out and redirecting")
     return redirect("{0}://{1}/".format(request.scheme, request.get_host()))
 
+""" Profile """
+
 
 class Profile(LoginRequiredMixin, TemplateView):
     """Tasks Delete"""
@@ -93,58 +135,7 @@ class Profile(LoginRequiredMixin, TemplateView):
         r_data.update({"username": username})
         return render(request, 'nmap/profile.html', r_data)
 
-
-def index(request):
-    """index"""
-
-    view_name = request.resolver_match.url_name
-    print(view_name)
-
-    try:
-        remote_user = request.META['REMOTE_USER']
-    except KeyError:
-        remote_user = None
-
-    """ DEBUG INFO """
-    print("full url: " + str(request.build_absolute_uri()))
-
-    print("user: " + str(request.user))
-    print("remote_user: " + str(remote_user))
-
-    #print("get user remote user: " + get_user(remote_user))
-
-    print("Authenticated: " +  str(request.user.is_authenticated()))
-
-    print("Superuser: "  + str(request.user.is_superuser))
-    print("Groups: "  + str(request.user.groups.count()))
-
-    """ /DEBUG INFO """
-
-
-
-    if request.user.is_authenticated():
-        if request.user.is_superuser:
-            print("you can do and see anything")
-            # _contacts = Contact.objects.all()
-        else:
-
-            if request.user.groups.count() == 0:
-                print("no groups assigned")
-            elif request.user.groups.count() == 1:
-                print("exactly one group.. that's normal (=nice)")
-            else:
-                print("hm.. why do you have more than one group?!")
-    else:
-        print("non-auth")
-
-    _contacts = Contact.objects.all()
-
-    r_data = {}
-
-    r_data.update({"remote_user": remote_user,
-                   "contacts": _contacts,
-                   "view_name": view_name})
-    return render(request, 'nmap/index.html', r_data)
+""" NWScanDB Models Start here """
 
 
 class ScanView(LoginRequiredMixin, TemplateView):
@@ -193,13 +184,13 @@ class TasksView(LoginRequiredMixin, TemplateView):
         print(current_view)
 
 
-
+        """
         #if not request.user.has_perm("nmap.view_task"):
         if not request.user.has_perm("nmap.stop_task"):
             messages.error(request, "You do not have permission to ")
             return render(request, 'nmap/tasks.html', {})
             #return redirect('/nmap/')
-
+        """
 
 
         # _nmap_tasks = NmapTask.find(user_id=user.id)
@@ -310,6 +301,13 @@ class NmapReportIDView(LoginRequiredMixin, TemplateView):
         r_data = {}
         r_data.update({"report": _nmap_report})
         return render(request, 'nmap/report.html', r_data)
+
+
+
+
+
+
+
 
 """
 #@login_required

@@ -18,13 +18,3 @@ urlpatterns = patterns('',
     url(r'^report/task_id/([-\w]+)$', NmapReportView.as_view(), name='nmapreport_task_id_view'),
     url(r'^report/id/([-\w]+)$', NmapReportIDView.as_view(), name='nmapreport_id_view'),
 )
-
-"""
-url(r'^tasks/$', views.tasks, name='tasks'),
-url(r'^reports/$', views.reports, name='reports'),
-url(r'^addresses/$', views.addresses, name='addresses'),
-url(r'^compare/$', views.compare, name='compare'),
-url(r'^db/$', views.database, name='database'),
-url(r'^import/$', views.importer, name='importer'),
-url(r'^export/$', views.exporter, name='exporter'),
-"""
