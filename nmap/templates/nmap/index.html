@@ -16,6 +16,12 @@
         <p>No polls are available.</p>
     {% endif %}
 
+    <br/><br/>Remote_User: <br/>
+    {% if remote_user %} is:
+    {{ remote_user }}
+    {% else %} is None
+    {% endif %}
+
     <br/><br/>User: <br/>
     {{ user }}
     <br/><br/>Permission Obj: <br/>

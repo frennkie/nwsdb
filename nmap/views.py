@@ -6,6 +6,7 @@ from django.db.models import ObjectDoesNotExist
 from django.shortcuts import render, redirect
 from django.core.urlresolvers import resolve
 from django.contrib import messages
+from django.contrib.auth import logout
 
 import json
 import datetime
@@ -37,35 +38,88 @@ class SomeView(LoginRequiredMixin, TemplateView):
 
 """
 
+def remote_user_logout(request):
+    """remoe_user_logout(request)"""
 
-# @login_required
+
+    try:
+        remote_user = request.META['REMOTE_USER']
+    except KeyError:
+        remote_user = None
+
+    """ DEBUG INFO """
+    print("full url: " + str(request.build_absolute_uri()))
+
+    print("user: " + str(request.user))
+    print("remote_user: " + str(remote_user))
+
+    #print("get user remote user: " + get_user(remote_user))
+
+    print("Authenticated: " +  str(request.user.is_authenticated()))
+
+    print("Superuser: "  + str(request.user.is_superuser))
+    print("Groups: "  + str(request.user.groups.count()))
+
+    """ /DEBUG INFO """
+
+    if not request.user.is_authenticated():
+        print("not authenticated.. what are you doing here?!")
+        return HttpResponse("Sorry - 403 Forbidden")
+
+    if not remote_user:
+        print("not remote user.. regular log out")
+
+        logout(request)
+        return redirect("{0}://{1}/".format(request.scheme, request.get_host()))
+
+    else:
+        print("remote user.. log out 'invalid'")
+        return redirect("{0}://log_out_user:@{1}/nmap/logged_out".format(request.scheme,
+                                                                         request.get_host()))
+
+
+def remote_user_logged_out(request):
+    print("logged out and redirecting")
+    return redirect("{0}://{1}/".format(request.scheme, request.get_host()))
+
+
+def profile(request):
+    """profile"""
+    return HttpResponse("Profile..")
+
+
 def index(request):
     """index"""
 
     view_name = request.resolver_match.url_name
     print(view_name)
 
-
-    print(request.META)
-
     try:
         remote_user = request.META['REMOTE_USER']
-    except:
-        remote_user =None
+    except KeyError:
+        remote_user = None
 
-    print("user: ")
-    print(remote_user)
-    print("..")
+    """ DEBUG INFO """
+    print("full url: " + str(request.build_absolute_uri()))
 
-    print(request.user)
-    print(request.user.is_authenticated())
-    print(request.user.is_superuser)
-    print(request.user.groups.count())
+    print("user: " + str(request.user))
+    print("remote_user: " + str(remote_user))
+
+    #print("get user remote user: " + get_user(remote_user))
+
+    print("Authenticated: " +  str(request.user.is_authenticated()))
+
+    print("Superuser: "  + str(request.user.is_superuser))
+    print("Groups: "  + str(request.user.groups.count()))
+
+    """ /DEBUG INFO """
+
+
 
     if request.user.is_authenticated():
         if request.user.is_superuser:
             print("you can do and see anything")
-            _contacts = Contact.objects.all()
+            # _contacts = Contact.objects.all()
         else:
 
             if request.user.groups.count() == 0:
@@ -77,14 +131,13 @@ def index(request):
     else:
         print("non-auth")
 
-
-
-    #print(request.user)
-
     _contacts = Contact.objects.all()
 
     r_data = {}
-    r_data.update({"contacts": _contacts, 'view_name': view_name})
+
+    r_data.update({"remote_user": remote_user,
+                   "contacts": _contacts,
+                   "view_name": view_name})
     return render(request, 'nmap/index.html', r_data)
 
 
@@ -92,8 +145,9 @@ class ScanView(LoginRequiredMixin, TemplateView):
     """Scan View"""
     template_name = "nmap/scan.html"
 
-    def get(self, request, *args, **kwargs):
 
+    def get(self, request, *args, **kwargs):
+        """get"""
         if request.user.is_authenticated():
             messages.success(request, "Welcome " + str(request.user))
         else:
@@ -158,7 +212,7 @@ class TasksView(LoginRequiredMixin, TemplateView):
         if request.POST['targets']:
             targets = request.POST["targets"]
         else:
-            abort(401)
+            return False
 
         if request.POST['comment']:
             comment = request.POST['comment']
@@ -217,7 +271,7 @@ class TaskDelete(LoginRequiredMixin, TemplateView):
             _nmap_task.delete()
         except ObjectDoesNotExist:
             messages.error(request, "does not exist!")
-            return render(request, 'accounts/login.html', r_data)
+            return render(request, 'accounts/login.html')
 
         return redirect('/nmap/tasks/')
 

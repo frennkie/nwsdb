@@ -74,21 +74,36 @@
                             {% widget "widgets_base:render_nav_link" title="Import" icon="import" link="/nmap/import/" %}
                         </ul>
                     </li>
-
-
                 </ul>
+
                 <ul class="nav navbar-nav navbar-right">
                     {% if user.is_superuser %} <!-- Admin link only for superusers -->
                         {% widget "widgets_base:render_nav_link" title="Admin Page" icon="cog" link="/admin/" %}
                     {% endif %}
 
                     {% widget "widgets_base:render_nav_link" title=user.username icon="user" link="/accounts/"|add:user.username|add:"/" %}
-                    {% widget "widgets_base:render_nav_link" title="Log out" icon="off" link="/accounts/logout/" %}
+
+                    {% if remote_user %} <!-- __ remote_user __ -->
+                        {% widget "widgets_base:render_nav_link" title="Log out" icon="off" link="/nmap/logout/" %}
+
+                    {% else %} <!-- is None. -->
+                        {% widget "widgets_base:render_nav_link" title="Log out" icon="off" link="/logout/" %}
+
+                    {% endif %}
+
+
                 </ul>
 
 
                 <!-- //Show this only for authenticated users: -->
             {% else %}
+
+                <!-- Collect the nav links, forms, and other content for toggling -->
+                <div class="collapse navbar-collapse" id="bs-example-navbar-collapse-1">
+                <ul class="nav navbar-nav">
+                    {% widget "widgets_base:render_nav_link" title="Home" icon="home" link="/" %}
+                </ul>
+
                 <!-- unauthenticated visitors -->
                 <ul class="nav navbar-nav navbar-right">
                     {% widget "widgets_base:render_nav_link" title="Admin" icon="cog" link="/admin/" %}

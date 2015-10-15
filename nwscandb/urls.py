@@ -21,7 +21,9 @@ from accounts import urls as accounts_urls
 
 urlpatterns =  patterns('',
     url(r'^$', nmap.views.index, name='Nmap Home'),
+    url(r'^logout/$', nmap.views.remote_user_logout, name='Log out'),
+    url(r'^logged_out/$', nmap.views.remote_user_logged_out, name='Logged out'),
     url(r'^nmap/', include(nmap_urls)),
-    url(r'^accounts/', include(accounts_urls)),
+    #url(r'^accounts/', include(accounts_urls)),
     url(r'^admin/', include(admin.site.urls)),
  )

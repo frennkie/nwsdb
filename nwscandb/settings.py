@@ -42,12 +42,11 @@ INSTALLED_APPS = (
     'django_jinja',
     'sniplates',
     'djcelery',
-    'accounts',
     'nmap',
 )
 
-LOGIN_URL = '/accounts/login/'
-LOGOUT_URL = '/accounts/logout/'
+LOGIN_URL = '/nmap/login/'
+LOGOUT_URL = '/nmap/logout/'
 LOGIN_REDIRECT_URL = '/nmap/'
 
 SESSION_EXPIRE_AT_BROWSER_CLOSE = True

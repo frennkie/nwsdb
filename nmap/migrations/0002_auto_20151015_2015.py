@@ -9,6 +9,7 @@ class Migration(migrations.Migration):
 
     dependencies = [
         migrations.swappable_dependency(settings.AUTH_USER_MODEL),
+        ('nmap', '0001_initial'),
     ]
 
     operations = [
@@ -26,13 +27,13 @@ class Migration(migrations.Migration):
                 ('comment', models.CharField(max_length=200, blank=True)),
                 ('created', models.DateTimeField(auto_now_add=True, verbose_name=b'date created')),
                 ('updated', models.DateTimeField(auto_now=True, verbose_name=b'date update')),
-                ('members', models.ManyToManyField(to=settings.AUTH_USER_MODEL, through='accounts.Membership')),
+                ('members', models.ManyToManyField(to=settings.AUTH_USER_MODEL, through='nmap.Membership')),
             ],
         ),
         migrations.AddField(
             model_name='membership',
             name='org',
-            field=models.ForeignKey(to='accounts.OrgUnit'),
+            field=models.ForeignKey(to='nmap.OrgUnit'),
         ),
         migrations.AddField(
             model_name='membership',
