@@ -1,4 +1,6 @@
 
+Get rid of Jinja2! ;-)
+
 
 ### Get started
 
