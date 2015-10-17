@@ -1,5 +1,5 @@
 from django.views.generic import TemplateView
-from braces.views import MessageMixin, LoginRequiredMixin
+from braces.views import MessageMixin, LoginRequiredMixin, GroupRequiredMixin
 from django.http import HttpResponse
 from django.db.models import ObjectDoesNotExist
 from django.shortcuts import render, redirect
@@ -126,14 +126,36 @@ def remote_user_logged_out(request):
 
 
 class Profile(LoginRequiredMixin, TemplateView):
-    """Tasks Delete"""
+    """Profile"""
 
     def get(self, request, username):
         """get"""
 
+        try:
+            remote_user = request.META['REMOTE_USER']
+        except KeyError:
+            remote_user = None
+
         r_data = {}
-        r_data.update({"username": username})
+        r_data.update({"remote_user": remote_user,
+                       "username": username})
         return render(request, 'nmap/profile.html', r_data)
+
+class NoPermission(LoginRequiredMixin, TemplateView):
+    """NoPermission"""
+
+    def get(self, request):
+        """get"""
+
+        try:
+            remote_user = request.META['REMOTE_USER']
+        except KeyError:
+            remote_user = None
+
+        r_data = {}
+        r_data.update({"remote_user": remote_user})
+        return render(request, 'nmap/no_permission.html', r_data)
+
 
 """ NWScanDB Models Start here """
 
@@ -170,12 +192,14 @@ class TasksJsonView(LoginRequiredMixin, TemplateView):
         return HttpResponse(json.dumps(_result), content_type="application/json")
 
 
-class TasksView(LoginRequiredMixin, TemplateView):
+class TasksView(GroupRequiredMixin, TemplateView):
     """Tasks View
 
     get and post
 
     """
+    group_required = [u"members_view_only", u"members_full_edit"]
+    login_url = "/nmap/no_permission"
 
     def get(self, request, *args, **kwargs):
         """get"""
