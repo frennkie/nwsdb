@@ -77,6 +77,13 @@ def index(request):
     else:
         print("non-auth")
 
+    """ TODO remove this block.. """
+    if request.user.is_authenticated():
+        messages.success(request, "Welcome " + str(request.user))
+    else:
+        messages.error(request, "You do not have permission to access this site!")
+    """ TODO remove this block.. """
+
     _contacts = Contact.objects.all()
 
     cdict = {"remote_user": get_remote_user(request)}
@@ -161,13 +168,6 @@ class ScanView(LoginRequiredMixin, TemplateView):
         """get"""
         template_name = "nmap/scan.html"
 
-        """ TODO remove this block.. """
-        if request.user.is_authenticated():
-            messages.success(request, "Welcome " + str(request.user))
-        else:
-            messages.error(request, "You do not have permission to access this site!")
-        """ TODO remove this block.. """
-
         u = User.objects.get(username=get_remote_user(request))
         orgunits = u.orgunit_set.all()
 
@@ -177,7 +177,7 @@ class ScanView(LoginRequiredMixin, TemplateView):
         return render(request, template_name, cdict)
 
 
-class TasksJsonView(LoginRequiredMixin, TemplateView):
+class TasksJsonView(PermissionRequiredMixin, TemplateView):
     """Task Json View
 
     Get a list of all tasks that the User is is allowed to see.
@@ -185,10 +185,16 @@ class TasksJsonView(LoginRequiredMixin, TemplateView):
     Return result as JSON dump so that the progress bar can be drawn with AJAX
 
     """
+    permission_required = "nmap.view_task"
+    login_url = "/nmap/no_permission"
 
     def get(self, request, *args, **kwargs):
         """TODO: get current user/group for filter"""
-        _result = NmapTask.get_tasks_status_as_dict()
+
+        u = User.objects.get(username=get_remote_user(request))
+        orgunits = u.orgunit_set.all()
+
+        _result = NmapTask.get_tasks_status_as_dict(org_unit__in=orgunits)
         return HttpResponse(json.dumps(_result), content_type="application/json")
 
 
@@ -205,23 +211,12 @@ class TasksView(PermissionRequiredMixin, TemplateView):
         """get"""
         template_name = "nmap/tasks.html"
 
-        current_view = resolve(request.path)[0]
-        print(current_view)
-
-
-        """
-        #if not request.user.has_perm("nmap.view_task"):
-        if not request.user.has_perm("nmap.stop_task"):
-            messages.error(request, "You do not have permission to ")
-            return render(request, 'nmap/tasks.html', {})
-            #return redirect('/nmap/')
-        """
-
-
-        # _nmap_tasks = NmapTask.find(user_id=user.id)
-        _nmap_task = NmapTask.find()
+        u = User.objects.get(username=get_remote_user(request))
+        orgunits = u.orgunit_set.all()
+        _nmap_task = NmapTask.objects.filter(org_unit__in=orgunits)
 
         cdict = {"remote_user": get_remote_user(request)}
+        cdict.update({"orgunits": orgunits})
         cdict.update({"nmap_tasks": _nmap_task})
         return render(request, template_name, cdict)
 

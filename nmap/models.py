@@ -313,7 +313,9 @@ class NmapReportMeta(models.Model):
                                      task_comment=_nmap_task.comment,
                                      task_created=_nmap_task.created,
                                      report_stored=1,
-                                     report=_result)
+                                     report=_result,
+                                     user=User.objects.get(id=_nmap_task.user_id),
+                                     org_unit=OrgUnit.objects.get(id=_nmap_task.org_unit_id))
         report_meta.save()
 
         """

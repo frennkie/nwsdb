@@ -7,12 +7,13 @@
 
 <legend>Scans Tasks</legend>
 <table id="tasktable" class="table table-striped">
-    <th>Tasks</th><th>Created (UTC)</th><th>Comment</th><th>Status</th><th>Progress</th><th>&nbsp;</th><th>Details</th><th>Delete</th>
+    <th>Tasks</th><th>Created (UTC)</th><th>OrgUnit</th><th>Comment</th><th>Status</th><th>Progress</th><th>&nbsp;</th><th>Details</th><th>Delete</th>
     {% if nmap_tasks %}
         {% for nmap_task in nmap_tasks %}
         <tr>
             <td id="{{ nmap_task.task_id }}">{{ nmap_task.task_id }}</td>
             <td id="{{ nmap_task.task_id }}">{{ nmap_task.created }} ({{ nmap_task.created|naturaltime }})</td>
+            <td id="{{ nmap_task.task_id }}">{{ nmap_task.org_unit.name }}</td>
             <td id="{{ nmap_task.task_id }}">{{ nmap_task.comment }}</td>
 
 
@@ -61,7 +62,11 @@
     {% endif %}
 </table>
 
-
+<p>You are member of:
+    {% for orgunit in orgunits %}
+        {{ orgunit }}{% if not forloop.last %}, {% endif %}
+    {% endfor %}
+</p>
 
 {% endblock %}
 {% block javascript %}
@@ -82,34 +87,43 @@
             var details_link = "<a href=\"/nmap/report/task_id/" + ntask.id + "\">Details</a>";
             var stop_link = '&nbsp';
 
-            //console.log(ntask.status)
 
-            if((ntask.ready == 1) && ($.inArray(ntask.id, tasks_done) == -1)){
-                document.getElementById('pb_' + ntask.id).className = 'progress-bar progress-bar-success';
-                document.getElementById('stop_' + ntask.id).innerHTML = stop_link;
+            // make a lookup to make sure that an element with that ID is on page //
+            try {
+                lookup = document.getElementById('pb_' + ntask.id).className
+                //console.log("found: " + ntask.id)
 
-                if(ntask.status != "REMOVED"){
+                if((ntask.ready == 1) && ($.inArray(ntask.id, tasks_done) == -1)){
+
+                    document.getElementById('pb_' + ntask.id).className = 'progress-bar progress-bar-success';
+                    document.getElementById('stop_' + ntask.id).innerHTML = stop_link;
+
+                    if(ntask.status != "REMOVED"){
+                        $('#pb_' + pbarid).css('width', ntask.progress+'%').attr('aria-valuenow', ntask.progress);
+                    }
+
+                    $('#' + pstatusid).text(ntask.status);
+
+                    if(ntask.status == "SUCCESS"){
+                        $('#' + plinkid).html(details_link);
+                    }
+                    tasks_done.push(ntask.id);
+                    all_done = false;
+                }
+                else if(ntask.ready == 0) {
+                    document.getElementById('pb_' + ntask.id).className = 'progress-bar progress-bar-striped active';
                     $('#pb_' + pbarid).css('width', ntask.progress+'%').attr('aria-valuenow', ntask.progress);
+                    $('#' + pstatusid).text(ntask.status);
+                    all_done = false;
                 }
-
-                $('#' + pstatusid).text(ntask.status);
-
-                if(ntask.status == "SUCCESS"){
-                    $('#' + plinkid).html(details_link);
+                else if($.inArray(ntask.id, tasks_done) == -1){
+                    $('#' + pbarid).css('width', ntask.progress+'%').attr('aria-valuenow', ntask.progress);
+                    $('#' + pstatusid).text(ntask.status);
+                    all_done = false;
                 }
-                tasks_done.push(ntask.id);
-                all_done = false;
             }
-            else if(ntask.ready == 0) {
-                document.getElementById('pb_' + ntask.id).className = 'progress-bar progress-bar-striped active';
-                $('#pb_' + pbarid).css('width', ntask.progress+'%').attr('aria-valuenow', ntask.progress);
-                $('#' + pstatusid).text(ntask.status);
-                all_done = false;
-            }
-            else if($.inArray(ntask.id, tasks_done) == -1){
-                $('#' + pbarid).css('width', ntask.progress+'%').attr('aria-valuenow', ntask.progress);
-                $('#' + pstatusid).text(ntask.status);
-                all_done = false;
+            catch(err) {
+                console.log("could not find: " + ntask.id)
             }
         });
         if(all_done){
