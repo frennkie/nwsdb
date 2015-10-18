@@ -1,0 +1,20 @@
+{% extends "base.html" %}
+{% block title %}No Permission{% endblock %}
+{% block body %}
+    <!--Body content-->
+
+    <h2>No Permission</h2>
+
+    <p>Well, you are logged in - but you don't have
+    permission to access this resource!</p> <br />
+
+    <p>
+    Remote_User:
+    {% if remote_user %} {{ remote_user }}
+    {% else %} None
+    {% endif %}
+    </p>
+
+    <p>User: {{ user }}</p>
+
+{% endblock %}

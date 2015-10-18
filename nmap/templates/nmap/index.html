@@ -1,0 +1,19 @@
+{% extends "base.html" %}
+{% block title %}Home{% endblock %}
+{% block body %}
+    <!--Body content-->
+    <legend>NW Scan DB</legend>
+    <p>Description...</p>
+
+    <p>Contact DB:</p>
+    {% if contacts %}
+        <ul>
+        {% for contact in contacts %}
+            <li>{{ contact }}, {{ contact.email }} </li>
+        {% endfor %}
+        </ul>
+    {% else %}
+        <p>No Contacts stored.</p>
+    {% endif %}
+
+{% endblock %}
