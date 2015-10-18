@@ -255,13 +255,27 @@ class NmapReportMeta(models.Model):
         return NmapReportMeta.objects.filter(**kwargs).order_by('created')
 
     @classmethod
-    def get_nmap_report_by_id(cls, nmap_report_meta_id):
-        _nrm = NmapReportMeta.objects.get(task_id=nmap_report_meta_id)
+    def get_nmap_report_by_id(cls, nmap_report_meta_id, user_obj=None):
+
+        if user_obj:
+            orgunits = user_obj.orgunit_set.all()
+            queryset = NmapReportMeta.objects.filter(org_unit__in=orgunits)
+        else:
+            queryset = NmapReportMeta.objects.all()
+
+        _nrm = queryset.get(id=nmap_report_meta_id)
         return NmapParser.parse_fromstring(str(_nrm.report))
 
     @classmethod
-    def get_nmap_report_by_task_id(cls, nmap_task_id):
-        _nrm = NmapReportMeta.objects.get(task_id=nmap_task_id)
+    def get_nmap_report_by_task_id(cls, nmap_task_id, user_obj=None):
+
+        if user_obj:
+            orgunits = user_obj.orgunit_set.all()
+            queryset = NmapReportMeta.objects.filter(org_unit__in=orgunits)
+        else:
+            queryset = NmapReportMeta.objects.all()
+
+        _nrm = queryset.get(task_id=nmap_task_id)
         return NmapParser.parse_fromstring(str(_nrm.report))
 
     @classmethod

@@ -3,34 +3,32 @@
 {% block body %}
     <!--Body content-->
 
+        {% load sniplates %}
+        {% load_widgets widgets_base="widgets_base.html" %}
 
-        <legend>Showing Reports from finished tasks (Total: {{ items_paged.total }})</legend>
-        <table id="tasktable" class="table table-striped">
-          <th>ID</th><th>TaskID</th><th>Started</th><th>Inserted</th><th>Comment</th><th>Hosts_Up</th><th>Hosts_Total</th><th>Details</th>
+        <legend>Showing Reports from finished tasks (Total: {{ items_paged.paginator.count }})</legend>
+        <table id="reportstable" class="table table-striped">
+          <th>ID</th><th>TaskID</th><th>Started</th><th>User</th><th>OrgUnit</th><th>Comment</th><th>Details</th>
 
           {% for report_meta in items_paged %}
             <tr>
                 <td id="{{ report_meta.id }}">{{ report_meta.id }}</td>
-                <td id="{{ report_meta.id }}">{{ report_meta.task_task_id }}</td>
-                <td id="{{ report_meta.id }}">{{ report_meta.task_comment }}</td>
+                <td id="{{ report_meta.id }}">{{ report_meta.task_id }}</td>
+                <td id="{{ report_meta.id }}">{{ report_meta.task_created }}</td>
+
+
+            <td id="{{ report_meta.id }}">{{ report_meta.user }}</td>
+            <td id="{{ report_meta.id }}">{{ report_meta.org_unit }}</td>
+            <td id="{{ report_meta.id }}">{{ report_meta.task_comment }}</td>
+            <td id="{{ report_meta.id }}"><a href="report/task_id/{{ report_meta.task_id }}">Details</a></td>
             </tr>
           {% endfor %}
         </table>
 
-<div class="pagination">
-    <span class="step-links">
-        {% if items_paged.has_previous %}
-            <a href="?page={{ items_paged.previous_page_number }}">previous</a>
-        {% endif %}
-
-        <span class="current">
-            Page {{ items_paged.number }} of {{ items_paged.paginator.num_pages }}.
-        </span>
-
-        {% if items_paged.has_next %}
-            <a href="?page={{ items_paged.next_page_number }}">next</a>
-        {% endif %}
-    </span>
-</div>
+        {% widget "widgets_base:pagination_buttons" items_paged=items_paged %}
 
 {% endblock %}
+
+
+
+

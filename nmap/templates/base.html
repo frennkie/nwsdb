@@ -60,20 +60,24 @@
                     {% widget "widgets_base:render_nav_link" title="Home" icon="home" link="/nmap/" %}
                     {% widget "widgets_base:render_nav_link" title="Scan" icon="fire" link="/nmap/scan/" %}
                     {% widget "widgets_base:render_nav_link" title="Tasks" icon="book" link="/nmap/tasks/" %}
-                    {% widget "widgets_base:render_nav_link" title="Reports" icon="alt" link="/nmap/reports/1" %}
-                    {% widget "widgets_base:render_nav_link" title="Addresses" icon="superscript" link="/nmap/addresses/1" %}
-                    {% widget "widgets_base:render_nav_link" title="Compare" icon="random" link="/nmap/compare/" %}
+                    {% widget "widgets_base:render_nav_link" title="Reports" icon="alt" link="/nmap/reports" %}
+                    <!--
+                    { % widget "widgets_base:render_nav_link" title="Addresses" icon="superscript" link="/nmap/addresses/1" %}
+                    { % widget "widgets_base:render_nav_link" title="Compare" icon="random" link="/nmap/compare/" %}
 
 
                     <li class="dropdown">
                         <a href="#" class="dropdown-toggle" data-toggle="dropdown" role="button" aria-haspopup="true" aria-expanded="false">Database <span class="caret"></span></a>
                         <ul class="dropdown-menu">
-                            {% widget "widgets_base:render_nav_link" title="Overview" icon="hdd" link="/nmap/db/" %}
+                            { % widget "widgets_base:render_nav_link" title="Overview" icon="hdd" link="/nmap/db/" %}
                             <li role="separator" class="divider"></li>
-                            {% widget "widgets_base:render_nav_link" title="Export" icon="export" link="/nmap/export/" %}
-                            {% widget "widgets_base:render_nav_link" title="Import" icon="import" link="/nmap/import/" %}
+                            { % widget "widgets_base:render_nav_link" title="Export" icon="export" link="/nmap/export/" %}
+                            { % widget "widgets_base:render_nav_link" title="Import" icon="import" link="/nmap/import/" %}
                         </ul>
                     </li>
+
+                    -->
+
                 </ul>
 
                 <ul class="nav navbar-nav navbar-right">

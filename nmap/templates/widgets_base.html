@@ -5,3 +5,37 @@
     </li>
 {% endblock %}
 
+
+{% block pagination_buttons %}
+    <div class="text-center">
+        <ul class="pagination pagination-lg">
+            {% if items_paged.has_previous %}
+                <li class="active"><a href="?page={{ items_paged.previous_page_number }}">&laquo;</a></li>
+            {% else %}
+                <li class="disabled"><a href="#">&laquo;</a></li>
+            {% endif %}
+
+            {% if items_paged.number != 1 %}
+                <li class="inactive"><a href="?page=1">1</a></li>
+                {% if items_paged.previous_page_number != 1 %}
+                    <li class="inactive"><span class=ellipsis>...</span></li>
+                {% endif %}
+            {% endif %}
+
+            <li class="disabled "><a href="#">{{ items_paged.number }}</a></li>
+
+            {% if items_paged.number != items_paged.paginator.num_pages %}
+                {% if items_paged.next_page_number != items_paged.paginator.num_pages %}
+                    <li class="inactive"><span class=ellipsis>...</span></li>
+                {% endif %}
+                <li class="inactive"><a href="?page={{ items_paged.paginator.num_pages }}">{{ items_paged.paginator.num_pages }}</a></li>
+            {% endif %}
+
+            {% if items_paged.has_next %}
+                <li class="active"><a href="?page={{ items_paged.next_page_number }}">&raquo;</a></li>
+            {% else %}
+                <li class="disabled"><a href="#">&raquo;</a></li>
+            {% endif %}
+        </ul>
+    </div>
+{% endblock %}

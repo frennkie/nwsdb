@@ -337,11 +337,9 @@ class NmapReportsView(PermissionRequiredMixin, TemplateView):
         orgunits = u.orgunit_set.all()
         nmap_reports = NmapReportMeta.objects.filter(org_unit__in=orgunits)
 
-        paginator = Paginator(nmap_reports, 5)
-
+        paginator = Paginator(nmap_reports, 25)
 
         page = request.GET.get('page')
-        #page = 1
 
         try:
             items_paged = paginator.page(page)
@@ -357,12 +355,15 @@ class NmapReportsView(PermissionRequiredMixin, TemplateView):
 
         return render(request, template_name, cdict)
 
+
 class NmapReportView(LoginRequiredMixin, TemplateView):
     """NmapReport View takes task_id"""
 
     def get(self, request, task_id, *args, **kwargs):
 
-        _nmap_report = NmapReportMeta.get_nmap_report_by_task_id(task_id)
+        u = User.objects.get(username=get_remote_user(request))
+
+        _nmap_report = NmapReportMeta.get_nmap_report_by_task_id(task_id, user_obj=u)
         for scanned_host in _nmap_report.hosts:
 
             scanned_host.datetime_starttime = datetime.datetime.fromtimestamp(int(scanned_host.starttime))
