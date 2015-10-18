@@ -37,12 +37,9 @@ class OrgUnit(models.Model):
         return _org_unit
 
     def __repr__(self):
-        return "<{0} {1}> Name: ({3}) Mail: ({4})".format(
+        return "<{0}: {1}>".format(
                 self.__class__.__name__,
-                self.id,
-                self.created,
-                self.name,
-                self.email)
+                self.name)
 
     def __unicode__(self): # __str__ on Python 3
         return self.name
@@ -75,7 +72,8 @@ class NmapTask(models.Model):
     completed = models.BooleanField(default=False)
     completed_status = models.CharField(max_length=20)
 
-    #user_id = db.Column(db.Integer, db.ForeignKey("user.id"))
+    user = models.ForeignKey(User)
+    org_unit = models.ForeignKey(OrgUnit)
 
     def __repr__(self):
         return "<{0} {1}: {2}>".format(self.__class__.__name__,
@@ -223,9 +221,10 @@ class NmapReportMeta(models.Model):
     updated = models.DateTimeField('date update', auto_now=True)
 
     report_stored = models.BooleanField(default=False)
-    #report_id = models.IntegerField(null=True)
     report = models.TextField(null=True)
-    #task_user_id = db.Column(db.Integer, db.ForeignKey("user.id"))
+
+    user = models.ForeignKey(User)
+    org_unit = models.ForeignKey(OrgUnit)
 
     def __repr__(self):
         return "<{0} {1}> TID:{2}".format(self.__class__.__name__,

@@ -1,6 +1,7 @@
 from django.views.generic import TemplateView
 from braces.views import MessageMixin, LoginRequiredMixin, GroupRequiredMixin
-from django.http import HttpResponse
+from braces.views import PermissionRequiredMixin
+from django.http import HttpResponse, HttpResponseBadRequest
 from django.db.models import ObjectDoesNotExist
 from django.shortcuts import render, redirect
 from django.core.urlresolvers import resolve
@@ -12,8 +13,19 @@ import datetime
 
 # start import from my models
 from nmap.tasks import celery_nmap_scan
-from .models import Contact, NmapTask, NmapReportMeta
+from .models import Contact, NmapTask, NmapReportMeta, OrgUnit
+from django.contrib.auth.models import User
 from django import forms
+
+
+def get_remote_user(_request):
+    """Return remote_user (value is None if empty)"""
+
+    try:
+        remote_user = _request.META['REMOTE_USER']
+    except KeyError:
+        remote_user = None
+    return remote_user
 
 
 """
@@ -26,10 +38,10 @@ class SomeView(LoginRequiredMixin, TemplateView):
         some = SomeClass.objects.all()
         other_stuff = OtherStuff.objects.all()
 
-        r_data = {}
-        r_data.update({"some": some,
+        cdict = {}
+        cdict.update({"some": some,
                        "other_stuff": other_stuff})
-        return render(request, 'nmap/index.html', r_data)
+        return render(request, 'nmap/index.html', cdict)
 
 """
 
@@ -40,10 +52,7 @@ def index(request):
     view_name = request.resolver_match.url_name
     print(view_name)
 
-    try:
-        remote_user = request.META['REMOTE_USER']
-    except KeyError:
-        remote_user = None
+    remote_user = get_remote_user(request)
 
     """ DEBUG INFO """
     print("user: " + str(request.user))
@@ -70,22 +79,16 @@ def index(request):
 
     _contacts = Contact.objects.all()
 
-    r_data = {}
-
-    r_data.update({"remote_user": remote_user,
-                   "contacts": _contacts,
-                   "view_name": view_name})
-    return render(request, 'nmap/index.html', r_data)
+    cdict = {"remote_user": get_remote_user(request)}
+    cdict.update({"contacts": _contacts,
+                  "view_name": view_name})
+    return render(request, 'nmap/index.html', cdict)
 
 
 def remote_user_logout(request):
     """remoe_user_logout(request)"""
 
-
-    try:
-        remote_user = request.META['REMOTE_USER']
-    except KeyError:
-        remote_user = None
+    remote_user = get_remote_user(request)
 
     """ DEBUG INFO """
     print("full url: " + str(request.build_absolute_uri()))
@@ -119,6 +122,7 @@ def remote_user_logout(request):
 
 
 def remote_user_logged_out(request):
+    """ """
     print("logged out and redirecting")
     return redirect("{0}://{1}/".format(request.scheme, request.get_host()))
 
@@ -128,33 +132,22 @@ def remote_user_logged_out(request):
 class Profile(LoginRequiredMixin, TemplateView):
     """Profile"""
 
-    def get(self, request, username):
+    def get(self, request, username, *args, **kwargs):
         """get"""
 
-        try:
-            remote_user = request.META['REMOTE_USER']
-        except KeyError:
-            remote_user = None
+        cdict = {"remote_user": get_remote_user(request)}
+        cdict.update({"username": username})
+        return render(request, 'nmap/profile.html', cdict)
 
-        r_data = {}
-        r_data.update({"remote_user": remote_user,
-                       "username": username})
-        return render(request, 'nmap/profile.html', r_data)
 
 class NoPermission(LoginRequiredMixin, TemplateView):
     """NoPermission"""
 
-    def get(self, request):
+    def get(self, request, *args, **kwargs):
         """get"""
 
-        try:
-            remote_user = request.META['REMOTE_USER']
-        except KeyError:
-            remote_user = None
-
-        r_data = {}
-        r_data.update({"remote_user": remote_user})
-        return render(request, 'nmap/no_permission.html', r_data)
+        cdict = {"remote_user": get_remote_user(request)}
+        return render(request, 'nmap/no_permission.html', cdict)
 
 
 """ NWScanDB Models Start here """
@@ -162,19 +155,26 @@ class NoPermission(LoginRequiredMixin, TemplateView):
 
 class ScanView(LoginRequiredMixin, TemplateView):
     """Scan View"""
-    template_name = "nmap/scan.html"
 
 
     def get(self, request, *args, **kwargs):
         """get"""
+        template_name = "nmap/scan.html"
+
+        """ TODO remove this block.. """
         if request.user.is_authenticated():
             messages.success(request, "Welcome " + str(request.user))
         else:
             messages.error(request, "You do not have permission to access this site!")
+        """ TODO remove this block.. """
 
-        r_data = {}
-        r_data.update({"form": forms.Form})
-        return render(request, 'nmap/scan.html', r_data)
+        u = User.objects.get(username=get_remote_user(request))
+        orgunits = u.orgunit_set.all()
+
+        cdict = {}
+        cdict.update({"form": forms.Form})
+        cdict.update({"orgunits": orgunits})
+        return render(request, template_name, cdict)
 
 
 class TasksJsonView(LoginRequiredMixin, TemplateView):
@@ -192,17 +192,18 @@ class TasksJsonView(LoginRequiredMixin, TemplateView):
         return HttpResponse(json.dumps(_result), content_type="application/json")
 
 
-class TasksView(GroupRequiredMixin, TemplateView):
+class TasksView(PermissionRequiredMixin, TemplateView):
     """Tasks View
 
     get and post
 
     """
-    group_required = [u"members_view_only", u"members_full_edit"]
+    permission_required = "nmap.view_task"
     login_url = "/nmap/no_permission"
 
     def get(self, request, *args, **kwargs):
         """get"""
+        template_name = "nmap/tasks.html"
 
         current_view = resolve(request.path)[0]
         print(current_view)
@@ -220,11 +221,11 @@ class TasksView(GroupRequiredMixin, TemplateView):
         # _nmap_tasks = NmapTask.find(user_id=user.id)
         _nmap_task = NmapTask.find()
 
-        r_data = {}
-        r_data.update({"nmap_tasks": _nmap_task})
-        return render(request, 'nmap/tasks.html', r_data)
+        cdict = {"remote_user": get_remote_user(request)}
+        cdict.update({"nmap_tasks": _nmap_task})
+        return render(request, template_name, cdict)
 
-    def post(self, request):
+    def post(self, request, *args, **kwargs):
         """post"""
 
         scantypes = [ "-sT", "-sT", "-sS", "-sA", "-sW", "-sM",
@@ -239,6 +240,23 @@ class TasksView(GroupRequiredMixin, TemplateView):
             comment = request.POST['comment']
         else:
             comment = ""
+
+        if request.POST['orgunit']:
+            org_unit_name = request.POST['orgunit']
+            print(org_unit_name)
+            try:
+                org_unit = OrgUnit.objects.get(name=org_unit_name)
+                print(org_unit)
+            except ObjectDoesNotExist:
+                print("Error: Unable to find a OrgUnit called " +
+                      str(org_unit_name))
+                return HttpResponseBadRequest()
+            except Exception as err:
+                print("Error: Something went wrong!")
+                print(err)
+                return HttpResponseBadRequest()
+
+        u = User.objects.get(username=get_remote_user(request))
 
         """
         if request.POST['run_now']:
@@ -277,7 +295,10 @@ class TasksView(GroupRequiredMixin, TemplateView):
                                                             'options': str(options)})
 
         #nt = NmapTask(user=request.user, task_id=_celery_task.id, comment=comment)
-        nt = NmapTask(task_id=_celery_task.id, comment=comment)
+        nt = NmapTask(task_id=_celery_task.id,
+                      comment=comment,
+                      user=u,
+                      org_unit=org_unit)
         nt.save()
 
         return redirect('/nmap/tasks/')
@@ -310,9 +331,9 @@ class NmapReportView(LoginRequiredMixin, TemplateView):
 
             scanned_host.get_open_ports_count = len(scanned_host.get_open_ports())
 
-        r_data = {}
-        r_data.update({"report": _nmap_report})
-        return render(request, 'nmap/report.html', r_data)
+        cdict = {}
+        cdict.update({"report": _nmap_report})
+        return render(request, 'nmap/report.html', cdict)
 
 
 class NmapReportIDView(LoginRequiredMixin, TemplateView):
@@ -322,9 +343,9 @@ class NmapReportIDView(LoginRequiredMixin, TemplateView):
 
         _nmap_report = NmapReportMeta.get_nmap_report_by_id(id)
 
-        r_data = {}
-        r_data.update({"report": _nmap_report})
-        return render(request, 'nmap/report.html', r_data)
+        cdict = {}
+        cdict.update({"report": _nmap_report})
+        return render(request, 'nmap/report.html', cdict)
 
 
 
