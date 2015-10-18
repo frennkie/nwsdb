@@ -2,9 +2,11 @@
 *.pyc
 *.tmp
 *.bak
+.htpasswd
 config.py
 testtools/*
 build/
 dump/
 migrations/versions/*
 celerybeat-schedule
+my.cnf

@@ -1,0 +1,34 @@
+{% extends "base.html" %}
+{% block title %}Reports{% endblock %}
+{% block body %}
+    <!--Body content-->
+
+        {% load sniplates %}
+        {% load_widgets widgets_base="widgets_base.html" %}
+
+        <legend>Showing Reports from finished tasks (Total: {{ items_paged.paginator.count }})</legend>
+        <table id="reportstable" class="table table-striped">
+          <th>ID</th><th>TaskID</th><th>Started</th><th>User</th><th>OrgUnit</th><th>Comment</th><th>Details</th>
+
+          {% for report_meta in items_paged %}
+            <tr>
+                <td id="{{ report_meta.id }}">{{ report_meta.id }}</td>
+                <td id="{{ report_meta.id }}">{{ report_meta.task_id }}</td>
+                <td id="{{ report_meta.id }}">{{ report_meta.task_created }}</td>
+
+
+            <td id="{{ report_meta.id }}">{{ report_meta.user }}</td>
+            <td id="{{ report_meta.id }}">{{ report_meta.org_unit }}</td>
+            <td id="{{ report_meta.id }}">{{ report_meta.task_comment }}</td>
+            <td id="{{ report_meta.id }}"><a href="report/task_id/{{ report_meta.task_id }}">Details</a></td>
+            </tr>
+          {% endfor %}
+        </table>
+
+        {% widget "widgets_base:pagination_buttons" items_paged=items_paged %}
+
+{% endblock %}
+
+
+
+
