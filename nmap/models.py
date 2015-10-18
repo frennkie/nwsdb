@@ -285,6 +285,7 @@ class NmapReportMeta(models.Model):
         Raises:
             MultipleObjectsReturned - if task_id is not unique (should never be the case)
             DoesNotExist - if task_id does not have a corresponding NmapTask in db
+            TODO: or is it ObjectDoesNotExist
 
         Examples:
 

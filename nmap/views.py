@@ -5,6 +5,7 @@ from django.http import HttpResponse, HttpResponseBadRequest
 from django.db.models import ObjectDoesNotExist
 from django.shortcuts import render, redirect
 from django.core.urlresolvers import resolve
+from django.core.paginator import Paginator, EmptyPage, PageNotAnInteger
 from django.contrib import messages
 from django.contrib.auth import logout
 
@@ -302,7 +303,7 @@ class TasksView(PermissionRequiredMixin, TemplateView):
 class TaskDelete(LoginRequiredMixin, TemplateView):
     """Tasks Delete"""
 
-    def get(self, request, task_id):
+    def get(self, request, task_id, *args, **kwargs):
         try:
             _nmap_task = NmapTask.objects.get(task_id=task_id)
             _nmap_task.delete()
@@ -310,13 +311,56 @@ class TaskDelete(LoginRequiredMixin, TemplateView):
             messages.error(request, "does not exist!")
             return render(request, 'accounts/login.html')
 
-        return redirect('/nmap/tasks/')
+        return redirect('/nmfap/tasks/')
 
+
+class NmapReportsView(PermissionRequiredMixin, TemplateView):
+    """NmapReports View takes task_id"""
+
+    permission_required = "nmap.view_task"
+    login_url = "/nmap/no_permission"
+
+    def get(self, request, *args, **kwargs):
+
+        """
+        _nmap_report = NmapReportMeta.get_nmap_report_by_task_id(task_id)
+        for scanned_host in _nmap_report.hosts:
+
+            scanned_host.datetime_starttime = datetime.datetime.fromtimestamp(int(scanned_host.starttime))
+            scanned_host.datetime_endtime = datetime.datetime.fromtimestamp(int(scanned_host.endtime))
+
+            scanned_host.get_open_ports_count = len(scanned_host.get_open_ports())
+        """
+        template_name = "nmap/reports.html"
+
+        u = User.objects.get(username=get_remote_user(request))
+        orgunits = u.orgunit_set.all()
+        nmap_reports = NmapReportMeta.objects.filter(org_unit__in=orgunits)
+
+        paginator = Paginator(nmap_reports, 5)
+
+
+        page = request.GET.get('page')
+        #page = 1
+
+        try:
+            items_paged = paginator.page(page)
+        except PageNotAnInteger:
+            # If page is not an integer, deliver first page.
+            items_paged = paginator.page(1)
+        except EmptyPage:
+            # If page is out of range (e.g. 9999), deliver last page of results.
+            items_paged = paginator.page(paginator.num_pages)
+
+        cdict = {"remote_user": get_remote_user(request)}
+        cdict.update({"items_paged": items_paged})
+
+        return render(request, template_name, cdict)
 
 class NmapReportView(LoginRequiredMixin, TemplateView):
     """NmapReport View takes task_id"""
 
-    def get(self, request, task_id):
+    def get(self, request, task_id, *args, **kwargs):
 
         _nmap_report = NmapReportMeta.get_nmap_report_by_task_id(task_id)
         for scanned_host in _nmap_report.hosts:
@@ -334,7 +378,7 @@ class NmapReportView(LoginRequiredMixin, TemplateView):
 class NmapReportIDView(LoginRequiredMixin, TemplateView):
     """NmapReportID View - same as NmapReportView but takes id instead of task_id """
 
-    def get(self, request, id):
+    def get(self, request, id, *args, **kwargs):
 
         _nmap_report = NmapReportMeta.get_nmap_report_by_id(id)
 
