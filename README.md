@@ -1,6 +1,4 @@
 
-Get rid of Jinja2! ;-)
-
 
 ### Get started
 
@@ -73,7 +71,7 @@ python manage.py shell_plus
 python manage.py shell_plus --notebook
 ```
 
-Autoreload
+Autoreload (careful!)
 ```
 %load_ext autoreload
 %autoreload 2
