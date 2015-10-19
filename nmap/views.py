@@ -9,6 +9,8 @@ from django.core.paginator import Paginator, EmptyPage, PageNotAnInteger
 from django.contrib import messages
 from django.contrib.auth import logout
 
+from xlsx import Workbook
+
 import json
 import datetime
 
@@ -50,17 +52,20 @@ class SomeView(LoginRequiredMixin, TemplateView):
 def index(request):
     """index"""
 
-    view_name = request.resolver_match.url_name
-    print(view_name)
+
+    """ DEBUG INFO """
 
     remote_user = get_remote_user(request)
 
-    """ DEBUG INFO """
+    view_name = request.resolver_match.url_name
+    print(view_name)
+
     print("user: " + str(request.user))
     print("remote_user: " + str(remote_user))
     print("Authenticated: " +  str(request.user.is_authenticated()))
     print("Superuser: "  + str(request.user.is_superuser))
     print("Groups: "  + str(request.user.groups.count()))
+
     """ /DEBUG INFO """
 
     if request.user.is_authenticated():
@@ -99,6 +104,7 @@ def remote_user_logout(request):
     remote_user = get_remote_user(request)
 
     """ DEBUG INFO """
+
     print("full url: " + str(request.build_absolute_uri()))
 
     print("user: " + str(request.user))
@@ -143,7 +149,11 @@ class Profile(LoginRequiredMixin, TemplateView):
     def get(self, request, username, *args, **kwargs):
         """get"""
 
+        u = User.objects.get(username=get_remote_user(request))
+        orgunits = u.orgunit_set.all()
+
         cdict = {"remote_user": get_remote_user(request)}
+        cdict.update({"orgunits": orgunits})
         cdict.update({"username": username})
         return render(request, 'nmap/profile.html', cdict)
 
@@ -311,7 +321,7 @@ class TaskDelete(LoginRequiredMixin, TemplateView):
             messages.error(request, "does not exist!")
             return render(request, 'accounts/login.html')
 
-        return redirect('/nmfap/tasks/')
+        return redirect('/nmap/tasks/')
 
 
 class NmapReportsView(PermissionRequiredMixin, TemplateView):
@@ -388,8 +398,37 @@ class NmapReportIDView(LoginRequiredMixin, TemplateView):
         return render(request, 'nmap/report.html', cdict)
 
 
+class ImportView(LoginRequiredMixin, TemplateView):
+    """Import View"""
 
 
+    def get(self, request, *args, **kwargs):
+        """get"""
+        template_name = "nmap/import.html"
+
+        cdict = {}
+        #cdict.update({"import": "import"})
+        return render(request, template_name, cdict)
+
+    def post(self, request, *args, **kwargs):
+        """post"""
+
+        template_name = "nmap/import_result.html"
+
+        import_file = request.FILES['file']
+        if import_file:
+            book = Workbook(import_file) #Open xlsx file
+            sheets = []
+            for sheet in book:
+                    print sheet.name
+                    sheets.append(sheet)
+            content = import_file.read()
+
+            cdict = {}
+            cdict.update({"sheets": sheets})
+            return render(request, template_name, cdict)
+        else:
+            raise Exception("nmap_import failed")
 
 
 
