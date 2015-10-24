@@ -40,6 +40,7 @@ INSTALLED_APPS = (
     'django_extensions',
     'django.contrib.humanize',
     'sniplates',
+    'crispy_forms',
     'djcelery',
     'nmap',
 )
@@ -128,3 +129,5 @@ STATIC_URL = '/static/'
 STATIC_ROOT = os.path.join(BASE_DIR, "common-static/")
 
 CELERY_RESULT_BACKEND = 'djcelery.backends.database:DatabaseBackend'
+
+CRISPY_TEMPLATE_PACK = 'bootstrap3'

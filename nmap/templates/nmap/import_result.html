@@ -7,9 +7,9 @@
     {% for sheet in sheets %}
         <legend>Sheet: {{ sheet.name }}</legend><br>
         <table id="{{ sheet.name }}" class="table table-striped">
-            {% for row, cells in sheet.rowsIter() %}
+            {% for row, cells in sheet.rowsIter %}
 
-                {% if row==1 %}
+                {% if row == 1 %}
                     {% for cell in cells %}
                         <th>{{ cell.value }}</th>
                     {% endfor %}

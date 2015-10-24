@@ -33,4 +33,11 @@
     <br/><br/>Url (nmapreport_view):<br/>
     {% url 'nmapreport_view' "1" %}
 
+
+<p>You are member of:
+    {% for orgunit in orgunits %}
+        {{ orgunit }}{% if not forloop.last %}, {% endif %}
+    {% endfor %}
+</p>
+
 {% endblock %}

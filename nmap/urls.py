@@ -4,6 +4,7 @@ from . import views
 from .views import ScanView, TasksJsonView, TasksView, TaskDelete
 from .views import NmapReportView, NmapReportIDView, NmapReportsView
 from .views import Profile, NoPermission
+from .views import ImportView
 
 urlpatterns = patterns('',
     url(r'^$', views.index, name='index'),
@@ -16,6 +17,7 @@ urlpatterns = patterns('',
     url(r'^tasks/$', TasksView.as_view(), name='tasks'),
     url(r'^task/delete/([-\w]+)$', TaskDelete.as_view(), name='task_delete'),
     url(r'^reports$', NmapReportsView.as_view(), name='reports'),
+    url(r'^import/$', ImportView.as_view(), name='import_view'),
     url(r'^report/([-\w]+)$', NmapReportView.as_view(), name='nmapreport_view'),
     url(r'^report/task_id/([-\w]+)$', NmapReportView.as_view(), name='nmapreport_task_id_view'),
     url(r'^report/id/([-\w]+)$', NmapReportIDView.as_view(), name='nmapreport_id_view'),
