@@ -31,8 +31,12 @@ def celery_nmap_scan(targets, options):
     _nmap_task_id = celery_nmap_scan.request.id
     store_nmap_report_meta.apply_async(kwargs={'nmap_task_id': str(_nmap_task_id)})
 
+    print("tasks.py: Targets and Options")
+    print(targets)
+    print(options)
+
     nm = NmapProcess(targets, options, event_callback=status_callback)
-    rc = nm.run()
+    rc = nm.sudo_run()
 
     if rc == 0 and nm.stdout:
         r = nm.stdout
