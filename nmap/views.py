@@ -13,13 +13,14 @@ from xlsx import Workbook
 
 import json
 import datetime
+import re
 
 # start import from my models
 from nmap.tasks import celery_nmap_scan
 from .models import Contact, NmapTask, NmapReportMeta, OrgUnit
 from django.contrib.auth.models import User
 from django import forms
-
+from .forms import ScanForm
 
 def get_remote_user(_request):
     """Return remote_user (value is None if empty)"""
@@ -180,12 +181,21 @@ class ScanView(LoginRequiredMixin, TemplateView):
         template_name = "nmap/scan.html"
 
         u = User.objects.get(username=get_remote_user(request))
-        orgunits = u.orgunit_set.all()
+        org_units = u.orgunit_set.all()
+
+        form = ScanForm(
+            initial={
+                'org_unit': org_units[0].id,
+            }
+        )
+
+        form.fields['org_unit'].queryset = u.orgunit_set
 
         cdict = {}
-        cdict.update({"form": forms.Form})
-        cdict.update({"orgunits": orgunits})
+        cdict.update({"form": form})
+        cdict.update({"org_units": org_units})
         return render(request, template_name, cdict)
+
 
 
 class TasksJsonView(PermissionRequiredMixin, TemplateView):
@@ -234,57 +244,76 @@ class TasksView(PermissionRequiredMixin, TemplateView):
     def post(self, request, *args, **kwargs):
         """post"""
 
-        scantypes = [ "-sT", "-sT", "-sS", "-sA", "-sW", "-sM",
+        u = User.objects.get(username=get_remote_user(request))
+        org_units = u.orgunit_set.all()
+
+        form = ScanForm(request.POST)
+        if not form.is_valid():
+            template_name = "nmap/scan.html"
+            form.fields['org_unit'].queryset = u.orgunit_set
+
+            cdict = {}
+            cdict.update({"form": form})
+            cdict.update({"org_units": org_units})
+            return render(request, template_name, cdict)
+
+        print("Form is valid!")
+
+
+        targets = form.cleaned_data["targets"]
+        comment = form.cleaned_data['comment']
+
+        no_ping = request.POST.get('no_ping', False)
+        banner_detection = request.POST.get('banner_detection', False)
+        os_detection = request.POST.get('os_detection', False)
+        run_now = request.POST.get('run_now', False)
+
+        if no_ping:
+            print("no_ping was selected. ")
+        if banner_detection:
+            print("banner_detection was selected.")
+        if os_detection:
+            print("os_detection was selected.")
+        if run_now or not run_now:
+            print("run_now is currently disabled.")
+
+        # as this has been validated.. it must be an OrgUnit obj
+        org_unit = form.cleaned_data['org_unit']
+
+        # isn't this validation?!
+        scan_types = [ "-sT", "-sT", "-sS", "-sA", "-sW", "-sM",
                 "-sN", "-sF", "-sX", "-sU" ]
 
-        if request.POST['targets']:
-            targets = request.POST["targets"]
+        _scan_type = scan_types[int(form.cleaned_data['scan_type'])]
+
+        if form.cleaned_data["ports"]:
+            _portlist = "-p " + form.cleaned_data["ports"]
         else:
-            return False
+            _portlist = ""
 
-        if request.POST['comment']:
-            comment = request.POST['comment']
+        print("ports list")
+        print(_portlist)
+
+        if form.cleaned_data["top_ports"]:
+            _top_portlist = "--top-ports " + str(form.cleaned_data["top_ports"])
         else:
-            comment = ""
+            _top_portlist = ""
 
-        if request.POST['orgunit']:
-            org_unit_name = request.POST['orgunit']
-            print(org_unit_name)
-            try:
-                org_unit = OrgUnit.objects.get(name=org_unit_name)
-                print(org_unit)
-            except ObjectDoesNotExist:
-                print("Error: Unable to find a OrgUnit called " +
-                      str(org_unit_name))
-                return HttpResponseBadRequest()
-            except Exception as err:
-                print("Error: Something went wrong!")
-                print(err)
-                return HttpResponseBadRequest()
+        print("top ports")
+        print(_top_portlist)
 
-        u = User.objects.get(username=get_remote_user(request))
+        _no_ping = "-P0" if no_ping else ""
+        _os_detection = "-O" if os_detection else ""
+        _banner_detection = "-sV" if banner_detection else ""
 
-        """
-        if request.POST['run_now']:
-            run_now = True
-        else:
-            run_now = False
-        """
-
-        scani = int(request.POST['scantype']) if 'scantype' in request.POST else 0
-        if 'ports' in request.POST and len(request.POST['ports']):
-            portlist = "-p " + request.POST['ports']
-        else:
-            portlist = ''
-        noping = '-P0' if 'noping' in request.POST else ''
-        osdetect = "-O" if 'os' in request.POST else ''
-        bannerdetect = "-sV" if 'banner' in request.POST else ''
-        options = "{0} {1} {2} {3} {4}".format(scantypes[scani],
-                                               portlist,
-                                               noping,
-                                               osdetect,
-                                               bannerdetect)
-
+        _options = "{0} {1} {2} {3} {4} {5}".format(_scan_type,
+                                                _top_portlist,
+                                                _portlist,
+                                                _no_ping,
+                                                _os_detection,
+                                                _banner_detection)
+        # remove double blanks
+        options = re.sub(" +"," ", _options)
 
 
         """ use either eta OR countdown! """
@@ -297,11 +326,10 @@ class TasksView(PermissionRequiredMixin, TemplateView):
                                                     kwargs={'targets': str(targets),
                                                             'options': str(options)})
         """
-        _celery_task = celery_nmap_scan.apply_async(kwargs={'targets': str(targets),
-                                                            'options': str(options)})
+        _ctask = celery_nmap_scan.apply_async(kwargs={'targets': str(targets),
+                                                      'options': str(options)})
 
-        #nt = NmapTask(user=request.user, task_id=_celery_task.id, comment=comment)
-        nt = NmapTask(task_id=_celery_task.id,
+        nt = NmapTask(task_id=_ctask.id,
                       comment=comment,
                       user=u,
                       org_unit=org_unit)
