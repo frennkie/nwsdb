@@ -56,9 +56,11 @@ class ScanForm(forms.Form):
                                          "autofocus": True}))
 
     def clean_targets(self):
-        """demo mode only allows localhost, 127.0.0.1, ::1"""
+        """demo mode only allows localhost, 127.0.0.1[/], ::1"""
         targets = self.cleaned_data['targets']
-        if targets == "localhost" or targets == "127.0.0.1" or targets == "::1":
+        if  (targets == "localhost" or targets == "127.0.0.1" or
+             targets == "127.0.0.1/32" or targets == "::1/128" or
+             targets == "::1"):
             return targets
         else:
             raise ValidationError(
@@ -104,28 +106,33 @@ class ScanForm(forms.Form):
     def clean_ports(self):
         """The ports field accepts comma seperated ports and also ranges
             declared as: low_port-high_port (e.g. 21-25)
-            This function expands ranges and puts all into a sorted list
+            This method expands ranges and puts all into a sorted list
+
+        Returns:
+            str with all ports (e.g. 21,22,23,25,110 ...)
+
         """
 
         _ports = self.cleaned_data['ports']
         if len(_ports) == 0:
             return None
 
-        _ports = _ports.replace(" ", "")
-
-        if not re.match("^[0-9,-]*$", _ports):
+        if not re.match("^[0-9 ,-]*$", _ports):
             raise ValidationError(
                 ("Invalid characters in field Ports: %(_ports)s"),
                 code="invalid",
                 params={"_ports": _ports},
             )
 
+        _ports = _ports.replace(" ", "")
         _port_list = _ports.split(",")
+
         port_set = set()
 
         for item in _port_list:
             if item.count("-") == 0:
                 port_set.add(str(item))
+
             elif item.count("-") == 1:
                 _split = item.split("-")
 
