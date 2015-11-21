@@ -25,6 +25,7 @@ Flask-Script==2.0.5
 Flask-SQLAlchemy==2.0
 functools32==3.2.3.post2
 ipaddr==2.1.11
+iptools==0.6.1
 ipykernel==4.1.0
 ipython==4.0.0
 ipython-genutils==0.1.0
