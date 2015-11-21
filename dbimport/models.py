@@ -5,6 +5,9 @@ from django.db import models
 from django.core.validators import MaxValueValidator, ValidationError
 from django.utils.translation import ugettext_lazy as _
 
+from django.db import transaction
+import reversion as revisions
+
 import idna
 import uuid
 import re
@@ -16,7 +19,7 @@ def dns_name_validator(dns_name):
     """
 
     if len(dns_name) > 255:
-        raise ValidationError(_("The DNS name needs to have no more than 255 characters."))
+        raise ValidationError(_("The DNS name can not have more than 255 characters."))
     dns_name = dns_name.encode("idna").lower()
     # TODO what is this doing?! And why the _re name?!
     if not hasattr(dns_name_validator, '_re'):

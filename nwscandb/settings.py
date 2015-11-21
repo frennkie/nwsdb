@@ -41,6 +41,7 @@ INSTALLED_APPS = (
     'django.contrib.humanize',
     'sniplates',
     'crispy_forms',
+    'reversion',
     'djcelery',
     'dbimport',
     'nmap',

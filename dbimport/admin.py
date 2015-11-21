@@ -2,7 +2,7 @@ from __future__ import unicode_literals
 from __future__ import print_function
 
 from django.contrib import admin
-
+from reversion.admin import VersionAdmin
 
 # Import then Register your models here.
 from .models import RangeV4
@@ -10,21 +10,21 @@ from .models import RangeV6
 from .models import RangeDNS
 
 
-class RangeV4Admin(admin.ModelAdmin):
+class RangeV4Admin(VersionAdmin):
 
     fields = ["address", "mask", "subnet_of", "comment"]
     list_display = ("address", "mask", "subnet_of", "comment")
     ordering = ["address"]
 
 
-class RangeV6Admin(admin.ModelAdmin):
+class RangeV6Admin(VersionAdmin):
 
     fields = ["address", "mask", "subnet_of", "comment"]
     list_display = ("address", "mask", "subnet_of", "comment")
     ordering = ["address"]
 
 
-class RangeDNSAdmin(admin.ModelAdmin):
+class RangeDNSAdmin(VersionAdmin):
 
     fields = ["address", "comment"]
     list_display = ["address", "idna_decoded", "comment"]
