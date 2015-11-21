@@ -2,6 +2,8 @@
 *.pyc
 *.tmp
 *.bak
+*.png
+*.sql
 .htpasswd
 config.py
 testtools/*
