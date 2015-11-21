@@ -429,7 +429,6 @@ class NmapReportIDView(LoginRequiredMixin, TemplateView):
 class ImportView(LoginRequiredMixin, TemplateView):
     """Import View"""
 
-
     def get(self, request, *args, **kwargs):
         """get"""
         template_name = "nmap/import.html"

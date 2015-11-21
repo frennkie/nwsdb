@@ -42,6 +42,7 @@ INSTALLED_APPS = (
     'sniplates',
     'crispy_forms',
     'djcelery',
+    'dbimport',
     'nmap',
 )
 

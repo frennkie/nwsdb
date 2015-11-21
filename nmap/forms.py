@@ -1,6 +1,5 @@
 # -*- coding: utf-8 -*-
 """Nmap Forms"""
-# nmap Forms
 from django import forms
 from .models import OrgUnit
 
@@ -23,6 +22,7 @@ SCAN_TYPE_CHOICES = (
     (8, "Xmas Scan"),
     (9, "UDP Scan"),
 )
+
 
 class ScanForm(forms.Form):
     """ScanForm
@@ -56,7 +56,7 @@ class ScanForm(forms.Form):
                                          "autofocus": True}))
 
     def clean_targets(self):
-        """demo mode only allows localhost, 127.0.0.1[/], ::1"""
+        """demo mode only allows localhost, 127.0.0.1[/32], ::1"""
         targets = self.cleaned_data['targets']
         if  (targets == "localhost" or targets == "127.0.0.1" or
              targets == "127.0.0.1/32" or targets == "::1/128" or
@@ -68,7 +68,6 @@ class ScanForm(forms.Form):
                 code="invalid",
                 params={"targets": targets},
             )
-
 
     comment = forms.CharField(label="Comment",
                               max_length=100,
@@ -90,13 +89,12 @@ class ScanForm(forms.Form):
 
     top_ports = forms.IntegerField(label="""Top Ports: Scan how many of the top ports""",
                                    required=False,
-                                   help_text="""Specifiy either Top Ports (above)
+                                   help_text="""Specify either Top Ports (above)
                                        or use Manual Selection (below)""",
                                    validators=[MaxValueValidator(10000),
                                                MinValueValidator(1),],
                                    widget=forms.TextInput(
                                        attrs={"placeholder": """e.g. 10 or 100 (max: 10000)"""}))
-
 
     ports = forms.CharField(label="""Manual Selection: Specify ports (and ranges)""",
                             max_length=100,
@@ -177,11 +175,9 @@ class ScanForm(forms.Form):
 
         return ports
 
-
     scan_type = forms.IntegerField(label="Scan Type",
                                    widget=forms.Select(
                                        choices=SCAN_TYPE_CHOICES))
-
 
     org_unit = forms.ModelChoiceField(queryset=OrgUnit.objects.all(),
                                       label="Org Unit",

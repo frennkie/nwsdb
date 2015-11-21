@@ -17,6 +17,7 @@ from django.conf.urls import include, url, patterns
 from django.contrib import admin
 import nmap
 from nmap import urls as nmap_urls
+from dbimport import urls as dbimport_urls
 
 urlpatterns =  patterns('',
     url(r'^$', nmap.views.index, name='Nmap Home'),
