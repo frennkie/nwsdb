@@ -44,6 +44,8 @@ class Range(models.Model):
 
     comment = models.CharField(max_length=255, default="", blank=True)
 
+    membership = models.ForeignKey("Membership")
+
 
 class RangeV4(Range):
     """IPv4 specific Range model"""
@@ -179,8 +181,15 @@ class Membership(models.Model):
 
     class Meta:
         unique_together = (("person", "organization"),)
-        
+
     person = models.ForeignKey(Person)
     organization = models.ForeignKey(Organization)
     role = models.ForeignKey(Role)
 
+    def __repr__(self):
+        return "<{0}: {1}>".format(
+                self.__class__.__name__,
+                self.person.email)
+
+    def __unicode__(self):  # __str__ on Python 3
+        return self.person.email

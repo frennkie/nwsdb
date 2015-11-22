@@ -11,8 +11,8 @@ from .models import Person, Organization, Role, Membership
 
 class RangeV4Admin(VersionAdmin):
 
-    fields = ["address", "mask", "subnet_of", "comment"]
-    list_display = ("address", "mask", "subnet_of", "comment")
+    fields = ["address", "mask", "membership", "subnet_of", "comment"]
+    list_display = ("address", "mask", "membership", "subnet_of", "comment")
     ordering = ["address"]
 
 
@@ -25,8 +25,8 @@ class RangeV6Admin(VersionAdmin):
 
 class RangeDNSAdmin(VersionAdmin):
 
-    fields = ["address", "comment"]
-    list_display = ["address", "idna_decoded", "comment"]
+    fields = ["address", "comment", "membership"]
+    list_display = ["address", "idna_decoded", "membership", "comment"]
     ordering = ["address"]
 
 
