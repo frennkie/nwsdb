@@ -14,6 +14,12 @@ class Migration(migrations.Migration):
 
     operations = [
         migrations.CreateModel(
+            name='Membership',
+            fields=[
+                ('id', models.UUIDField(default=uuid.uuid4, serialize=False, editable=False, primary_key=True)),
+            ],
+        ),
+        migrations.CreateModel(
             name='Organization',
             fields=[
                 ('id', models.UUIDField(default=uuid.uuid4, serialize=False, editable=False, primary_key=True)),
@@ -45,6 +51,16 @@ class Migration(migrations.Migration):
             ],
         ),
         migrations.CreateModel(
+            name='Role',
+            fields=[
+                ('id', models.UUIDField(default=uuid.uuid4, serialize=False, editable=False, primary_key=True)),
+                ('created', models.DateTimeField(auto_now_add=True, verbose_name='date created')),
+                ('updated', models.DateTimeField(auto_now=True, verbose_name='date update')),
+                ('comment', models.CharField(default='', max_length=255, blank=True)),
+                ('name', models.CharField(max_length=80)),
+            ],
+        ),
+        migrations.CreateModel(
             name='RangeDNS',
             fields=[
                 ('range_ptr', models.OneToOneField(parent_link=True, auto_created=True, primary_key=True, serialize=False, to='dbimport.Range')),
@@ -71,5 +87,24 @@ class Migration(migrations.Migration):
                 ('subnet_of', models.OneToOneField(null=True, on_delete=django.db.models.deletion.SET_NULL, blank=True, to='dbimport.RangeV6')),
             ],
             bases=('dbimport.range',),
+        ),
+        migrations.AddField(
+            model_name='membership',
+            name='organization',
+            field=models.ForeignKey(to='dbimport.Organization'),
+        ),
+        migrations.AddField(
+            model_name='membership',
+            name='person',
+            field=models.ForeignKey(to='dbimport.Person'),
+        ),
+        migrations.AddField(
+            model_name='membership',
+            name='role',
+            field=models.ForeignKey(to='dbimport.Role'),
+        ),
+        migrations.AlterUniqueTogether(
+            name='membership',
+            unique_together=set([('person', 'organization')]),
         ),
     ]

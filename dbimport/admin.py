@@ -6,7 +6,7 @@ from reversion.admin import VersionAdmin
 
 # Import then Register your models here.
 from .models import RangeV4, RangeV6, RangeDNS
-from .models import Person, Organization
+from .models import Person, Organization, Role, Membership
 
 
 class RangeV4Admin(VersionAdmin):
@@ -32,7 +32,7 @@ class RangeDNSAdmin(VersionAdmin):
 
 class PersonAdmin(VersionAdmin):
 
-    fields = ["email", "comment"]
+    fields = ["email",  "comment"]
     list_display = ["email", "comment"]
     ordering = ["email"]
 
@@ -51,6 +51,9 @@ class OrganizationAdmin(VersionAdmin):
     ordering = ["name"]
 
 
+class MembershipAdmin(VersionAdmin):
+    fields = ["person", "organization", "role"]
+    list_display = ["person", "organization", "role"]
 
 
 # registers
@@ -58,5 +61,8 @@ admin.site.register(RangeV4, RangeV4Admin)
 admin.site.register(RangeV6, RangeV6Admin)
 admin.site.register(RangeDNS, RangeDNSAdmin)
 admin.site.register(Person, PersonAdmin)
+admin.site.register(Role, RoleAdmin)
 admin.site.register(Organization, OrganizationAdmin)
+admin.site.register(Membership, MembershipAdmin)
+
 

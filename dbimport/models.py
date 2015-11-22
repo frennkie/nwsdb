@@ -150,3 +150,37 @@ class Organization(models.Model):
 
     def __unicode__(self):  # __str__ on Python 3
         return self.name
+
+
+class Role(models.Model):
+    """Organization model"""
+
+    id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
+    created = models.DateTimeField('date created', auto_now_add=True)
+    updated = models.DateTimeField('date update', auto_now=True)
+
+    comment = models.CharField(max_length=255, default="", blank=True)
+
+    name = models.CharField(max_length=80)
+
+    def __repr__(self):
+        return "<{0}: {1}>".format(
+                self.__class__.__name__,
+                self.name)
+
+    def __unicode__(self):  # __str__ on Python 3
+        return self.name
+
+
+class Membership(models.Model):
+    """Membership Person Organization having a Role"""
+
+    id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
+
+    class Meta:
+        unique_together = (("person", "organization"),)
+        
+    person = models.ForeignKey(Person)
+    organization = models.ForeignKey(Organization)
+    role = models.ForeignKey(Role)
+
