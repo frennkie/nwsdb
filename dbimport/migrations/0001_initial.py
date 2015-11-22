@@ -14,7 +14,7 @@ class Migration(migrations.Migration):
 
     operations = [
         migrations.CreateModel(
-            name='Membership',
+            name='MembershipPRORange',
             fields=[
                 ('id', models.UUIDField(default=uuid.uuid4, serialize=False, editable=False, primary_key=True)),
             ],
@@ -28,6 +28,9 @@ class Migration(migrations.Migration):
                 ('comment', models.CharField(default='', max_length=255, blank=True)),
                 ('name', models.CharField(max_length=80)),
             ],
+            options={
+                'ordering': ['name'],
+            },
         ),
         migrations.CreateModel(
             name='Person',
@@ -37,18 +40,65 @@ class Migration(migrations.Migration):
                 ('updated', models.DateTimeField(auto_now=True, verbose_name='date update')),
                 ('comment', models.CharField(default='', max_length=255, blank=True)),
                 ('email', models.EmailField(max_length=254)),
-                ('lastname', models.CharField(default='', max_length=80)),
-                ('firstnames', models.CharField(default='', max_length=80)),
+                ('last_name', models.CharField(default='', max_length=80)),
+                ('first_names', models.CharField(default='', max_length=80, blank=True)),
+                ('salutation', models.CharField(max_length=5, choices=[('MR', 'Mr.'), ('MRS', 'Mrs.'), ('MS', 'Ms.'), ('OTHER', 'Other')])),
             ],
+            options={
+                'ordering': ['email'],
+            },
         ),
         migrations.CreateModel(
-            name='Range',
+            name='RangeDNS',
             fields=[
                 ('id', models.UUIDField(default=uuid.uuid4, serialize=False, editable=False, primary_key=True)),
                 ('created', models.DateTimeField(auto_now_add=True, verbose_name='date created')),
                 ('updated', models.DateTimeField(auto_now=True, verbose_name='date update')),
                 ('comment', models.CharField(default='', max_length=255, blank=True)),
+                ('duplicates_allowed', models.BooleanField(default=False)),
+                ('is_duplicate', models.BooleanField(default=False, editable=False)),
+                ('address', models.CharField(max_length=255)),
+                ('membershipprorange', models.ForeignKey(verbose_name='Relation', to='dbimport.MembershipPRORange')),
             ],
+            options={
+                'ordering': ['address'],
+            },
+        ),
+        migrations.CreateModel(
+            name='RangeV4',
+            fields=[
+                ('id', models.UUIDField(default=uuid.uuid4, serialize=False, editable=False, primary_key=True)),
+                ('created', models.DateTimeField(auto_now_add=True, verbose_name='date created')),
+                ('updated', models.DateTimeField(auto_now=True, verbose_name='date update')),
+                ('comment', models.CharField(default='', max_length=255, blank=True)),
+                ('duplicates_allowed', models.BooleanField(default=False)),
+                ('is_duplicate', models.BooleanField(default=False, editable=False)),
+                ('address', models.GenericIPAddressField(protocol='IPv4', verbose_name='IPv4 Address')),
+                ('mask', models.PositiveSmallIntegerField(verbose_name='CIDR Bits', validators=[django.core.validators.MaxValueValidator(32)])),
+                ('membershipprorange', models.ForeignKey(verbose_name='Relation', to='dbimport.MembershipPRORange')),
+                ('subnet_of', models.OneToOneField(null=True, on_delete=django.db.models.deletion.SET_NULL, blank=True, to='dbimport.RangeV4')),
+            ],
+            options={
+                'ordering': ['address'],
+            },
+        ),
+        migrations.CreateModel(
+            name='RangeV6',
+            fields=[
+                ('id', models.UUIDField(default=uuid.uuid4, serialize=False, editable=False, primary_key=True)),
+                ('created', models.DateTimeField(auto_now_add=True, verbose_name='date created')),
+                ('updated', models.DateTimeField(auto_now=True, verbose_name='date update')),
+                ('comment', models.CharField(default='', max_length=255, blank=True)),
+                ('duplicates_allowed', models.BooleanField(default=False)),
+                ('is_duplicate', models.BooleanField(default=False, editable=False)),
+                ('address', models.GenericIPAddressField(protocol='IPv6', verbose_name='IPv6 Address')),
+                ('mask', models.PositiveSmallIntegerField(verbose_name='CIDR Bits', validators=[django.core.validators.MaxValueValidator(128)])),
+                ('membershipprorange', models.ForeignKey(verbose_name='Relation', to='dbimport.MembershipPRORange')),
+                ('subnet_of', models.OneToOneField(null=True, on_delete=django.db.models.deletion.SET_NULL, blank=True, to='dbimport.RangeV6')),
+            ],
+            options={
+                'ordering': ['address'],
+            },
         ),
         migrations.CreateModel(
             name='Role',
@@ -59,52 +109,27 @@ class Migration(migrations.Migration):
                 ('comment', models.CharField(default='', max_length=255, blank=True)),
                 ('name', models.CharField(max_length=80)),
             ],
-        ),
-        migrations.CreateModel(
-            name='RangeDNS',
-            fields=[
-                ('range_ptr', models.OneToOneField(parent_link=True, auto_created=True, primary_key=True, serialize=False, to='dbimport.Range')),
-                ('address', models.CharField(max_length=255)),
-            ],
-            bases=('dbimport.range',),
-        ),
-        migrations.CreateModel(
-            name='RangeV4',
-            fields=[
-                ('range_ptr', models.OneToOneField(parent_link=True, auto_created=True, primary_key=True, serialize=False, to='dbimport.Range')),
-                ('address', models.GenericIPAddressField(protocol='IPv4', verbose_name='IPv4 Address')),
-                ('mask', models.PositiveSmallIntegerField(verbose_name='CIDR Bits', validators=[django.core.validators.MaxValueValidator(32)])),
-                ('subnet_of', models.OneToOneField(null=True, on_delete=django.db.models.deletion.SET_NULL, blank=True, to='dbimport.RangeV4')),
-            ],
-            bases=('dbimport.range',),
-        ),
-        migrations.CreateModel(
-            name='RangeV6',
-            fields=[
-                ('range_ptr', models.OneToOneField(parent_link=True, auto_created=True, primary_key=True, serialize=False, to='dbimport.Range')),
-                ('address', models.GenericIPAddressField(protocol='IPv6', verbose_name='IPv6 Address')),
-                ('mask', models.PositiveSmallIntegerField(verbose_name='CIDR Bits', validators=[django.core.validators.MaxValueValidator(128)])),
-                ('subnet_of', models.OneToOneField(null=True, on_delete=django.db.models.deletion.SET_NULL, blank=True, to='dbimport.RangeV6')),
-            ],
-            bases=('dbimport.range',),
+            options={
+                'ordering': ['name'],
+            },
         ),
         migrations.AddField(
-            model_name='membership',
+            model_name='membershipprorange',
             name='organization',
             field=models.ForeignKey(to='dbimport.Organization'),
         ),
         migrations.AddField(
-            model_name='membership',
+            model_name='membershipprorange',
             name='person',
             field=models.ForeignKey(to='dbimport.Person'),
         ),
         migrations.AddField(
-            model_name='membership',
+            model_name='membershipprorange',
             name='role',
             field=models.ForeignKey(to='dbimport.Role'),
         ),
         migrations.AlterUniqueTogether(
-            name='membership',
+            name='membershipprorange',
             unique_together=set([('person', 'organization')]),
         ),
     ]
