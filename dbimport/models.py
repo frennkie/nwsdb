@@ -13,6 +13,11 @@ import uuid
 import re
 
 
+def dummy():
+    with transaction.atomic(), revisions.create_revision():
+        revisions.set_comment("great bar foo comment on change2...")
+
+
 def dns_name_validator(dns_name):
     """IDN compatible domain validator
     https://stackoverflow.com/questions/2532053/validate-a-hostname-string
@@ -38,6 +43,11 @@ class Range(models.Model):
     updated = models.DateTimeField('date update', auto_now=True)
 
     comment = models.CharField(max_length=255, default="", blank=True)
+
+    personroleorganization = models.ForeignKey("PersonRoleOrganization",
+                                               null=True,
+                                               blank=True,
+                                               on_delete=models.SET_NULL)
 
 
 class RangeV4(Range):
@@ -102,3 +112,76 @@ class RangeDNS(Range):
 
     def __unicode__(self):  # __str__ on Python 3
         return self.address
+
+
+class PersonRoleOrganization(models.Model):
+
+    id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
+    created = models.DateTimeField('date created', auto_now_add=True)
+    updated = models.DateTimeField('date update', auto_now=True)
+
+    person = models.ForeignKey("Person")
+    role = models.ForeignKey("Role")
+    organization = models.ForeignKey("Organization")
+
+
+class Person(models.Model):
+    """Person Range model"""
+
+    id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
+    created = models.DateTimeField('date created', auto_now_add=True)
+    updated = models.DateTimeField('date update', auto_now=True)
+
+    comment = models.CharField(max_length=255, default="", blank=True)
+
+    email = models.EmailField()
+    lastname = models.CharField(max_length=80, default="")
+    firstnames = models.CharField(max_length=80, default="")
+
+    def __repr__(self):
+        return "<{0}: {1}>".format(
+                self.__class__.__name__,
+                self.email)
+
+    def __unicode__(self):  # __str__ on Python 3
+        return self.email
+
+
+class Role(models.Model):
+    """Role Range model"""
+
+    id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
+    created = models.DateTimeField('date created', auto_now_add=True)
+    updated = models.DateTimeField('date update', auto_now=True)
+
+    comment = models.CharField(max_length=255, default="", blank=True)
+
+    name = models.CharField(max_length=80)
+
+    def __repr__(self):
+        return "<{0}: {1}>".format(
+                self.__class__.__name__,
+                self.name)
+
+    def __unicode__(self):  # __str__ on Python 3
+        return self.name
+
+
+class Organization(models.Model):
+    """Organization model"""
+
+    id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
+    created = models.DateTimeField('date created', auto_now_add=True)
+    updated = models.DateTimeField('date update', auto_now=True)
+
+    comment = models.CharField(max_length=255, default="", blank=True)
+
+    name = models.CharField(max_length=80)
+
+    def __repr__(self):
+        return "<{0}: {1}>".format(
+                self.__class__.__name__,
+                self.name)
+
+    def __unicode__(self):  # __str__ on Python 3
+        return self.name
