@@ -36,32 +36,12 @@ class Migration(migrations.Migration):
             ],
         ),
         migrations.CreateModel(
-            name='PersonRoleCompany',
-            fields=[
-                ('id', models.UUIDField(default=uuid.uuid4, serialize=False, editable=False, primary_key=True)),
-                ('created', models.DateTimeField(auto_now_add=True, verbose_name='date created')),
-                ('updated', models.DateTimeField(auto_now=True, verbose_name='date update')),
-                ('organization', models.OneToOneField(to='dbimport.Organization')),
-                ('person', models.OneToOneField(to='dbimport.Person')),
-            ],
-        ),
-        migrations.CreateModel(
             name='Range',
             fields=[
                 ('id', models.UUIDField(default=uuid.uuid4, serialize=False, editable=False, primary_key=True)),
                 ('created', models.DateTimeField(auto_now_add=True, verbose_name='date created')),
                 ('updated', models.DateTimeField(auto_now=True, verbose_name='date update')),
                 ('comment', models.CharField(default='', max_length=255, blank=True)),
-            ],
-        ),
-        migrations.CreateModel(
-            name='Role',
-            fields=[
-                ('id', models.UUIDField(default=uuid.uuid4, serialize=False, editable=False, primary_key=True)),
-                ('created', models.DateTimeField(auto_now_add=True, verbose_name='date created')),
-                ('updated', models.DateTimeField(auto_now=True, verbose_name='date update')),
-                ('comment', models.CharField(default='', max_length=255, blank=True)),
-                ('name', models.CharField(max_length=80)),
             ],
         ),
         migrations.CreateModel(
@@ -91,15 +71,5 @@ class Migration(migrations.Migration):
                 ('subnet_of', models.OneToOneField(null=True, on_delete=django.db.models.deletion.SET_NULL, blank=True, to='dbimport.RangeV6')),
             ],
             bases=('dbimport.range',),
-        ),
-        migrations.AddField(
-            model_name='range',
-            name='personrolecompany',
-            field=models.ForeignKey(on_delete=django.db.models.deletion.SET_NULL, blank=True, to='dbimport.PersonRoleCompany', null=True),
-        ),
-        migrations.AddField(
-            model_name='personrolecompany',
-            name='role',
-            field=models.OneToOneField(to='dbimport.Role'),
         ),
     ]

@@ -44,11 +44,6 @@ class Range(models.Model):
 
     comment = models.CharField(max_length=255, default="", blank=True)
 
-    personroleorganization = models.ForeignKey("PersonRoleOrganization",
-                                               null=True,
-                                               blank=True,
-                                               on_delete=models.SET_NULL)
-
 
 class RangeV4(Range):
     """IPv4 specific Range model"""
@@ -114,17 +109,6 @@ class RangeDNS(Range):
         return self.address
 
 
-class PersonRoleOrganization(models.Model):
-
-    id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
-    created = models.DateTimeField('date created', auto_now_add=True)
-    updated = models.DateTimeField('date update', auto_now=True)
-
-    person = models.ForeignKey("Person")
-    role = models.ForeignKey("Role")
-    organization = models.ForeignKey("Organization")
-
-
 class Person(models.Model):
     """Person Range model"""
 
@@ -137,6 +121,7 @@ class Person(models.Model):
     email = models.EmailField()
     lastname = models.CharField(max_length=80, default="")
     firstnames = models.CharField(max_length=80, default="")
+    # salutation
 
     def __repr__(self):
         return "<{0}: {1}>".format(
@@ -145,26 +130,6 @@ class Person(models.Model):
 
     def __unicode__(self):  # __str__ on Python 3
         return self.email
-
-
-class Role(models.Model):
-    """Role Range model"""
-
-    id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
-    created = models.DateTimeField('date created', auto_now_add=True)
-    updated = models.DateTimeField('date update', auto_now=True)
-
-    comment = models.CharField(max_length=255, default="", blank=True)
-
-    name = models.CharField(max_length=80)
-
-    def __repr__(self):
-        return "<{0}: {1}>".format(
-                self.__class__.__name__,
-                self.name)
-
-    def __unicode__(self):  # __str__ on Python 3
-        return self.name
 
 
 class Organization(models.Model):
