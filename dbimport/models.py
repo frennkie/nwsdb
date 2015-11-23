@@ -73,14 +73,16 @@ class RangeV4(models.Model):
     membershipprorange = models.ForeignKey("MembershipPRORange", verbose_name="Relation")
 
     class Meta:
-        ordering = ["address"]
+        ordering = ["address", "mask"]
 
     address = models.GenericIPAddressField(verbose_name="Network Address (IPv4)",
                                            protocol='IPv4', unpack_ipv4=False)
     mask = models.PositiveSmallIntegerField(verbose_name="Mask in Bits (e.g. /24)",
                                             validators=[MaxValueValidator(32)])
 
-    subnet_of = models.OneToOneField('self', null=True, blank=True, on_delete=models.SET_NULL)
+    # TODO (2015-11-23 RH): on_delete after change from O2O to FK
+    #subnet_of = models.ManyToManyField('self', null=True, blank=True, on_delete=models.SET_NULL)
+    subnet_of = models.ManyToManyField('self', symmetrical=False, blank=True)
 
     def cidr(self):
         if self.address and self.mask:
@@ -126,6 +128,12 @@ class RangeV4(models.Model):
                 raise ValidationError(_(
                     self.cidr + " is not a subnet of " + self.subnet_of.cidr))
 
+        existing = self.check_is_subnet_of_existing()
+        if existing:
+            if not self.subnet_of == existing:
+                raise ValidationError(_(
+                    self.cidr + " is a subnet of existing range " + existing.cidr))
+
         return self
 
     def delete(self, *args, **kwargs):
@@ -139,8 +147,13 @@ class RangeV4(models.Model):
                     all_dupes[0].is_duplicate = False
                     all_dupes[0].save()
 
-        if self.rangev4 and self.subnet_of:
+        # only need if both rangev4 (child) and subnet_of (parent) are set
+        try:
+            isinstance(self.rangev4, RangeV4)
+            isinstance(self.subnet_of, RangeV4)
+
             print("need to move relation")
+
             """
             _top = self.subnet_of
             _bottom = self.rangev4
@@ -172,16 +185,56 @@ class RangeV4(models.Model):
             _bottom.save()
             """
 
+        except:
+            print("no need to move relation")
+            pass
+
+
         super(RangeV4, self).delete(*args, **kwargs)  # Call the "real" save() method.
+
+    def check_is_subnet_of_existing(self):
+        """try to find out whether there already is range of which is range is a subnet
+
+        Returns
+        """
+
+        all_ranges = RangeV4.objects.all().exclude(id=self.id)
+
+        candidate_list = list()
+        for _range in all_ranges:
+            if self.address in _range.ip_range:
+                candidate_list.append(_range)
+
+        if not candidate_list:
+            return False
+
+        longest_parent_range = False
+        for candidate in candidate_list:
+            if not longest_parent_range:
+                if 0 < candidate.mask < self.mask:
+                    longest_parent_range = candidate
+            else:
+                if longest_parent_range.mask < candidate.mask < self.mask:
+                    longest_parent_range = candidate
+
+        return longest_parent_range
 
     def check_is_duplicate(self):
         """Method to check whether there already is a Range object defined with the exact
         same "cidr" value. If so also check for duplicates_allowed flag and act on it."""
 
-        all_dupes = RangeV4.objects.filter(address=self.address).exclude(id=self.id)
+        all_dupes_same_mask = RangeV4.objects.filter(address=self.address, mask=self.mask).exclude(id=self.id)
+
+        if not all_dupes_same_mask:
+            return False
+        print("made it past here!")
+
+        all_dupes = RangeV4.objects.filter(address=self.address, mask=self.mask).exclude(id=self.id)
 
         if not all_dupes:
             return False
+
+        print("and here!")
 
         if not self.duplicates_allowed:
             raise ValidationError(_(

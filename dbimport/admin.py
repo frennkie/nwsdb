@@ -28,10 +28,10 @@ class CustomDeleteMixin(admin.ModelAdmin):
 
 class RangeV4Admin(VersionAdmin, CustomDeleteMixin):
 
-    readonly_fields = ("is_duplicate", "cidr")
-    fields = ["cidr", "address", "mask", "subnet_of", "membershipprorange",
+    readonly_fields = ("is_duplicate", "cidr", "subnet_of")
+    fields = ["cidr", "address", "mask", "subnet_of","membershipprorange",
               "comment", "is_duplicate", "duplicates_allowed"]
-    list_display = ("cidr", "subnet_of", "membershipprorange",
+    list_display = ("cidr",  "membershipprorange",
                     "comment", "is_duplicate", "duplicates_allowed")
 
 
