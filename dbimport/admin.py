@@ -28,19 +28,20 @@ class CustomDeleteMixin(admin.ModelAdmin):
 
 class RangeV4Admin(VersionAdmin, CustomDeleteMixin):
 
-    readonly_fields = ("is_duplicate",)
-    fields = ["address", "mask", "subnet_of", "membershipprorange",
+    readonly_fields = ("is_duplicate", "cidr")
+    fields = ["cidr", "address", "mask", "subnet_of", "membershipprorange",
               "comment", "is_duplicate", "duplicates_allowed"]
-    list_display = ("address", "mask", "subnet_of", "membershipprorange",
+    list_display = ("cidr", "subnet_of", "membershipprorange",
                     "comment", "is_duplicate", "duplicates_allowed")
+
 
 
 class RangeV6Admin(VersionAdmin, CustomDeleteMixin):
 
-    readonly_fields = ("is_duplicate", )
-    fields = ["address", "mask", "subnet_of", "membershipprorange",
+    readonly_fields = ("is_duplicate", "cidr")
+    fields = ["cidr", "address", "mask", "subnet_of", "membershipprorange",
               "comment", "is_duplicate", "duplicates_allowed"]
-    list_display = ("address", "mask", "subnet_of", "membershipprorange",
+    list_display = ("cidr", "subnet_of", "membershipprorange",
                     "comment", "is_duplicate", "duplicates_allowed")
 
 
@@ -84,7 +85,7 @@ class RangeDNSInline(admin.TabularInline):
 
     readonly_fields = ("is_duplicate",)
     fields = ["address",
-              "comment", "is_duplicate", "duplicates_allowed", "range_ptr"]
+              "comment", "is_duplicate", "duplicates_allowed"]
     list_display = ["address", "idna_decoded",
                     "comment", "is_duplicate", "duplicates_allowed"]
 

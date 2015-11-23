@@ -4,7 +4,6 @@ from __future__ import print_function
 from django.db import models
 from django.core.validators import MaxValueValidator, ValidationError
 from django.utils.translation import ugettext_lazy as _
-from django.db.models import Count
 
 from django.db import transaction
 import reversion as revisions
@@ -12,11 +11,7 @@ import reversion as revisions
 import idna
 import uuid
 import re
-
-
-def dummy():
-    with transaction.atomic(), revisions.create_revision():
-        revisions.set_comment("great bar foo comment on change2...")
+import iptools
 
 
 def dns_name_validator(dns_name):
@@ -35,27 +30,37 @@ def dns_name_validator(dns_name):
     else:
         return True
 
-"""
-class Range(models.Model):
-"""
-#eneric Range model
-"""
 
-    id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
-    created = models.DateTimeField('date created', auto_now_add=True)
-    updated = models.DateTimeField('date update', auto_now=True)
+def network_address_validator(address, obj_range):
+    """validate that given ip address and netmask is really the network address of the range
+    e.g. 10.11.12.0/24 is valid;
+    Args:
+        address (unicode): a give address (e.g. "127.0.0.1")
+        obj_range (iptools.IpRange): an object instance; e.g. created by: IpRange("::1/128")
 
-    comment = models.CharField(max_length=255, default="", blank=True)
+    Returns:
+        True or Raises ValidationError
 
-    duplicates_allowed = models.BooleanField(default=False)
-    is_duplicate = models.BooleanField(default=False, editable=False)
+    Examples:
+        >>> network_address_validator(u'10.11.12.0', iptools.IpRange('10.11.12.0/24'))
+        True
 
-    membership = models.ForeignKey("MembershipPRORange")
-"""
+        >>> network_address_validator(u'10.11.12.5', iptools.IpRange('10.11.12.0/24'))
+        Traceback (most recent call last):
+          ...
+        ValidationError: [u'Invalid network address for given mask, should be 10.11.12.0']
+
+    """
+
+    if not iptools.IpRange(address).startIp == obj_range.startIp:
+        raise ValidationError(_(
+            "Invalid network address for given mask, should be " + unicode(obj_range[0])))
+    return True
 
 
 class RangeV4(models.Model):
     """IPv4 specific Range model"""
+
     id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
     created = models.DateTimeField('date created', auto_now_add=True)
     updated = models.DateTimeField('date update', auto_now=True)
@@ -70,28 +75,61 @@ class RangeV4(models.Model):
     class Meta:
         ordering = ["address"]
 
-    address = models.GenericIPAddressField(verbose_name="IPv4 Address",
+    address = models.GenericIPAddressField(verbose_name="Network Address (IPv4)",
                                            protocol='IPv4', unpack_ipv4=False)
-    mask = models.PositiveSmallIntegerField(verbose_name="CIDR Bits",
+    mask = models.PositiveSmallIntegerField(verbose_name="Mask in Bits (e.g. /24)",
                                             validators=[MaxValueValidator(32)])
 
     subnet_of = models.OneToOneField('self', null=True, blank=True, on_delete=models.SET_NULL)
 
+    def cidr(self):
+        if self.address and self.mask:
+            return self.address + "/" + unicode(self.mask)
+        else:
+            return ""
+    cidr = property(cidr)
+
+    def ip_range(self):
+        try:
+            return iptools.IpRange(self.cidr)
+        except:
+            # TODO (2015-11-23; RH)
+            print("warning.. unable to create an ip_range from input!")
+            return None
+    ip_range = property(ip_range)
+
     def __repr__(self):
         return "<{0}: {1}>".format(
                 self.__class__.__name__,
-                self.address)
+                self.cidr)
 
     def __unicode__(self):  # __str__ on Python 3
-        return self.address
+        return self.cidr
 
-    def clean(self, exclude=None):
-        """validate fields"""
+    def clean(self):
+        """validate fields
+        https://docs.djangoproject.com/en/1.8/ref/models/instances/#django.db.models.Model.clean
+        This method should be used to provide custom model validation,
+        and to modify attributes on your model if desired.
+        Note that a model's clean() method is not invoked when you call your model's save()
+        method. But it is called when is_valid is invoked.
+
+        """
+
+        if self.ip_range:
+            network_address_validator(self.address, iptools.IpRange(self.ip_range))
+
         self.check_is_duplicate()
+
+        if self.subnet_of:
+            if self.address not in self.subnet_of.ip_range:
+                raise ValidationError(_(
+                    self.cidr + " is not a subnet of " + self.subnet_of.cidr))
+
         return self
 
     def delete(self, *args, **kwargs):
-        """ Override built in delete to update the "is_duplicate" flag"""
+        """ Override built in delete method to update the "is_duplicate" flag"""
 
         if self.is_duplicate:
             all_dupes = RangeV4.objects.filter(address=self.address).exclude(id=self.id)
@@ -101,20 +139,44 @@ class RangeV4(models.Model):
                     all_dupes[0].is_duplicate = False
                     all_dupes[0].save()
 
-            super(RangeV4, self).delete(*args, **kwargs)
-            return  # just return
-        else:
-            super(RangeV4, self).delete(*args, **kwargs)  # Call the "real" save() method.
-            return
+        if self.rangev4 and self.subnet_of:
+            print("need to move relation")
+            """
+            _top = self.subnet_of
+            _bottom = self.rangev4
+
+            print(self.id)
+            print(self.subnet_of)
+            print(self.subnet_of_id)
+
+            self.subnet_of_id = None
+            self.subnet_of = None
+
+            print(self.id)
+            print(self.subnet_of)
+            print(self.subnet_of_id)
+
+            _top.rangev4 = _bottom
+            _top.flush()
+
+            print(_bottom.id)
+            print(_bottom.subnet_of)
+            print(_bottom.subnet_of_id)
+
+            _bottom.subnet_of = _top
+
+            print(_bottom.id)
+            print(_bottom.subnet_of)
+            print(_bottom.subnet_of_id)
+
+            _bottom.save()
+            """
+
+        super(RangeV4, self).delete(*args, **kwargs)  # Call the "real" save() method.
 
     def check_is_duplicate(self):
         """Method to check whether there already is a Range object defined with the exact
-        same "address" value. If so also check for duplicates_allowed flag and act on it."""
-
-        #dupes = RangeV4.objects.values('address').annotate(Count('id')).order_by().filter(id__count__gt=0, address=self.address)
-        #all_dupes = RangeV4.objects.filter(address__in=[item['address'] for item in dupes])
-        #print(dupes)
-        #print(all_dupes)
+        same "cidr" value. If so also check for duplicates_allowed flag and act on it."""
 
         all_dupes = RangeV4.objects.filter(address=self.address).exclude(id=self.id)
 
@@ -122,7 +184,8 @@ class RangeV4(models.Model):
             return False
 
         if not self.duplicates_allowed:
-            raise ValidationError(_("Range already exists but allow duplicates is set to False on this Range."))
+            raise ValidationError(_(
+                "Range already exists but allow duplicates is set to False on this Range."))
 
         duplicates_allowed_list = list()
         duplicates_forbidden_id_list = list()
@@ -137,7 +200,9 @@ class RangeV4(models.Model):
                     duplicates_forbidden_id_list.append(dupe.id)
 
         if duplicates_forbidden_id_list:
-            raise ValidationError(_("""Range already exists and at least one existing entry does not allow duplicates. Check: """ + unicode(duplicates_forbidden_id_list)))
+            raise ValidationError(_(
+                """Range already exists and at least one existing entry does not allow
+                duplicates. Check: """ + unicode(duplicates_forbidden_id_list)))
 
         with transaction.atomic(), revisions.create_revision():
             revisions.set_comment("set is_duplicate to True while adding")
@@ -177,6 +242,17 @@ class RangeV6(models.Model):
 
     subnet_of = models.OneToOneField('self', null=True, blank=True, on_delete=models.SET_NULL)
 
+    def cidr(self):
+        if self.address and self.mask:
+            return self.address + "/" + unicode(self.mask)
+        else:
+            return ""
+    cidr = property(cidr)
+
+    def ip_range(self):
+        return iptools.IpRange(self.cidr)
+    ip_range = property(ip_range)
+
     def __repr__(self):
         return "<{0}: {1}>".format(
                 self.__class__.__name__,
@@ -184,6 +260,73 @@ class RangeV6(models.Model):
 
     def __unicode__(self):  # __str__ on Python 3
         return self.address
+
+    def clean(self, exclude=None):
+        """validate fields"""
+        self.check_is_duplicate()
+        return self
+
+    def delete(self, *args, **kwargs):
+        """ Override built in delete to update the "is_duplicate" flag"""
+
+        if self.is_duplicate:
+            all_dupes = RangeV6.objects.filter(address=self.address).exclude(id=self.id)
+            if len(all_dupes) == 1:
+                with transaction.atomic(), revisions.create_revision():
+                    revisions.set_comment("set is_duplicate to False while deleting")
+                    all_dupes[0].is_duplicate = False
+                    all_dupes[0].save()
+
+            super(RangeV6, self).delete(*args, **kwargs)
+            return  # just return
+        else:
+            super(RangeV6, self).delete(*args, **kwargs)  # Call the "real" save() method.
+            return
+
+    def check_is_duplicate(self):
+        """Method to check whether there already is a Range object defined with the exact
+        same "address" value. If so also check for duplicates_allowed flag and act on it."""
+
+        all_dupes = RangeV6.objects.filter(address=self.address).exclude(id=self.id)
+
+        if not all_dupes:
+            return False
+
+        if not self.duplicates_allowed:
+            raise ValidationError(_(
+                "Range already exists but allow duplicates is set to False on this Range."))
+
+        duplicates_allowed_list = list()
+        duplicates_forbidden_id_list = list()
+
+        for dupe in all_dupes:
+            if self.id == dupe.id:
+                pass
+            else:
+                if dupe.duplicates_allowed:
+                    duplicates_allowed_list.append(dupe)
+                else:
+                    duplicates_forbidden_id_list.append(dupe.id)
+
+        if duplicates_forbidden_id_list:
+            raise ValidationError(_(
+                """Range already exists and at least one existing entry does not allow
+                duplicates. Check: """ + unicode(duplicates_forbidden_id_list)))
+
+        with transaction.atomic(), revisions.create_revision():
+            revisions.set_comment("set is_duplicate to True while adding")
+            self.is_duplicate = True
+            self.save()
+
+        for dupe in all_dupes:
+            if not dupe.is_duplicate:
+                with transaction.atomic(), revisions.create_revision():
+                    revisions.set_comment("set is_duplicate to True while adding " +
+                                          unicode(self.id))
+                    dupe.is_duplicate = True
+                    dupe.save()
+
+        return True
 
 
 class RangeDNS(models.Model):
@@ -224,6 +367,65 @@ class RangeDNS(models.Model):
 
     def __unicode__(self):  # __str__ on Python 3
         return self.address
+
+    def clean(self, exclude=None):
+        """validate fields"""
+        self.check_is_duplicate()
+        return self
+
+    def delete(self, *args, **kwargs):
+        """ Override built in delete to update the "is_duplicate" flag"""
+
+        if self.is_duplicate:
+            all_dupes = RangeDNS.objects.filter(address=self.address).exclude(id=self.id)
+            if len(all_dupes) == 1:
+                with transaction.atomic(), revisions.create_revision():
+                    revisions.set_comment("set is_duplicate to False while deleting")
+                    all_dupes[0].is_duplicate = False
+                    all_dupes[0].save()
+
+        super(RangeDNS, self).delete(*args, **kwargs)  # Call the "real" save() method.
+
+    def check_is_duplicate(self):
+        """Method to check whether there already is a Range object defined with the exact
+        same "address" value. If so also check for duplicates_allowed flag and act on it."""
+
+        all_dupes = RangeDNS.objects.filter(address=self.address).exclude(id=self.id)
+
+        if not all_dupes:
+            return False
+
+        if not self.duplicates_allowed:
+            raise ValidationError(_("Range already exists but allow duplicates is set to False on this Range."))
+
+        duplicates_allowed_list = list()
+        duplicates_forbidden_id_list = list()
+
+        for dupe in all_dupes:
+            if self.id == dupe.id:
+                pass
+            else:
+                if dupe.duplicates_allowed:
+                    duplicates_allowed_list.append(dupe)
+                else:
+                    duplicates_forbidden_id_list.append(dupe.id)
+
+        if duplicates_forbidden_id_list:
+            raise ValidationError(_("""Range already exists and at least one existing entry does not allow duplicates. Check: """ + unicode(duplicates_forbidden_id_list)))
+
+        with transaction.atomic(), revisions.create_revision():
+            revisions.set_comment("set is_duplicate to True while adding")
+            self.is_duplicate = True
+            self.save()
+
+        for dupe in all_dupes:
+            if not dupe.is_duplicate:
+                with transaction.atomic(), revisions.create_revision():
+                    revisions.set_comment("set is_duplicate to True while adding " + unicode(self.id))
+                    dupe.is_duplicate = True
+                    dupe.save()
+
+        return True
 
 
 class Person(models.Model):
@@ -343,10 +545,3 @@ class MembershipPRORange(models.Model):
                 "\" Role: \"" + self.role.name +
                 "\" at Org: \"" + self.organization.name +
                 "\" (" + unicode(self.ranges_total) + " Ranges)")
-        """
-        return ("User " + self.person.display_name +
-                " (" + self.person.email + ") has Role \"" + self.role.name +
-                "\" at Organization \"" + self.organization.name +
-                "\" managing " + unicode(self.ranges_total) + " Range(s).")
-        """
-

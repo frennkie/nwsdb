@@ -45,6 +45,7 @@ INSTALLED_APPS = (
     'djcelery',
     'dbimport',
     'nmap',
+    'django_nose',
 )
 
 LOGIN_URL = '/nmap/login/'
@@ -133,3 +134,14 @@ STATIC_ROOT = os.path.join(BASE_DIR, "common-static/")
 CELERY_RESULT_BACKEND = 'djcelery.backends.database:DatabaseBackend'
 
 CRISPY_TEMPLATE_PACK = 'bootstrap3'
+
+# testing
+TEST_RUNNER = 'django_nose.NoseTestSuiteRunner'
+
+NOSE_ARGS = [
+    '--with-doctest',
+    '--with-coverage',
+    '--cover-package=dbimport',
+    '--cover-inclusive',
+]
+

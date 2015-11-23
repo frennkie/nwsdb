@@ -12,3 +12,5 @@ dump/
 migrations/versions/*
 celerybeat-schedule
 my.cnf
+.coverage
+.cache/
