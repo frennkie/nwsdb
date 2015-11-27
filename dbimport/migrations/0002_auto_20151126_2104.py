@@ -7,13 +7,13 @@ from django.db import migrations, models
 class Migration(migrations.Migration):
 
     dependencies = [
-        ('dbimport', '0004_auto_20151123_2206'),
+        ('dbimport', '0001_initial'),
     ]
 
     operations = [
         migrations.AlterField(
             model_name='rangev4',
-            name='subnet_of',
-            field=models.ManyToManyField(to='dbimport.RangeV4', blank=True),
+            name='rangev4_relationships',
+            field=models.ManyToManyField(related_name='_rangev4_relationships_+', through='dbimport.V4ParentChildRelation', to='dbimport.RangeV4'),
         ),
     ]

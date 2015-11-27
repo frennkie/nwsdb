@@ -57,7 +57,6 @@ def network_address_validator(address, obj_range):
             "Invalid network address for given mask, should be " + unicode(obj_range[0])))
     return True
 
-
 class RangeV4(models.Model):
     """IPv4 specific Range model"""
 
@@ -81,9 +80,98 @@ class RangeV4(models.Model):
                                             validators=[MaxValueValidator(32)])
 
     # TODO (2015-11-23 RH): on_delete after change from O2O to FK
-    #subnet_of = models.ManyToManyField('self', null=True, blank=True, on_delete=models.SET_NULL)
-    subnet_of = models.ManyToManyField('self', symmetrical=False, blank=True)
+    #subnet_of = models.OneToOneField('self', null=True, blank=True, on_delete=models.SET_NULL)
+    #subnet_of = models.ManyToManyField('self', symmetrical=False, blank=True)
 
+    # each range has 0 or 1 parent range
+    parent_range = models.OneToOneField('self',
+                                        null=True,
+                                        blank=True,
+                                        on_delete=models.SET_NULL,
+                                        # no reverse relation!
+                                        related_name='+')
+
+    # each range has 0 to n child range(s)
+    rangev4_relationships = models.ManyToManyField('self',
+                                                   through="V4ParentChildRelation",
+                                                   symmetrical=False,
+                                                   # 2015-11-26 (RH) may be change this to '+'
+                                                   # could make life harder.. but could also
+                                                   # eliminate a trap (inconsistent data)
+                                                   related_name="related_to+")
+
+    # adding parent/child relations
+    def _add_relationship(self, rangev4, status, symm=True):
+        relationship, created = V4ParentChildRelation.objects.get_or_create(
+            from_rangev4=self,
+            to_rangev4=rangev4,
+            status=status)
+        if symm:
+            # avoid recursion by passing `symm=False`
+            if status == 1:  #
+                rangev4._add_relationship(self, 2, False)
+            elif status == 2:
+                rangev4._add_relationship(self, 1, False)
+            else:
+                raise NotImplementedError
+        return relationship
+
+    def add_parent(self, rangev4):
+        # a range can only have one parent
+        if self.get_parent():
+            print("I already have a parent!")
+        else:
+            return self._add_relationship(rangev4, 1)
+
+    def add_child(self, rangev4):  # 2015-11-26 (RH): do not use?!
+        # a range can have multiple children
+        return self._add_relationship(rangev4, 2)
+
+    # removing parent/child relations
+    def _remove_relationship(self, rangev4, status, symm=True):
+        V4ParentChildRelation.objects.filter(
+            from_rangev4=self,
+            to_rangev4=rangev4,
+            status=status).delete()
+        if symm:
+            # avoid recursion by passing `symm=False`
+            if status == 1:  #
+                rangev4._remove_relationship(self, 2, False)
+            elif status == 2:
+                rangev4._remove_relationship(self, 1, False)
+            else:
+                raise NotImplementedError
+        return
+
+    def remove_parent(self, rangev4):
+        self._remove_relationship(rangev4, 1)
+        return
+
+    def remove_child(self, rangev4):
+        self._remove_relationship(rangev4, 2)
+        return
+
+    #
+    # get parent/child relations
+    def _get_relationships(self, status):
+        return self.rangev4_relationships.filter(
+            to_rangev4__status=status,
+            to_rangev4__from_rangev4=self)
+
+    def get_children(self):
+        return self._get_relationships(2)
+
+    def get_parent(self):  # or "get_parents"?!
+        result = self._get_relationships(1)
+        if len(result) == 0:
+            return None
+        elif len(result) == 1:
+            return result[0]
+        else:
+            raise Exception("more than one parent found.. that's not possible")
+
+    #
+    # properties
     def cidr(self):
         if self.address and self.mask:
             return self.address + "/" + unicode(self.mask)
@@ -123,6 +211,7 @@ class RangeV4(models.Model):
 
         self.check_is_duplicate()
 
+        """
         if self.subnet_of:
             if self.address not in self.subnet_of.ip_range:
                 raise ValidationError(_(
@@ -133,6 +222,7 @@ class RangeV4(models.Model):
             if not self.subnet_of == existing:
                 raise ValidationError(_(
                     self.cidr + " is a subnet of existing range " + existing.cidr))
+        """
 
         return self
 
@@ -188,7 +278,6 @@ class RangeV4(models.Model):
         except:
             print("no need to move relation")
             pass
-
 
         super(RangeV4, self).delete(*args, **kwargs)  # Call the "real" save() method.
 
@@ -270,6 +359,23 @@ class RangeV4(models.Model):
                     dupe.save()
 
         return True
+
+
+RELATIONSHIP_V4_PARENT = 1
+RELATIONSHIP_V4_CHILD = 2
+RELATIONSHIP_STATUSES = (
+    (RELATIONSHIP_V4_PARENT, 'Parent'),
+    (RELATIONSHIP_V4_CHILD, 'Child'),
+)
+
+
+class V4ParentChildRelation(models.Model):
+    created = models.DateTimeField('date created', auto_now_add=True)
+    updated = models.DateTimeField('date update', auto_now=True)
+
+    from_rangev4 = models.ForeignKey(RangeV4, related_name='from_rangev4')
+    to_rangev4 = models.ForeignKey(RangeV4, related_name='to_rangev4')
+    status = models.IntegerField(choices=RELATIONSHIP_STATUSES)
 
 
 class RangeV6(models.Model):

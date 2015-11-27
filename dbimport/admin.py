@@ -28,20 +28,19 @@ class CustomDeleteMixin(admin.ModelAdmin):
 
 class RangeV4Admin(VersionAdmin, CustomDeleteMixin):
 
-    readonly_fields = ("is_duplicate", "cidr", "subnet_of")
-    fields = ["cidr", "address", "mask", "subnet_of","membershipprorange",
-              "comment", "is_duplicate", "duplicates_allowed"]
-    list_display = ("cidr",  "membershipprorange",
+    readonly_fields = ("is_duplicate", "cidr",)
+    fields = ["cidr", "address", "mask", "parent_range",
+              "membershipprorange", "comment", "is_duplicate", "duplicates_allowed"]
+    list_display = ("cidr",  "parent_range", "membershipprorange",
                     "comment", "is_duplicate", "duplicates_allowed")
-
 
 
 class RangeV6Admin(VersionAdmin, CustomDeleteMixin):
 
     readonly_fields = ("is_duplicate", "cidr")
-    fields = ["cidr", "address", "mask", "subnet_of", "membershipprorange",
+    fields = ["cidr", "address", "mask",  "membershipprorange",
               "comment", "is_duplicate", "duplicates_allowed"]
-    list_display = ("cidr", "subnet_of", "membershipprorange",
+    list_display = ("cidr", "membershipprorange",
                     "comment", "is_duplicate", "duplicates_allowed")
 
 
@@ -60,9 +59,9 @@ class RangeV4Inline(admin.TabularInline):
     extra = 1
 
     readonly_fields = ("is_duplicate",)
-    fields = ["address", "mask", "subnet_of",
+    fields = ["address", "mask", "parent_range",
               "comment", "is_duplicate", "duplicates_allowed"]
-    list_display = ("address", "mask", "subnet_of",
+    list_display = ("address", "mask", "parent_range", "children_range",
                     "comment", "is_duplicate", "duplicates_allowed")
 
 
@@ -72,9 +71,9 @@ class RangeV6Inline(admin.TabularInline):
     extra = 1
 
     readonly_fields = ("is_duplicate",)
-    fields = ["address", "mask", "subnet_of",
+    fields = ["address", "mask",
               "comment", "is_duplicate", "duplicates_allowed"]
-    list_display = ("address", "mask", "subnet_of",
+    list_display = ("address", "mask",
                     "comment", "is_duplicate", "duplicates_allowed")
 
 

@@ -73,13 +73,13 @@ class Migration(migrations.Migration):
                 ('comment', models.CharField(default='', max_length=255, blank=True)),
                 ('duplicates_allowed', models.BooleanField(default=False)),
                 ('is_duplicate', models.BooleanField(default=False, editable=False)),
-                ('address', models.GenericIPAddressField(protocol='IPv4', verbose_name='IPv4 Address')),
-                ('mask', models.PositiveSmallIntegerField(verbose_name='CIDR Bits', validators=[django.core.validators.MaxValueValidator(32)])),
+                ('address', models.GenericIPAddressField(protocol='IPv4', verbose_name='Network Address (IPv4)')),
+                ('mask', models.PositiveSmallIntegerField(verbose_name='Mask in Bits (e.g. /24)', validators=[django.core.validators.MaxValueValidator(32)])),
                 ('membershipprorange', models.ForeignKey(verbose_name='Relation', to='dbimport.MembershipPRORange')),
-                ('subnet_of', models.OneToOneField(null=True, on_delete=django.db.models.deletion.SET_NULL, blank=True, to='dbimport.RangeV4')),
+                ('parent_range', models.OneToOneField(related_name='+', null=True, on_delete=django.db.models.deletion.SET_NULL, blank=True, to='dbimport.RangeV4')),
             ],
             options={
-                'ordering': ['address'],
+                'ordering': ['address', 'mask'],
             },
         ),
         migrations.CreateModel(
@@ -112,6 +112,22 @@ class Migration(migrations.Migration):
             options={
                 'ordering': ['name'],
             },
+        ),
+        migrations.CreateModel(
+            name='V4ParentChildRelation',
+            fields=[
+                ('id', models.AutoField(verbose_name='ID', serialize=False, auto_created=True, primary_key=True)),
+                ('created', models.DateTimeField(auto_now_add=True, verbose_name='date created')),
+                ('updated', models.DateTimeField(auto_now=True, verbose_name='date update')),
+                ('status', models.IntegerField(choices=[(1, 'Parent'), (2, 'Child')])),
+                ('from_rangev4', models.ForeignKey(related_name='from_rangev4', to='dbimport.RangeV4')),
+                ('to_rangev4', models.ForeignKey(related_name='to_rangev4', to='dbimport.RangeV4')),
+            ],
+        ),
+        migrations.AddField(
+            model_name='rangev4',
+            name='rangev4_relationships',
+            field=models.ManyToManyField(related_name='related_to', through='dbimport.V4ParentChildRelation', to='dbimport.RangeV4'),
         ),
         migrations.AddField(
             model_name='membershipprorange',
