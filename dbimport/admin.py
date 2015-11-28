@@ -4,6 +4,8 @@ from __future__ import print_function
 from django.contrib import admin
 from reversion.admin import VersionAdmin
 
+from mptt.admin import MPTTModelAdmin
+
 # Import then Register your models here.
 from .models import RangeV4, RangeV6, RangeDNS
 from .models import Person, Organization, Role, MembershipPRORange
@@ -26,22 +28,26 @@ class CustomDeleteMixin(admin.ModelAdmin):
         return actions
 
 
-class RangeV4Admin(VersionAdmin, CustomDeleteMixin):
+class RangeV4Admin(MPTTModelAdmin, VersionAdmin, CustomDeleteMixin):
+
+    mptt_level_indent = 15
 
     readonly_fields = ("is_duplicate", "cidr",)
-    fields = ["cidr", "address", "mask", "parent_range",
+    fields = ["cidr", "address", "mask", "parent",
               "membershipprorange", "comment", "is_duplicate", "duplicates_allowed"]
-    list_display = ("cidr",  "parent_range", "membershipprorange",
+    list_display = ("cidr", "parent", "membershipprorange",
                     "comment", "is_duplicate", "duplicates_allowed")
 
 
 class RangeV6Admin(VersionAdmin, CustomDeleteMixin):
-
+    pass
+    """
     readonly_fields = ("is_duplicate", "cidr")
     fields = ["cidr", "address", "mask",  "membershipprorange",
               "comment", "is_duplicate", "duplicates_allowed"]
     list_display = ("cidr", "membershipprorange",
                     "comment", "is_duplicate", "duplicates_allowed")
+    """
 
 
 class RangeDNSAdmin(VersionAdmin, CustomDeleteMixin):
@@ -59,9 +65,9 @@ class RangeV4Inline(admin.TabularInline):
     extra = 1
 
     readonly_fields = ("is_duplicate",)
-    fields = ["address", "mask", "parent_range",
+    fields = ["address", "mask",
               "comment", "is_duplicate", "duplicates_allowed"]
-    list_display = ("address", "mask", "parent_range", "children_range",
+    list_display = ("address", "mask", "children_range",
                     "comment", "is_duplicate", "duplicates_allowed")
 
 
@@ -75,6 +81,7 @@ class RangeV6Inline(admin.TabularInline):
               "comment", "is_duplicate", "duplicates_allowed"]
     list_display = ("address", "mask",
                     "comment", "is_duplicate", "duplicates_allowed")
+
 
 
 class RangeDNSInline(admin.TabularInline):

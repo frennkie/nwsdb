@@ -1,0 +1,113 @@
+[
+{
+    "fields": {
+        "comment": "",
+        "first_names": "Hans-J\u00fcrgen",
+        "updated": "2015-11-22T14:41:09.906Z",
+        "last_name": "Henrich",
+        "created": "2015-11-22T14:41:09.906Z",
+        "salutation": "MRS",
+        "email": "hh@example.com"
+    },
+    "model": "dbimport.person",
+    "pk": "26121a58-abc7-4b00-9fe7-186d1d33994b"
+},
+{
+    "fields": {
+        "comment": "",
+        "first_names": "Heinz",
+        "updated": "2015-11-22T14:41:43.167Z",
+        "last_name": "M\u00fcller",
+        "created": "2015-11-22T14:41:43.167Z",
+        "salutation": "MR",
+        "email": "hm@example.com"
+    },
+    "model": "dbimport.person",
+    "pk": "5d54e958-ebbd-4353-b4a4-beecf11782a8"
+},
+{
+    "fields": {
+        "comment": "",
+        "first_names": "",
+        "updated": "2015-11-22T14:40:51.838Z",
+        "last_name": "Test25",
+        "created": "2015-11-22T14:40:51.838Z",
+        "salutation": "MR",
+        "email": "test25@denm.de"
+    },
+    "model": "dbimport.person",
+    "pk": "60d3b3a8-8f8e-4f43-b94a-e54648967b83"
+},
+{
+    "fields": {
+        "comment": "",
+        "first_names": "",
+        "updated": "2015-11-22T14:41:19.693Z",
+        "last_name": "Admin",
+        "created": "2015-11-22T14:41:19.693Z",
+        "salutation": "OTHER",
+        "email": "admin@example.com"
+    },
+    "model": "dbimport.person",
+    "pk": "9b6879e1-1c8d-451e-bd01-2385e4bf387c"
+},
+{
+    "fields": {
+        "comment": "",
+        "updated": "2015-11-22T01:09:26.246Z",
+        "name": "Marketing",
+        "created": "2015-11-22T01:09:26.246Z"
+    },
+    "model": "dbimport.organization",
+    "pk": "507caa9d-17d3-4785-aa72-960790b0b88d"
+},
+{
+    "fields": {
+        "comment": "",
+        "updated": "2015-11-22T01:09:30.522Z",
+        "name": "IT",
+        "created": "2015-11-22T01:09:30.522Z"
+    },
+    "model": "dbimport.organization",
+    "pk": "7be1766d-9868-4f57-aa34-338fc3e0985e"
+},
+{
+    "fields": {
+        "comment": "",
+        "updated": "2015-11-22T01:09:22.476Z",
+        "name": "Sales",
+        "created": "2015-11-22T01:09:22.476Z"
+    },
+    "model": "dbimport.organization",
+    "pk": "8676d5c1-ec8f-4409-bf31-3b2ed680e957"
+},
+{
+    "fields": {
+        "comment": "",
+        "updated": "2015-11-22T01:08:09.252Z",
+        "name": "Unlimited",
+        "created": "2015-11-22T01:08:09.252Z"
+    },
+    "model": "dbimport.role",
+    "pk": "51c6477d-14d1-43ea-8b09-0aba29577839"
+},
+{
+    "fields": {
+        "comment": "",
+        "updated": "2015-11-22T01:07:59.976Z",
+        "name": "Limited",
+        "created": "2015-11-22T01:07:59.976Z"
+    },
+    "model": "dbimport.role",
+    "pk": "8c8bf713-c056-46dd-a4af-2e49d4c45185"
+},
+{
+    "fields": {
+        "person": "9b6879e1-1c8d-451e-bd01-2385e4bf387c",
+        "role": "51c6477d-14d1-43ea-8b09-0aba29577839",
+        "organization": "7be1766d-9868-4f57-aa34-338fc3e0985e"
+    },
+    "model": "dbimport.membershipprorange",
+    "pk": "e20d86bf-c9bd-450e-9a4a-d5d966707e69"
+}
+]

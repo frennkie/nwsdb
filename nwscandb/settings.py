@@ -46,6 +46,7 @@ INSTALLED_APPS = (
     'dbimport',
     'nmap',
     'django_nose',
+    'mptt',
 )
 
 LOGIN_URL = '/nmap/login/'

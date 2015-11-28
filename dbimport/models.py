@@ -5,6 +5,8 @@ from django.db import models
 from django.core.validators import MaxValueValidator, ValidationError
 from django.utils.translation import ugettext_lazy as _
 
+from mptt.models import MPTTModel, TreeForeignKey
+
 from django.db import transaction
 import reversion as revisions
 
@@ -48,16 +50,17 @@ def network_address_validator(address, obj_range):
         >>> network_address_validator(u'10.11.12.5', iptools.IpRange('10.11.12.0/24'))
         Traceback (most recent call last):
           ...
-        ValidationError: [u'Invalid network address for given mask, should be 10.11.12.0']
+        ValidationError: [u'Wrong network address for given mask, should be 10.11.12.0']
 
     """
 
     if not iptools.IpRange(address).startIp == obj_range.startIp:
         raise ValidationError(_(
-            "Invalid network address for given mask, should be " + unicode(obj_range[0])))
+            "Wrong network address for given mask, should be " + unicode(obj_range[0])))
     return True
 
-class RangeV4(models.Model):
+
+class RangeV4(MPTTModel):
     """IPv4 specific Range model"""
 
     id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
@@ -72,121 +75,20 @@ class RangeV4(models.Model):
     membershipprorange = models.ForeignKey("MembershipPRORange", verbose_name="Relation")
 
     class Meta:
-        ordering = ["address", "mask"]
+        ordering = ["address_integer", "mask"]
+
+    class MPTTMeta:
+        order_insertion_by = ["address", "mask"]
 
     address = models.GenericIPAddressField(verbose_name="Network Address (IPv4)",
                                            protocol='IPv4', unpack_ipv4=False)
+
+    address_integer = models.BigIntegerField(verbose_name="IPv4 as Integer", editable=False)
+
     mask = models.PositiveSmallIntegerField(verbose_name="Mask in Bits (e.g. /24)",
                                             validators=[MaxValueValidator(32)])
 
-    # TODO (2015-11-23 RH): on_delete after change from O2O to FK
-    #subnet_of = models.OneToOneField('self', null=True, blank=True, on_delete=models.SET_NULL)
-    #subnet_of = models.ManyToManyField('self', symmetrical=False, blank=True)
-
-    # each range has 0 or 1 parent range
-    parent_range = models.OneToOneField('self',
-                                        null=True,
-                                        blank=True,
-                                        on_delete=models.SET_NULL,
-                                        # no reverse relation!
-                                        related_name='+')
-
-    # each range has 0 to n child range(s)
-    rangev4_relationships = models.ManyToManyField('self',
-                                                   through="V4ParentChildRelation",
-                                                   symmetrical=False,
-                                                   # 2015-11-26 (RH) may be change this to '+'
-                                                   # could make life harder.. but could also
-                                                   # eliminate a trap (inconsistent data)
-                                                   related_name="related_to+")
-
-    # adding parent/child relations
-    def _add_relationship(self, rangev4, status, symm=True):
-        relationship, created = V4ParentChildRelation.objects.get_or_create(
-            from_rangev4=self,
-            to_rangev4=rangev4,
-            status=status)
-        if symm:
-            # avoid recursion by passing `symm=False`
-            if status == 1:  #
-                rangev4._add_relationship(self, 2, False)
-            elif status == 2:
-                rangev4._add_relationship(self, 1, False)
-            else:
-                raise NotImplementedError
-        return relationship
-
-    def add_parent(self, rangev4):
-        # a range can only have one parent
-        if self.get_parent():
-            print("I already have a parent!")
-        else:
-            return self._add_relationship(rangev4, 1)
-
-    def add_child(self, rangev4):  # 2015-11-26 (RH): do not use?!
-        # a range can have multiple children
-        return self._add_relationship(rangev4, 2)
-
-    # removing parent/child relations
-    def _remove_relationship(self, rangev4, status, symm=True):
-        V4ParentChildRelation.objects.filter(
-            from_rangev4=self,
-            to_rangev4=rangev4,
-            status=status).delete()
-        if symm:
-            # avoid recursion by passing `symm=False`
-            if status == 1:  #
-                rangev4._remove_relationship(self, 2, False)
-            elif status == 2:
-                rangev4._remove_relationship(self, 1, False)
-            else:
-                raise NotImplementedError
-        return
-
-    def remove_parent(self, rangev4):
-        self._remove_relationship(rangev4, 1)
-        return
-
-    def remove_child(self, rangev4):
-        self._remove_relationship(rangev4, 2)
-        return
-
-    #
-    # get parent/child relations
-    def _get_relationships(self, status):
-        return self.rangev4_relationships.filter(
-            to_rangev4__status=status,
-            to_rangev4__from_rangev4=self)
-
-    def get_children(self):
-        return self._get_relationships(2)
-
-    def get_parent(self):  # or "get_parents"?!
-        result = self._get_relationships(1)
-        if len(result) == 0:
-            return None
-        elif len(result) == 1:
-            return result[0]
-        else:
-            raise Exception("more than one parent found.. that's not possible")
-
-    #
-    # properties
-    def cidr(self):
-        if self.address and self.mask:
-            return self.address + "/" + unicode(self.mask)
-        else:
-            return ""
-    cidr = property(cidr)
-
-    def ip_range(self):
-        try:
-            return iptools.IpRange(self.cidr)
-        except:
-            # TODO (2015-11-23; RH)
-            print("warning.. unable to create an ip_range from input!")
-            return None
-    ip_range = property(ip_range)
+    parent = TreeForeignKey('self', null=True, blank=True, related_name='children', db_index=True)
 
     def __repr__(self):
         return "<{0}: {1}>".format(
@@ -195,6 +97,29 @@ class RangeV4(models.Model):
 
     def __unicode__(self):  # __str__ on Python 3
         return self.cidr
+
+    # properties
+    def cidr(self):
+        if self.address and self.mask:
+            return self.address + "/" + unicode(self.mask)
+        elif self.address == "0.0.0.0" and self.mask == 0:
+            return "0.0.0.0/0"
+        else:
+            return ""
+    cidr = property(cidr)
+
+    def ip_range(self):
+        try:
+            return iptools.IpRange(self.cidr)
+        except:
+            # 2015-11-23 (RH): TODO when and how can parsing the IpRange fail?!
+            print("warning.. unable to create an ip_range from input!")
+            return None
+    ip_range = property(ip_range)
+
+    def address_int(self):
+        return iptools.IpRange(self.address).startIp
+    address_int = property(address_int)
 
     def clean(self):
         """validate fields
@@ -211,12 +136,12 @@ class RangeV4(models.Model):
 
         self.check_is_duplicate()
 
-        """
-        if self.subnet_of:
-            if self.address not in self.subnet_of.ip_range:
+        if self.parent:
+            if self.address not in self.parent.ip_range:
                 raise ValidationError(_(
-                    self.cidr + " is not a subnet of " + self.subnet_of.cidr))
+                    self.cidr + " is not a subnet of " + self.parent.cidr))
 
+        """
         existing = self.check_is_subnet_of_existing()
         if existing:
             if not self.subnet_of == existing:
@@ -225,6 +150,19 @@ class RangeV4(models.Model):
         """
 
         return self
+
+
+    def save(self, *args, **kwargs):
+        """ Override built in delete method to update the "is_duplicate" flag"""
+        # make sure address_integer is stored correctly
+        if not self.address_integer == self.address_int:
+            self.address_integer = self.address_int
+
+
+        #self.insert_into_tree()
+
+        super(RangeV4, self).save(*args, **kwargs) # Call the "real" save() method.
+
 
     def delete(self, *args, **kwargs):
         """ Override built in delete method to update the "is_duplicate" flag"""
@@ -237,49 +175,110 @@ class RangeV4(models.Model):
                     all_dupes[0].is_duplicate = False
                     all_dupes[0].save()
 
-        # only need if both rangev4 (child) and subnet_of (parent) are set
+        # only needed if both rangev4 (child) and subnet_of (parent) are set
         try:
             isinstance(self.rangev4, RangeV4)
             isinstance(self.subnet_of, RangeV4)
 
             print("need to move relation")
-
-            """
-            _top = self.subnet_of
-            _bottom = self.rangev4
-
-            print(self.id)
-            print(self.subnet_of)
-            print(self.subnet_of_id)
-
-            self.subnet_of_id = None
-            self.subnet_of = None
-
-            print(self.id)
-            print(self.subnet_of)
-            print(self.subnet_of_id)
-
-            _top.rangev4 = _bottom
-            _top.flush()
-
-            print(_bottom.id)
-            print(_bottom.subnet_of)
-            print(_bottom.subnet_of_id)
-
-            _bottom.subnet_of = _top
-
-            print(_bottom.id)
-            print(_bottom.subnet_of)
-            print(_bottom.subnet_of_id)
-
-            _bottom.save()
-            """
+            # 2015-11-28 (RH): TODO move relation
 
         except:
             print("no need to move relation")
             pass
 
         super(RangeV4, self).delete(*args, **kwargs)  # Call the "real" save() method.
+
+    def insert_into_tree(self):
+        """insert into tree at correct position"""
+
+        # find tree that range belongs to; if none found create new tree
+        r_nodes = RangeV4.objects.root_nodes()
+        for r_node in r_nodes:
+            if self.address in r_node.ip_range:
+                break
+        else:  # this belongs to the for r_node in r_nodes!
+            # range is not part of an existing tree
+            print("not in any range!")
+            self.insert_at(None)
+            
+        # 2015-11-29 (RH): TODO is self.parent = None needed here?!
+        self.parent = None
+        self.find_parent(r_node)
+        self.save()
+
+        nodes_to_move = []
+
+        for child in self.parent.get_children():
+            # as we are saving self above we appear as child of parent.. just skip
+            if child.cidr == self.cidr:
+                pass
+            elif child.address in self.ip_range:
+                print("need to set self as parent for: " + str(child))
+                nodes_to_move.append(child)
+
+        for node in nodes_to_move:
+            node.parent = self
+            node.save()
+
+        return
+
+    def find_parent(self, node=None):
+        """find the parent of self in tree starting from top/root
+            Assumes that the tree exists.
+            Runs recursively.
+            Initial run should pass in the tree root as "node".
+
+        Args:
+            node (RangeV4): When calling should be the root of a tree that contains self
+
+        Returns:
+            True when done
+                parent value is stored in self.parent
+                All cases where a parent can't be found are covered in Exceptions
+
+        Raises:
+            Generic Exception:
+                when node is not set
+                when node is the exact same object as self
+                when node and self have the same values for address AND mask
+                when node does not contain self
+
+            TODO <RH 2015-11-28>: Create more specific Exceptions?!
+
+        """
+
+        if not node:
+            raise Exception(_("Error: Can not find position without node?!"))
+
+        if node is self:
+            raise Exception(_("Error: That's me! That shouldn't happen!"))
+
+        if node.cidr == self.cidr:
+            # TODO <RH 2015-11-28>: Duplicate handling?!
+            # I'd say checking duplicate should be done before calling this (recursive method)!
+            raise Exception(_("Error: same Network AND same Mask!"))
+
+        if self.address not in node.ip_range:
+            raise Exception(_("Error: I'm not a child of supposed parent!"))
+
+        if not self.parent:
+            self.parent = node
+
+        for child in node.get_children():
+            # print("checking: " + str(child.cidr))
+            if self.address in child.ip_range:
+                # print("Yepp, could be: " + str(child.cidr))
+                if self.mask < child.mask:
+                    # print("no no .. you might be my child!")
+                    pass
+                else:
+                    self.parent = child
+                    self.find_parent(child)
+                    break
+        else:
+            return False
+        return True
 
     def check_is_subnet_of_existing(self):
         """try to find out whether there already is range of which is range is a subnet
@@ -361,25 +360,9 @@ class RangeV4(models.Model):
         return True
 
 
-RELATIONSHIP_V4_PARENT = 1
-RELATIONSHIP_V4_CHILD = 2
-RELATIONSHIP_STATUSES = (
-    (RELATIONSHIP_V4_PARENT, 'Parent'),
-    (RELATIONSHIP_V4_CHILD, 'Child'),
-)
-
-
-class V4ParentChildRelation(models.Model):
-    created = models.DateTimeField('date created', auto_now_add=True)
-    updated = models.DateTimeField('date update', auto_now=True)
-
-    from_rangev4 = models.ForeignKey(RangeV4, related_name='from_rangev4')
-    to_rangev4 = models.ForeignKey(RangeV4, related_name='to_rangev4')
-    status = models.IntegerField(choices=RELATIONSHIP_STATUSES)
-
-
 class RangeV6(models.Model):
     """IPv6 specific Range model"""
+
     id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
     created = models.DateTimeField('date created', auto_now_add=True)
     updated = models.DateTimeField('date update', auto_now=True)

@@ -2,6 +2,7 @@
 from __future__ import unicode_literals
 
 from django.db import migrations, models
+import mptt.fields
 import django.db.models.deletion
 import django.core.validators
 import uuid
@@ -75,8 +76,12 @@ class Migration(migrations.Migration):
                 ('is_duplicate', models.BooleanField(default=False, editable=False)),
                 ('address', models.GenericIPAddressField(protocol='IPv4', verbose_name='Network Address (IPv4)')),
                 ('mask', models.PositiveSmallIntegerField(verbose_name='Mask in Bits (e.g. /24)', validators=[django.core.validators.MaxValueValidator(32)])),
+                ('lft', models.PositiveIntegerField(editable=False, db_index=True)),
+                ('rght', models.PositiveIntegerField(editable=False, db_index=True)),
+                ('tree_id', models.PositiveIntegerField(editable=False, db_index=True)),
+                ('level', models.PositiveIntegerField(editable=False, db_index=True)),
                 ('membershipprorange', models.ForeignKey(verbose_name='Relation', to='dbimport.MembershipPRORange')),
-                ('parent_range', models.OneToOneField(related_name='+', null=True, on_delete=django.db.models.deletion.SET_NULL, blank=True, to='dbimport.RangeV4')),
+                ('parent', mptt.fields.TreeForeignKey(related_name='children', blank=True, to='dbimport.RangeV4', null=True)),
             ],
             options={
                 'ordering': ['address', 'mask'],
@@ -123,11 +128,6 @@ class Migration(migrations.Migration):
                 ('from_rangev4', models.ForeignKey(related_name='from_rangev4', to='dbimport.RangeV4')),
                 ('to_rangev4', models.ForeignKey(related_name='to_rangev4', to='dbimport.RangeV4')),
             ],
-        ),
-        migrations.AddField(
-            model_name='rangev4',
-            name='rangev4_relationships',
-            field=models.ManyToManyField(related_name='related_to', through='dbimport.V4ParentChildRelation', to='dbimport.RangeV4'),
         ),
         migrations.AddField(
             model_name='membershipprorange',
