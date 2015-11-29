@@ -141,6 +141,14 @@ class RangeV4(MPTTModel):
                 raise ValidationError(_(
                     self.cidr + " is not a subnet of " + self.parent.cidr))
 
+        if not self.address_integer == self.address_int:
+            self.address_integer = self.address_int
+
+        if not RangeV4.objects.filter(id=self.id):
+            self.insert_into_tree()
+        else:
+            print("well, ok.. but is position still correct?!")
+
         """
         existing = self.check_is_subnet_of_existing()
         if existing:
@@ -151,18 +159,10 @@ class RangeV4(MPTTModel):
 
         return self
 
-
+    ''' well.. seems a bit dangerous to override save() .. easily get's you into a loop
     def save(self, *args, **kwargs):
-        """ Override built in delete method to update the "is_duplicate" flag"""
-        # make sure address_integer is stored correctly
-        if not self.address_integer == self.address_int:
-            self.address_integer = self.address_int
-
-
-        #self.insert_into_tree()
-
-        super(RangeV4, self).save(*args, **kwargs) # Call the "real" save() method.
-
+        pass
+    '''
 
     def delete(self, *args, **kwargs):
         """ Override built in delete method to update the "is_duplicate" flag"""
@@ -199,28 +199,22 @@ class RangeV4(MPTTModel):
                 break
         else:  # this belongs to the for r_node in r_nodes!
             # range is not part of an existing tree
-            print("not in any range!")
+            print("Not in any range! Will create new tree.")
             self.insert_at(None)
-            
+
         # 2015-11-29 (RH): TODO is self.parent = None needed here?!
         self.parent = None
         self.find_parent(r_node)
         self.save()
-
-        nodes_to_move = []
 
         for child in self.parent.get_children():
             # as we are saving self above we appear as child of parent.. just skip
             if child.cidr == self.cidr:
                 pass
             elif child.address in self.ip_range:
-                print("need to set self as parent for: " + str(child))
-                nodes_to_move.append(child)
-
-        for node in nodes_to_move:
-            node.parent = self
-            node.save()
-
+                # print("need to set self as parent for: " + str(child))
+                child.parent = self
+                child.save()
         return
 
     def find_parent(self, node=None):
@@ -326,7 +320,7 @@ class RangeV4(MPTTModel):
 
         if not self.duplicates_allowed:
             raise ValidationError(_(
-                "Range already exists but allow duplicates is set to False on this Range."))
+                "Range already exists but duplicates_allowed is set to False on this Range."))
 
         duplicates_allowed_list = list()
         duplicates_forbidden_id_list = list()
