@@ -14,3 +14,4 @@ celerybeat-schedule
 my.cnf
 .coverage
 .cache/
+*.log

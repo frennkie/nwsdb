@@ -1,8 +1,9 @@
 from __future__ import unicode_literals
 from __future__ import print_function
 
-from django.db import models
+from django.db import models, IntegrityError
 from django.core.validators import MaxValueValidator, ValidationError
+from django.core.exceptions import ObjectDoesNotExist
 from django.utils.translation import ugettext_lazy as _
 
 from mptt.models import MPTTModel, TreeForeignKey
@@ -14,6 +15,9 @@ import idna
 import uuid
 import re
 import iptools
+
+import logging
+logger = logging.getLogger(__name__)
 
 
 def dns_name_validator(dns_name):
@@ -81,14 +85,21 @@ class RangeV4(MPTTModel):
         order_insertion_by = ["address", "mask"]
 
     address = models.GenericIPAddressField(verbose_name="Network Address (IPv4)",
-                                           protocol='IPv4', unpack_ipv4=False)
+                                           protocol='IPv4',
+                                           unpack_ipv4=False)
 
-    address_integer = models.BigIntegerField(verbose_name="IPv4 as Integer", editable=False)
+    address_integer = models.BigIntegerField(verbose_name="IPv4 as Integer",
+                                             editable=False,
+                                             db_index=True)
 
     mask = models.PositiveSmallIntegerField(verbose_name="Mask in Bits (e.g. /24)",
                                             validators=[MaxValueValidator(32)])
 
-    parent = TreeForeignKey('self', null=True, blank=True, related_name='children', db_index=True)
+    parent = TreeForeignKey('self',
+                            null=True,
+                            blank=True,
+                            related_name='children',
+                            db_index=True)
 
     def __repr__(self):
         return "<{0}: {1}>".format(
@@ -111,9 +122,9 @@ class RangeV4(MPTTModel):
     def ip_range(self):
         try:
             return iptools.IpRange(self.cidr)
-        except:
+        except ValueError:
             # 2015-11-23 (RH): TODO when and how can parsing the IpRange fail?!
-            print("warning.. unable to create an ip_range from input!")
+            logger.warn("warning.. unable to create an ip_range from input!")
             return None
     ip_range = property(ip_range)
 
@@ -131,31 +142,34 @@ class RangeV4(MPTTModel):
 
         """
 
+        # make sure db field address_integer is set to the correct value
+        if not self.address_integer == self.address_int:
+            self.address_integer = self.address_int
+
+        # make sure that given address is really the startIp of the range (with given mask)
         if self.ip_range:
             network_address_validator(self.address, iptools.IpRange(self.ip_range))
 
+        # check for duplicates
+        # TODO (RH) 2015-11-29: duplicate handling?!
         self.check_is_duplicate()
 
+        # check whether new RangeV4 is really a child of selected parent
+        # TODO (RH) 2015-11-29: should user really be allow / required to set parent?!
         if self.parent:
             if self.address not in self.parent.ip_range:
                 raise ValidationError(_(
                     self.cidr + " is not a subnet of " + self.parent.cidr))
 
-        if not self.address_integer == self.address_int:
-            self.address_integer = self.address_int
-
-        if not RangeV4.objects.filter(id=self.id):
+        # insert into tree at correct position (no matter what user selected as "parent")
+        try:
             self.insert_into_tree()
-        else:
-            print("well, ok.. but is position still correct?!")
+        except IntegrityError:
+            logger.debug("Integrity because object is not new.. so that's fine.")
 
-        """
-        existing = self.check_is_subnet_of_existing()
-        if existing:
-            if not self.subnet_of == existing:
-                raise ValidationError(_(
-                    self.cidr + " is a subnet of existing range " + existing.cidr))
-        """
+        # TODO (RH) 2015-11-29: does this hurt? Shouldn't really!
+        # play it safe.. rebuild on every save
+        RangeV4.objects.rebuild()
 
         return self
 
@@ -165,8 +179,11 @@ class RangeV4(MPTTModel):
     '''
 
     def delete(self, *args, **kwargs):
-        """ Override built in delete method to update the "is_duplicate" flag"""
+        """Override built in delete method to update the "is_duplicate" flag"""
 
+        # TODO (RH) 2015-11-29: TODO When delete a node the children are also deleted?!
+
+        # update is_duplicate flags
         if self.is_duplicate:
             all_dupes = RangeV4.objects.filter(address=self.address).exclude(id=self.id)
             if len(all_dupes) == 1:
@@ -175,110 +192,135 @@ class RangeV4(MPTTModel):
                     all_dupes[0].is_duplicate = False
                     all_dupes[0].save()
 
-        # only needed if both rangev4 (child) and subnet_of (parent) are set
-        try:
-            isinstance(self.rangev4, RangeV4)
-            isinstance(self.subnet_of, RangeV4)
-
-            print("need to move relation")
-            # 2015-11-28 (RH): TODO move relation
-
-        except:
-            print("no need to move relation")
-            pass
+        # take care of parent/child relations
+        self.prepare_delete()
+        RangeV4.objects.rebuild()
 
         super(RangeV4, self).delete(*args, **kwargs)  # Call the "real" save() method.
 
-    def insert_into_tree(self):
-        """insert into tree at correct position"""
-
-        # find tree that range belongs to; if none found create new tree
-        r_nodes = RangeV4.objects.root_nodes()
-        for r_node in r_nodes:
-            if self.address in r_node.ip_range:
-                break
-        else:  # this belongs to the for r_node in r_nodes!
-            # range is not part of an existing tree
-            print("Not in any range! Will create new tree.")
-            self.insert_at(None)
-
-        # 2015-11-29 (RH): TODO is self.parent = None needed here?!
-        self.parent = None
-        self.find_parent(r_node)
-        self.save()
-
-        for child in self.parent.get_children():
-            # as we are saving self above we appear as child of parent.. just skip
-            if child.cidr == self.cidr:
-                pass
-            elif child.address in self.ip_range:
-                # print("need to set self as parent for: " + str(child))
-                child.parent = self
-                child.save()
-        return
-
-    def find_parent(self, node=None):
-        """find the parent of self in tree starting from top/root
-            Assumes that the tree exists.
-            Runs recursively.
-            Initial run should pass in the tree root as "node".
+    def prepare_delete(self, preserve_children=True):
+        """Prepare deletion of a node.
 
         Args:
-            node (RangeV4): When calling should be the root of a tree that contains self
+            preserve_children (bool): If False all children will be deleted with node
+                When True will preserve children (might require to promote new root
 
         Returns:
-            True when done
-                parent value is stored in self.parent
-                All cases where a parent can't be found are covered in Exceptions
-
-        Raises:
-            Generic Exception:
-                when node is not set
-                when node is the exact same object as self
-                when node and self have the same values for address AND mask
-                when node does not contain self
-
-            TODO <RH 2015-11-28>: Create more specific Exceptions?!
+            True if everything is find, otherwise (e.g. unable to promote new root) False
 
         """
 
-        if not node:
-            raise Exception(_("Error: Can not find position without node?!"))
+        if not preserve_children:
+            return True
 
-        if node is self:
-            raise Exception(_("Error: That's me! That shouldn't happen!"))
+        # TODO (RH) 2015-11-28: move relation .. write some tests! :-)
+        # Fixture for tests: 20151129.datadump.json
+        if self.is_root_node():
+            if self.is_leaf_node():
+                logger.debug("Node is both root and leaf.. no need to move anything.")
+                return True
+            else:
+                new_root_candidates = self.get_children()
+                if len(new_root_candidates) == 1:
+                    new_root = new_root_candidates[0]
+                    logger.info("Make this the new tree root: " + str(new_root.cidr))
+                    new_root.parent = None
+                    new_root.move_to(None, None)
+                    new_root.save()
 
-        if node.cidr == self.cidr:
-            # TODO <RH 2015-11-28>: Duplicate handling?!
-            # I'd say checking duplicate should be done before calling this (recursive method)!
-            raise Exception(_("Error: same Network AND same Mask!"))
-
-        if self.address not in node.ip_range:
-            raise Exception(_("Error: I'm not a child of supposed parent!"))
-
-        if not self.parent:
-            self.parent = node
-
-        for child in node.get_children():
-            # print("checking: " + str(child.cidr))
-            if self.address in child.ip_range:
-                # print("Yepp, could be: " + str(child.cidr))
-                if self.mask < child.mask:
-                    # print("no no .. you might be my child!")
-                    pass
+                    return True
                 else:
-                    self.parent = child
-                    self.find_parent(child)
-                    break
+                    logger.info("Root (going to be deleted) has more than one child. Split..")
+                    for new_root_candidate in new_root_candidates:
+                        logger.debug("New root: " + str(new_root_candidate))
+                        new_root_candidate.parent = None
+                        new_root_candidate.move_to(None, None)
+                        new_root_candidate.save()
+
+                    return False
+
         else:
-            return False
+            if self.is_leaf_node():
+                logger.debug("Node is a leaf.. no need to move anything.")
+                return True
+            else:
+                logger.debug("need to fix parent - child relations...")
+                for node in self.get_children():
+                    logger.debug("kids: " + node.cidr)
+                    node.parent = self.parent
+                    node.save()
+
+                return True
+
+    @classmethod
+    def validate_trees(cls):
+        """validate database (iterate over every root)"""
+
+        root_nodes = RangeV4.objects.root_nodes()
+
+        inconsistent_trees = list()
+
+        for root in root_nodes:
+            if not root.validate_tree():
+                inconsistent_trees.append(root)
+
+        if inconsistent_trees:
+            logger.error("Inconsistent tree(s): " + str(inconsistent_trees))
+            raise Exception(_("Error: Inconsistent tree(s)"))
+        else:
+            logger.info("Tree(s) appear to be consistent!")
+
+    def validate_tree(self):
+        """validate one tee
+
+            Iterate every item in tree and check:
+                is item cidr contained in parent cidr
+                is cidr of every child contained in item cidr
+
+        Returns:
+            True or False
+
+        Notes:
+            TODO (RH) 2015-11-28: Some cases are missing
+                * document implemented cases
+                * document missing cases
+                * implement missing cases
+                * write tests! ;-)
+
+            * Go over every leaf node and check the direct ancestor line (to root)
+            * check every sibling.. should not have exact same address
+
+        """
+
+        for item in self.get_family():
+            logger.debug("validating on: " + item.cidr)
+            # check parent (unless item it's a root_node)
+            if not item.is_root_node():
+                if item.address not in item.parent.ip_range:
+                    logger.error("Range " + item.cidr + " not in " + str(item.parent.ip_range))
+                    return False
+                if item.mask == item.parent.mask:
+                    logger.error("child has same mask as parent on: " + item.cidr)
+                    return False
+                # store current value of item.parent, run find_parent and then compare
+                cur_parent = item.parent
+                item.find_parent(item.get_root())
+                if cur_parent is not item.parent:
+                    logger.error("Range " + item.cidr + " points to wrong parent.")
+                    return False
+
+            # check children (unless item is a leaf_node)
+            if not item.is_leaf_node():
+                for child in item.get_children():
+                    if child.address not in item.ip_range:
+                        logger.error("Range " + child.cidr + " not in " + str(item.ip_range))
+                        return False
+
         return True
 
+    '''
     def check_is_subnet_of_existing(self):
-        """try to find out whether there already is range of which is range is a subnet
-
-        Returns
-        """
+        # try to find out whether there already is range of which is range is a subnet
 
         all_ranges = RangeV4.objects.all().exclude(id=self.id)
 
@@ -300,6 +342,81 @@ class RangeV4(MPTTModel):
                     longest_parent_range = candidate
 
         return longest_parent_range
+    '''
+
+
+
+    def insert_into_tree(self):
+        """Insert into tree at correct position.
+
+        Insert as member method to insert a _new_ object at the right position.
+        Parent and Child relations are taken care of
+
+        Raises:
+            IntegrityError: if object already exists in DB
+
+        """
+
+        # ensure that object is not already in DB - in that case it would be a move
+        if RangeV4.objects.filter(pk=self.pk).exists():
+            raise IntegrityError("Object instance already in database.")
+
+        # find tree that range belongs to; if none found create new tree
+        all_root_nodes = RangeV4.objects.root_nodes()
+        for root_node in all_root_nodes:
+            if self.address in root_node.ip_range:
+                logger.debug("Need to insert Range " + self.cidr + " below: " + str(root_node))
+                break
+        else:  # from for loop!
+            # range is not part of an existing tree
+            # TODO (RH) 2015-11-29: new tree handling! Passt?!
+            logger.debug("Range not in any existing tree! Create new tree.")
+            self.insert_at(None)
+            self.save()
+            RangeV4.objects.rebuild()
+            return True
+
+        self.parent = self.find_parent(root_node)
+        logger.debug("Setting newly created Range as child of: " + str(self.parent))
+        self.save()
+
+        # rearranging any items that were children of parent and are now children of self
+        for child in self.parent.get_children():
+            # as we are saving self above we appear as child of parent.. just skip
+            if child.cidr == self.cidr:
+                pass
+            elif child.address in self.ip_range:
+                logger.info("Setting newly created Range as parent for: " + str(child))
+                child.parent = self
+                child.save()
+
+        return True
+
+    def find_parent(self, node):
+        """Find the parent of self in tree starting from top/root.
+
+        Assumes that the tree exists.
+        Tree needs to be valid (Ranges reflect IP subnet rules)
+        Runs recursively.
+        Initial run must pass in the tree root as "node".
+
+        Args:
+            node (RangeV4): Must be the root of a tree that contains self
+
+        Returns:
+            parent (RangeV4)
+
+        """
+
+        parent = node
+
+        for item in node.get_children():
+            if self.address in item.ip_range:
+                logger.debug("Yepp: self is part of this branch: " + str(parent.cidr))
+                parent = self.find_parent(item)
+                break
+
+        return parent
 
     def check_is_duplicate(self):
         """Method to check whether there already is a Range object defined with the exact
@@ -309,14 +426,14 @@ class RangeV4(MPTTModel):
 
         if not all_dupes_same_mask:
             return False
-        print("made it past here!")
+        logger.debug("made it past here!")
 
         all_dupes = RangeV4.objects.filter(address=self.address, mask=self.mask).exclude(id=self.id)
 
         if not all_dupes:
             return False
 
-        print("and here!")
+        logger.debug("and here!")
 
         if not self.duplicates_allowed:
             raise ValidationError(_(

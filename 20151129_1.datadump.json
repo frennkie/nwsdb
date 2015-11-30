@@ -1,0 +1,523 @@
+[
+{
+    "fields": {
+        "comment": "",
+        "address_integer": 3232240688,
+        "updated": "2015-11-29T17:00:23.786Z",
+        "parent": "22b40c5c-46da-438a-9c75-7f0c054434f2",
+        "created": "2015-11-28T18:00:04.407Z",
+        "tree_id": 9,
+        "mask": 28,
+        "is_duplicate": false,
+        "lft": 7,
+        "address": "192.168.20.48",
+        "membershipprorange": "e20d86bf-c9bd-450e-9a4a-d5d966707e69",
+        "level": 4,
+        "rght": 8,
+        "duplicates_allowed": false
+    },
+    "model": "dbimport.rangev4",
+    "pk": "13491eb6-95a5-40f5-a539-f63fa95c690f"
+},
+{
+    "fields": {
+        "comment": "",
+        "address_integer": 3232240768,
+        "updated": "2015-11-28T18:20:07.689Z",
+        "parent": "be9640a3-6f2d-48f3-9367-50a7b902eef5",
+        "created": "2015-11-27T19:46:37.424Z",
+        "tree_id": 9,
+        "mask": 25,
+        "is_duplicate": false,
+        "lft": 19,
+        "address": "192.168.20.128",
+        "membershipprorange": "e20d86bf-c9bd-450e-9a4a-d5d966707e69",
+        "level": 2,
+        "rght": 22,
+        "duplicates_allowed": false
+    },
+    "model": "dbimport.rangev4",
+    "pk": "1526f4b3-d3a2-494f-a684-fb35662465a1"
+},
+{
+    "fields": {
+        "comment": "",
+        "address_integer": 3232240640,
+        "updated": "2015-11-29T17:00:23.775Z",
+        "parent": "27f47c7c-5dec-46db-bc95-a0e3bc550fdf",
+        "created": "2015-11-29T17:00:23.775Z",
+        "tree_id": 9,
+        "mask": 26,
+        "is_duplicate": false,
+        "lft": 4,
+        "address": "192.168.20.0",
+        "membershipprorange": "e20d86bf-c9bd-450e-9a4a-d5d966707e69",
+        "level": 3,
+        "rght": 9,
+        "duplicates_allowed": false
+    },
+    "model": "dbimport.rangev4",
+    "pk": "22b40c5c-46da-438a-9c75-7f0c054434f2"
+},
+{
+    "fields": {
+        "comment": "",
+        "address_integer": 3232240640,
+        "updated": "2015-11-28T18:19:07.898Z",
+        "parent": "be9640a3-6f2d-48f3-9367-50a7b902eef5",
+        "created": "2015-11-27T18:54:38.499Z",
+        "tree_id": 9,
+        "mask": 25,
+        "is_duplicate": false,
+        "lft": 3,
+        "address": "192.168.20.0",
+        "membershipprorange": "e20d86bf-c9bd-450e-9a4a-d5d966707e69",
+        "level": 2,
+        "rght": 18,
+        "duplicates_allowed": false
+    },
+    "model": "dbimport.rangev4",
+    "pk": "27f47c7c-5dec-46db-bc95-a0e3bc550fdf"
+},
+{
+    "fields": {
+        "comment": "",
+        "address_integer": 3232240672,
+        "updated": "2015-11-29T18:21:25.481Z",
+        "parent": "22b40c5c-46da-438a-9c75-7f0c054434f2",
+        "created": "2015-11-27T18:52:04.791Z",
+        "tree_id": 9,
+        "mask": 28,
+        "is_duplicate": false,
+        "lft": 5,
+        "address": "192.168.20.32",
+        "membershipprorange": "e20d86bf-c9bd-450e-9a4a-d5d966707e69",
+        "level": 4,
+        "rght": 6,
+        "duplicates_allowed": false
+    },
+    "model": "dbimport.rangev4",
+    "pk": "2c3a6f2e-8898-4ed7-87c4-f78ffe0bb3c4"
+},
+{
+    "fields": {
+        "comment": "",
+        "address_integer": 167772160,
+        "updated": "2015-11-29T19:47:30.175Z",
+        "parent": "3d42aac5-c562-434b-93ae-f6500ec8a0fd",
+        "created": "2015-11-29T19:47:30.175Z",
+        "tree_id": 1,
+        "mask": 24,
+        "is_duplicate": false,
+        "lft": 3,
+        "address": "10.0.0.0",
+        "membershipprorange": "e20d86bf-c9bd-450e-9a4a-d5d966707e69",
+        "level": 2,
+        "rght": 6,
+        "duplicates_allowed": false
+    },
+    "model": "dbimport.rangev4",
+    "pk": "2c9e99b0-19de-449b-8b7c-3dcfd6b50ae6"
+},
+{
+    "fields": {
+        "comment": "",
+        "address_integer": 167772160,
+        "updated": "2015-11-29T19:41:23.782Z",
+        "parent": "b8fa67f0-ea39-475b-b26a-f599433057b3",
+        "created": "2015-11-29T19:40:20.400Z",
+        "tree_id": 1,
+        "mask": 16,
+        "is_duplicate": false,
+        "lft": 2,
+        "address": "10.0.0.0",
+        "membershipprorange": "e20d86bf-c9bd-450e-9a4a-d5d966707e69",
+        "level": 1,
+        "rght": 7,
+        "duplicates_allowed": false
+    },
+    "model": "dbimport.rangev4",
+    "pk": "3d42aac5-c562-434b-93ae-f6500ec8a0fd"
+},
+{
+    "fields": {
+        "comment": "",
+        "address_integer": 3232240704,
+        "updated": "2015-11-29T18:21:44.523Z",
+        "parent": "27f47c7c-5dec-46db-bc95-a0e3bc550fdf",
+        "created": "2015-11-27T18:52:20.951Z",
+        "tree_id": 9,
+        "mask": 28,
+        "is_duplicate": false,
+        "lft": 14,
+        "address": "192.168.20.64",
+        "membershipprorange": "e20d86bf-c9bd-450e-9a4a-d5d966707e69",
+        "level": 3,
+        "rght": 17,
+        "duplicates_allowed": false
+    },
+    "model": "dbimport.rangev4",
+    "pk": "469eb064-a16e-4cff-8b00-b7383125b59a"
+},
+{
+    "fields": {
+        "comment": "",
+        "address_integer": 2835709952,
+        "updated": "2015-11-29T00:56:26.710Z",
+        "parent": null,
+        "created": "2015-11-29T00:56:26.709Z",
+        "tree_id": 8,
+        "mask": 24,
+        "is_duplicate": false,
+        "lft": 1,
+        "address": "169.5.128.0",
+        "membershipprorange": "e20d86bf-c9bd-450e-9a4a-d5d966707e69",
+        "level": 0,
+        "rght": 2,
+        "duplicates_allowed": false
+    },
+    "model": "dbimport.rangev4",
+    "pk": "4ab0f2c4-28ad-445e-9f2f-84986dfd7b73"
+},
+{
+    "fields": {
+        "comment": "",
+        "address_integer": 3232240720,
+        "updated": "2015-11-29T00:46:21.823Z",
+        "parent": "855905f5-3f09-4315-b038-6e0c479841ee",
+        "created": "2015-11-28T18:32:33.968Z",
+        "tree_id": 9,
+        "mask": 28,
+        "is_duplicate": false,
+        "lft": 11,
+        "address": "192.168.20.80",
+        "membershipprorange": "e20d86bf-c9bd-450e-9a4a-d5d966707e69",
+        "level": 4,
+        "rght": 12,
+        "duplicates_allowed": false
+    },
+    "model": "dbimport.rangev4",
+    "pk": "6021e6df-ad33-4ceb-b9d7-fbd1bd4fbb36"
+},
+{
+    "fields": {
+        "comment": "",
+        "address_integer": 2835677184,
+        "updated": "2015-11-29T00:56:49.890Z",
+        "parent": "f7a28d86-0934-4c0f-8de4-77aeb9a83f33",
+        "created": "2015-11-29T00:56:49.888Z",
+        "tree_id": 7,
+        "mask": 16,
+        "is_duplicate": false,
+        "lft": 2,
+        "address": "169.5.0.0",
+        "membershipprorange": "e20d86bf-c9bd-450e-9a4a-d5d966707e69",
+        "level": 1,
+        "rght": 3,
+        "duplicates_allowed": false
+    },
+    "model": "dbimport.rangev4",
+    "pk": "6ca33f41-863c-4622-becf-e301ddcb2822"
+},
+{
+    "fields": {
+        "comment": "",
+        "address_integer": 3232235520,
+        "updated": "2015-11-28T18:05:38.384Z",
+        "parent": null,
+        "created": "2015-11-28T17:45:44.296Z",
+        "tree_id": 9,
+        "mask": 16,
+        "is_duplicate": false,
+        "lft": 1,
+        "address": "192.168.0.0",
+        "membershipprorange": "e20d86bf-c9bd-450e-9a4a-d5d966707e69",
+        "level": 0,
+        "rght": 24,
+        "duplicates_allowed": false
+    },
+    "model": "dbimport.rangev4",
+    "pk": "6dc1b457-e030-43f4-a6d6-de051c7ba34b"
+},
+{
+    "fields": {
+        "comment": "",
+        "address_integer": 3232240704,
+        "updated": "2015-11-29T00:46:21.824Z",
+        "parent": "27f47c7c-5dec-46db-bc95-a0e3bc550fdf",
+        "created": "2015-11-29T00:46:21.816Z",
+        "tree_id": 9,
+        "mask": 26,
+        "is_duplicate": false,
+        "lft": 10,
+        "address": "192.168.20.64",
+        "membershipprorange": "e20d86bf-c9bd-450e-9a4a-d5d966707e69",
+        "level": 3,
+        "rght": 13,
+        "duplicates_allowed": false
+    },
+    "model": "dbimport.rangev4",
+    "pk": "855905f5-3f09-4315-b038-6e0c479841ee"
+},
+{
+    "fields": {
+        "comment": "",
+        "address_integer": 3232240832,
+        "updated": "2015-11-29T00:55:46.308Z",
+        "parent": "1526f4b3-d3a2-494f-a684-fb35662465a1",
+        "created": "2015-11-29T00:55:46.306Z",
+        "tree_id": 9,
+        "mask": 26,
+        "is_duplicate": false,
+        "lft": 20,
+        "address": "192.168.20.192",
+        "membershipprorange": "e20d86bf-c9bd-450e-9a4a-d5d966707e69",
+        "level": 3,
+        "rght": 21,
+        "duplicates_allowed": false
+    },
+    "model": "dbimport.rangev4",
+    "pk": "8dfe27ef-702c-46c0-bc7f-eac1def4069e"
+},
+{
+    "fields": {
+        "comment": "",
+        "address_integer": 3232240705,
+        "updated": "2015-11-29T00:05:48.735Z",
+        "parent": "469eb064-a16e-4cff-8b00-b7383125b59a",
+        "created": "2015-11-27T19:17:20.169Z",
+        "tree_id": 9,
+        "mask": 32,
+        "is_duplicate": false,
+        "lft": 15,
+        "address": "192.168.20.65",
+        "membershipprorange": "e20d86bf-c9bd-450e-9a4a-d5d966707e69",
+        "level": 4,
+        "rght": 16,
+        "duplicates_allowed": false
+    },
+    "model": "dbimport.rangev4",
+    "pk": "aa16cb3b-1657-4f0e-b9d8-3ee9ddc5cfc1"
+},
+{
+    "fields": {
+        "comment": "",
+        "address_integer": 167772160,
+        "updated": "2015-11-29T19:47:35.391Z",
+        "parent": "2c9e99b0-19de-449b-8b7c-3dcfd6b50ae6",
+        "created": "2015-11-29T19:47:35.391Z",
+        "tree_id": 1,
+        "mask": 26,
+        "is_duplicate": false,
+        "lft": 4,
+        "address": "10.0.0.0",
+        "membershipprorange": "e20d86bf-c9bd-450e-9a4a-d5d966707e69",
+        "level": 3,
+        "rght": 5,
+        "duplicates_allowed": false
+    },
+    "model": "dbimport.rangev4",
+    "pk": "b57a4072-642a-4a34-a4da-fc8f73443056"
+},
+{
+    "fields": {
+        "comment": "",
+        "address_integer": 167772160,
+        "updated": "2015-11-28T18:05:15.982Z",
+        "parent": null,
+        "created": "2015-11-28T18:05:15.982Z",
+        "tree_id": 1,
+        "mask": 8,
+        "is_duplicate": false,
+        "lft": 1,
+        "address": "10.0.0.0",
+        "membershipprorange": "e20d86bf-c9bd-450e-9a4a-d5d966707e69",
+        "level": 0,
+        "rght": 10,
+        "duplicates_allowed": false
+    },
+    "model": "dbimport.rangev4",
+    "pk": "b8fa67f0-ea39-475b-b26a-f599433057b3"
+},
+{
+    "fields": {
+        "comment": "",
+        "address_integer": 3232240640,
+        "updated": "2015-11-28T18:19:01.360Z",
+        "parent": "6dc1b457-e030-43f4-a6d6-de051c7ba34b",
+        "created": "2015-11-27T18:51:50.979Z",
+        "tree_id": 9,
+        "mask": 24,
+        "is_duplicate": false,
+        "lft": 2,
+        "address": "192.168.20.0",
+        "membershipprorange": "e20d86bf-c9bd-450e-9a4a-d5d966707e69",
+        "level": 1,
+        "rght": 23,
+        "duplicates_allowed": false
+    },
+    "model": "dbimport.rangev4",
+    "pk": "be9640a3-6f2d-48f3-9367-50a7b902eef5"
+},
+{
+    "fields": {
+        "comment": "",
+        "address_integer": 167837696,
+        "updated": "2015-11-29T19:41:46.299Z",
+        "parent": "b8fa67f0-ea39-475b-b26a-f599433057b3",
+        "created": "2015-11-29T19:40:49.531Z",
+        "tree_id": 1,
+        "mask": 24,
+        "is_duplicate": false,
+        "lft": 8,
+        "address": "10.1.0.0",
+        "membershipprorange": "e20d86bf-c9bd-450e-9a4a-d5d966707e69",
+        "level": 1,
+        "rght": 9,
+        "duplicates_allowed": false
+    },
+    "model": "dbimport.rangev4",
+    "pk": "c7efb573-b3d5-4839-8bca-14eaac2d1c5d"
+},
+{
+    "fields": {
+        "comment": "",
+        "address_integer": 2835677184,
+        "updated": "2015-11-29T10:14:50.793Z",
+        "parent": null,
+        "created": "2015-11-29T00:55:33.272Z",
+        "tree_id": 7,
+        "mask": 24,
+        "is_duplicate": false,
+        "lft": 1,
+        "address": "169.5.0.0",
+        "membershipprorange": "e20d86bf-c9bd-450e-9a4a-d5d966707e69",
+        "level": 0,
+        "rght": 4,
+        "duplicates_allowed": false
+    },
+    "model": "dbimport.rangev4",
+    "pk": "f7a28d86-0934-4c0f-8de4-77aeb9a83f33"
+},
+{
+    "fields": {
+        "comment": "",
+        "first_names": "Hans-J\u00fcrgen",
+        "updated": "2015-11-22T14:41:09.906Z",
+        "last_name": "Henrich",
+        "created": "2015-11-22T14:41:09.906Z",
+        "salutation": "MRS",
+        "email": "hh@example.com"
+    },
+    "model": "dbimport.person",
+    "pk": "26121a58-abc7-4b00-9fe7-186d1d33994b"
+},
+{
+    "fields": {
+        "comment": "",
+        "first_names": "Heinz",
+        "updated": "2015-11-22T14:41:43.167Z",
+        "last_name": "M\u00fcller",
+        "created": "2015-11-22T14:41:43.167Z",
+        "salutation": "MR",
+        "email": "hm@example.com"
+    },
+    "model": "dbimport.person",
+    "pk": "5d54e958-ebbd-4353-b4a4-beecf11782a8"
+},
+{
+    "fields": {
+        "comment": "",
+        "first_names": "",
+        "updated": "2015-11-22T14:40:51.838Z",
+        "last_name": "Test25",
+        "created": "2015-11-22T14:40:51.838Z",
+        "salutation": "MR",
+        "email": "test25@denm.de"
+    },
+    "model": "dbimport.person",
+    "pk": "60d3b3a8-8f8e-4f43-b94a-e54648967b83"
+},
+{
+    "fields": {
+        "comment": "",
+        "first_names": "",
+        "updated": "2015-11-22T14:41:19.693Z",
+        "last_name": "Admin",
+        "created": "2015-11-22T14:41:19.693Z",
+        "salutation": "OTHER",
+        "email": "admin@example.com"
+    },
+    "model": "dbimport.person",
+    "pk": "9b6879e1-1c8d-451e-bd01-2385e4bf387c"
+},
+{
+    "fields": {
+        "comment": "",
+        "updated": "2015-11-22T01:09:26.246Z",
+        "name": "Marketing",
+        "created": "2015-11-22T01:09:26.246Z"
+    },
+    "model": "dbimport.organization",
+    "pk": "507caa9d-17d3-4785-aa72-960790b0b88d"
+},
+{
+    "fields": {
+        "comment": "",
+        "updated": "2015-11-22T01:09:30.522Z",
+        "name": "IT",
+        "created": "2015-11-22T01:09:30.522Z"
+    },
+    "model": "dbimport.organization",
+    "pk": "7be1766d-9868-4f57-aa34-338fc3e0985e"
+},
+{
+    "fields": {
+        "comment": "",
+        "updated": "2015-11-22T01:09:22.476Z",
+        "name": "Sales",
+        "created": "2015-11-22T01:09:22.476Z"
+    },
+    "model": "dbimport.organization",
+    "pk": "8676d5c1-ec8f-4409-bf31-3b2ed680e957"
+},
+{
+    "fields": {
+        "comment": "",
+        "updated": "2015-11-22T01:08:09.252Z",
+        "name": "Unlimited",
+        "created": "2015-11-22T01:08:09.252Z"
+    },
+    "model": "dbimport.role",
+    "pk": "51c6477d-14d1-43ea-8b09-0aba29577839"
+},
+{
+    "fields": {
+        "comment": "",
+        "updated": "2015-11-28T18:24:05.701Z",
+        "name": "Manager",
+        "created": "2015-11-28T18:24:05.701Z"
+    },
+    "model": "dbimport.role",
+    "pk": "6c283221-2265-488e-87a2-466a7163a64b"
+},
+{
+    "fields": {
+        "comment": "",
+        "updated": "2015-11-22T01:07:59.976Z",
+        "name": "Limited",
+        "created": "2015-11-22T01:07:59.976Z"
+    },
+    "model": "dbimport.role",
+    "pk": "8c8bf713-c056-46dd-a4af-2e49d4c45185"
+},
+{
+    "fields": {
+        "person": "9b6879e1-1c8d-451e-bd01-2385e4bf387c",
+        "role": "51c6477d-14d1-43ea-8b09-0aba29577839",
+        "organization": "7be1766d-9868-4f57-aa34-338fc3e0985e"
+    },
+    "model": "dbimport.membershipprorange",
+    "pk": "e20d86bf-c9bd-450e-9a4a-d5d966707e69"
+}
+]

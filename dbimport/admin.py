@@ -30,13 +30,38 @@ class CustomDeleteMixin(admin.ModelAdmin):
 
 class RangeV4Admin(MPTTModelAdmin, VersionAdmin, CustomDeleteMixin):
 
+    # visual indention of children
     mptt_level_indent = 15
 
+    # "normal" declaration of readonly (ro) fields (never editable)
     readonly_fields = ("is_duplicate", "cidr",)
-    fields = ["cidr", "address", "mask", "parent",
-              "membershipprorange", "comment", "is_duplicate", "duplicates_allowed"]
-    list_display = ("cidr", "parent", "membershipprorange",
-                    "comment", "is_duplicate", "duplicates_allowed")
+
+    # "special" readonly fields: add (admin form): readwrite (rw) - view: readonly (ro)
+    def get_readonly_fields(self, request, obj=None):
+        if obj:
+            ## return ('address', 'mask', 'parent',) + self.readonly_fields
+            # while dev/debug make parent rw
+            return ('address', 'mask',) + self.readonly_fields
+        return self.readonly_fields
+
+    # fields (and order) in list/table view
+    list_display = ("cidr",
+                    "parent",
+                    "membershipprorange",
+                    "comment",
+                    "duplicates_allowed",
+                    "is_duplicate")
+
+    # fields (and order) in detail/edit view
+    fields = ["cidr",                # add: ro - view: ro
+              "address",             # add: rw - view: ro
+              "mask",                # add: rw - view: ro
+              "parent",              # add: rw - view: rw
+              "membershipprorange",  # add: rw - view: rw
+              "comment",             # add: rw - view: rw
+              "duplicates_allowed",  # add: rw - view: rw
+              "is_duplicate"]        # add: ro - view: ro
+
 
 
 class RangeV6Admin(VersionAdmin, CustomDeleteMixin):
