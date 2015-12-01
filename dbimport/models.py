@@ -167,21 +167,20 @@ class RangeV4(MPTTModel):
         except IntegrityError:
             logger.debug("Integrity because object is not new.. so that's fine.")
 
-        # TODO (RH) 2015-11-29: does this hurt? Shouldn't really!
+        # 2015-11-29 (RH): TODO does this hurt? Shouldn't really!
         # play it safe.. rebuild on every save
         RangeV4.objects.rebuild()
 
         return self
 
-    ''' well.. seems a bit dangerous to override save() .. easily get's you into a loop
+    # well.. seems a bit dangerous to override save() .. easily get's you into a loop
+    """
     def save(self, *args, **kwargs):
         pass
-    '''
+    """
 
     def delete(self, *args, **kwargs):
         """Override built in delete method to update the "is_duplicate" flag"""
-
-        # TODO (RH) 2015-11-29: TODO When delete a node the children are also deleted?!
 
         # update is_duplicate flags
         if self.is_duplicate:
@@ -192,6 +191,7 @@ class RangeV4(MPTTModel):
                     all_dupes[0].is_duplicate = False
                     all_dupes[0].save()
 
+        # 2015-11-29 (RH): TODO When delete a node the children are also deleted?!
         # take care of parent/child relations
         self.prepare_delete()
         RangeV4.objects.rebuild()
@@ -213,7 +213,7 @@ class RangeV4(MPTTModel):
         if not preserve_children:
             return True
 
-        # TODO (RH) 2015-11-28: move relation .. write some tests! :-)
+        # 2015-11-28 (RH): TODO move relation .. write some tests! :-)
         # Fixture for tests: 20151129.datadump.json
         if self.is_root_node():
             if self.is_leaf_node():
@@ -261,7 +261,8 @@ class RangeV4(MPTTModel):
         inconsistent_trees = list()
 
         for root in root_nodes:
-            if not root.validate_tree():
+            result, error_codes = root.validate_tree()
+            if not result:
                 inconsistent_trees.append(root)
 
         if inconsistent_trees:
@@ -281,27 +282,75 @@ class RangeV4(MPTTModel):
             True or False
 
         Notes:
-            TODO (RH) 2015-11-28: Some cases are missing
+            2015-11-28 (RH): TODO Some cases are missing
                 * document implemented cases
                 * document missing cases
                 * implement missing cases
                 * write tests! ;-)
 
-            * Go over every leaf node and check the direct ancestor line (to root)
-            * check every sibling.. should not have exact same address
+        """
+
+        error_codes = list()
+
+        logger.info("---")
+        logger.info("Tree: " + self.cidr)
+
+        logger.info("validate_tree_from_leaf_ancestors_top_down: ")
+        try:
+            res1 = self._validate_tree_from_leaf_ancestors_top_down(self)
+        except Exception as err:
+            res1 = False
+            error_codes.append(err)
+        logger.info(res1)
+
+        logger.info("validate_tree_no_siblings_have_same_address: ")
+        try:
+            res2 = self._validate_tree_no_siblings_have_same_address(self)
+        except Exception as err:
+            res2 = False
+            error_codes.append(err)
+        logger.info(res2)
+
+        logger.info("validate_tree_by_each_node: ")
+        try:
+            res3 = self._validate_tree_by_each_node(self)
+        except Exception as err:
+            res3 = False
+            error_codes.append(err)
+        logger.info(res3)
+
+        if res1 and res2 and res3:
+            return True, None
+        else:
+            return False, error_codes
+
+    @staticmethod
+    def _validate_tree_by_each_node(tree_root):
+        """Validate a tree by checking every child to parent and parent to child relation
+
+        2015-01-12 (RH): TODO be more verbose
+
+        Args:
+            tree_root (RangeV4): root node of a RangeV4 tree
+
+        Returns:
+            False as soon as a validation error occurs, otherwise True
+
+        Notes:
+            **Be aware that validation STOPs when first error is encountered!**
 
         """
 
-        for item in self.get_family():
+        all_nodes = tree_root.get_family()
+
+        for item in all_nodes:
             logger.debug("validating on: " + item.cidr)
-            # check parent (unless item it's a root_node)
+            # check parent (unless item is a root_node)
             if not item.is_root_node():
                 if item.address not in item.parent.ip_range:
                     logger.error("Range " + item.cidr + " not in " + str(item.parent.ip_range))
                     return False
-                if item.mask == item.parent.mask:
-                    logger.error("child has same mask as parent on: " + item.cidr)
-                    return False
+
                 # store current value of item.parent, run find_parent and then compare
                 cur_parent = item.parent
                 item.find_parent(item.get_root())
@@ -315,6 +364,91 @@ class RangeV4(MPTTModel):
                     if child.address not in item.ip_range:
                         logger.error("Range " + child.cidr + " not in " + str(item.ip_range))
                         return False
+
+        return True
+
+    @staticmethod
+    def _validate_tree_from_leaf_ancestors_top_down(tree_root):
+        """Validate a tree by checking that every child has longer/bigger mask than parent
+
+        Get list of all leaves, iterate over each and get list of ancestors.
+        Then iterate over ancestor list from top to bottom using custom for loop index
+        counter (idx) and check mask of current node against next node's mask.
+        Last for loop iteration checks last list element against the current calling
+        leaf (as leaf is not included in get_ancestors() call).
+
+        A tree is considered valid if the mask of a child is longer - that means numerical
+        bigger - than the mask of it's parent. E.g.:
+                Root: 192.168.0.0/16>  - 24 bigger than 16
+                    Child of root: 192.168.20.0/24  - 25 bigger than 24
+                        It's child:  192.168.20.128/25  - 26 bigger than 25
+                            It's child: 192.168.20.192/26 (which is also the leaf)
+
+        Args:
+            tree_root (RangeV4): root node of a RangeV4 tree
+
+        Returns:
+            False as soon as a validation error occurs, otherwise True
+
+        Notes:
+            **Be aware that validation STOPs when first error is encountered!**
+
+        """
+
+        all_leaves = tree_root.get_leafnodes()
+
+        for leaf in all_leaves:
+            ancestors = leaf.get_ancestors()
+            logger.debug("---")
+            for idx in range(0, len(ancestors)):
+                idx_next = idx + 1
+                if idx_next < len(ancestors):
+                    logger.debug("Compare mask for: " + str(ancestors[idx]) +
+                                 " and: " + str(ancestors[idx_next]))
+                    if ancestors[idx].mask >= ancestors[idx_next].mask:
+                        logger.error("Child mask is not longer/bigger than parent mask")
+                        return False
+                else:
+                    logger.debug("Last: C mask: " + str(ancestors[idx]) + " and " + str(leaf))
+                    if ancestors[idx].mask >= leaf.mask:
+                        logger.error("Child mask is not longer/bigger than parent mask")
+                        return False
+
+        return True
+
+    @staticmethod
+    def _validate_tree_no_siblings_have_same_address(tree_root):
+        """Validate a tree by checking that no siblings have the same value for address
+
+        Iterate over all descendants of calling tree root (tree_root).
+        On each iteration compile a list of all siblings of current descendant node
+        (including node itself) and then check whether this list ("siblings") contains
+        duplicate values for node.address field. Duplicate check uses "set()" function.
+
+        Args:
+            tree_root (RangeV4): root node of a RangeV4 tree
+
+        Returns:
+            False as soon as a validation error occurs, otherwise True
+
+        Notes:
+            **Be aware that validation STOPs when first error is encountered!**
+
+        """
+
+        descendants = tree_root.get_descendants()
+
+        for descendant in descendants:
+            siblings = list()
+            logger.debug("---")
+            for sibling in descendant.get_siblings(include_self=True):
+                logger.debug("Child: " + sibling.cidr)
+                siblings.append(sibling.address)
+
+            if len(siblings) != len(set(siblings)):
+                logger.debug("At least two siblings have same address on level: " +
+                             str(descendant.level) + " (" + descendant.cidr + ")")
+                return False
 
         return True
 
@@ -369,7 +503,7 @@ class RangeV4(MPTTModel):
                 break
         else:  # from for loop!
             # range is not part of an existing tree
-            # TODO (RH) 2015-11-29: new tree handling! Passt?!
+            # 2015-11-29 (RH): TODO new tree handling! Passt?!
             logger.debug("Range not in any existing tree! Create new tree.")
             self.insert_at(None)
             self.save()
@@ -471,6 +605,7 @@ class RangeV4(MPTTModel):
         return True
 
 
+# 2015-11-29 (RH): TODO there is a lot to take over from RangeV4!!
 class RangeV6(models.Model):
     """IPv6 specific Range model"""
 
