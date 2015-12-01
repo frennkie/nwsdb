@@ -20,6 +20,19 @@ import logging
 logger = logging.getLogger(__name__)
 
 
+class TreeValidationError(StandardError):
+    def __init__(self, message):
+        self.message = message
+
+    def __repr__(self):
+        return "<{0}: {1}>".format(
+                self.__class__.__name__,
+                self.message)
+
+    def __unicode__(self):  # __str__ on Python 3
+        return self.message
+
+
 def dns_name_validator(dns_name):
     """IDN compatible domain validator
     https://stackoverflow.com/questions/2532053/validate-a-hostname-string
@@ -259,14 +272,20 @@ class RangeV4(MPTTModel):
         root_nodes = RangeV4.objects.root_nodes()
 
         inconsistent_trees = list()
+        tree_errors = list()
 
         for root in root_nodes:
             result, error_codes = root.validate_tree()
             if not result:
                 inconsistent_trees.append(root)
+                tree_errors.append(error_codes)
 
         if inconsistent_trees:
-            logger.error("Inconsistent tree(s): " + str(inconsistent_trees))
+            logger.error("Inconsistent tree(s): ")
+            for i_tree in tree_errors:
+                for _range, error in i_tree:
+                    logger.error(_range.cidr + ": \t" + error.message)
+
             raise Exception(_("Error: Inconsistent tree(s)"))
         else:
             logger.info("Tree(s) appear to be consistent!")
@@ -280,6 +299,7 @@ class RangeV4(MPTTModel):
 
         Returns:
             True or False
+            2015-12-01 (RH): TODO update the return (now return errors)
 
         Notes:
             2015-11-28 (RH): TODO Some cases are missing
@@ -295,29 +315,26 @@ class RangeV4(MPTTModel):
         logger.info("---")
         logger.info("Tree: " + self.cidr)
 
-        logger.info("validate_tree_from_leaf_ancestors_top_down: ")
         try:
             res1 = self._validate_tree_from_leaf_ancestors_top_down(self)
-        except Exception as err:
+        except TreeValidationError as err:
             res1 = False
-            error_codes.append(err)
-        logger.info(res1)
+            error_codes.append((self, err),)
+        #logger.debug("validate_tree_from_leaf_ancestors_top_down: " + str(res1))
 
-        logger.info("validate_tree_no_siblings_have_same_address: ")
         try:
             res2 = self._validate_tree_no_siblings_have_same_address(self)
-        except Exception as err:
+        except TreeValidationError as err:
             res2 = False
-            error_codes.append(err)
-        logger.info(res2)
+            error_codes.append((self, err),)
+        #logger.debug("validate_tree_no_siblings_have_same_address: " + str(res2))
 
-        logger.info("validate_tree_by_each_node: ")
         try:
             res3 = self._validate_tree_by_each_node(self)
-        except Exception as err:
+        except TreeValidationError as err:
             res3 = False
-            error_codes.append(err)
-        logger.info(res3)
+            error_codes.append((self, err),)
+        #logger.debug("validate_tree_by_each_node: " + str(res3))
 
         if res1 and res2 and res3:
             return True, None
@@ -349,21 +366,21 @@ class RangeV4(MPTTModel):
             if not item.is_root_node():
                 if item.address not in item.parent.ip_range:
                     logger.error("Range " + item.cidr + " not in " + str(item.parent.ip_range))
-                    return False
+                    raise TreeValidationError("Range " + item.cidr + " not in " + str(item.parent.ip_range))
 
                 # store current value of item.parent, run find_parent and then compare
                 cur_parent = item.parent
                 item.find_parent(item.get_root())
                 if cur_parent is not item.parent:
                     logger.error("Range " + item.cidr + " points to wrong parent.")
-                    return False
+                    raise TreeValidationError("Range " + item.cidr + " points to wrong parent.")
 
             # check children (unless item is a leaf_node)
             if not item.is_leaf_node():
                 for child in item.get_children():
                     if child.address not in item.ip_range:
                         logger.error("Range " + child.cidr + " not in " + str(item.ip_range))
-                        return False
+                        raise TreeValidationError("Range " + child.cidr + " not in " + str(item.ip_range))
 
         return True
 
@@ -407,12 +424,12 @@ class RangeV4(MPTTModel):
                                  " and: " + str(ancestors[idx_next]))
                     if ancestors[idx].mask >= ancestors[idx_next].mask:
                         logger.error("Child mask is not longer/bigger than parent mask")
-                        return False
+                        raise TreeValidationError("Child mask is not longer/bigger than parent mask")
                 else:
                     logger.debug("Last: C mask: " + str(ancestors[idx]) + " and " + str(leaf))
                     if ancestors[idx].mask >= leaf.mask:
                         logger.error("Child mask is not longer/bigger than parent mask")
-                        return False
+                        raise TreeValidationError("Child mask is not longer/bigger than parent mask")
 
         return True
 
@@ -448,7 +465,8 @@ class RangeV4(MPTTModel):
             if len(siblings) != len(set(siblings)):
                 logger.debug("At least two siblings have same address on level: " +
                              str(descendant.level) + " (" + descendant.cidr + ")")
-                return False
+                raise TreeValidationError("At least two siblings have same address on level: " +
+                                  str(descendant.level) + " (" + descendant.cidr + ")")
 
         return True
 
