@@ -1,9 +1,12 @@
 from __future__ import unicode_literals
 from __future__ import print_function
 
-from django.db import models
+from django.db import models, IntegrityError
 from django.core.validators import MaxValueValidator, ValidationError
+from django.core.exceptions import ObjectDoesNotExist
 from django.utils.translation import ugettext_lazy as _
+
+from mptt.models import MPTTModel, TreeForeignKey
 
 from django.db import transaction
 import reversion as revisions
@@ -12,6 +15,22 @@ import idna
 import uuid
 import re
 import iptools
+
+import logging
+logger = logging.getLogger(__name__)
+
+
+class TreeValidationError(StandardError):
+    def __init__(self, message):
+        self.message = message
+
+    def __repr__(self):
+        return "<{0}: {1}>".format(
+                self.__class__.__name__,
+                self.message)
+
+    def __unicode__(self):  # __str__ on Python 3
+        return self.message
 
 
 def dns_name_validator(dns_name):
@@ -48,17 +67,17 @@ def network_address_validator(address, obj_range):
         >>> network_address_validator(u'10.11.12.5', iptools.IpRange('10.11.12.0/24'))
         Traceback (most recent call last):
           ...
-        ValidationError: [u'Invalid network address for given mask, should be 10.11.12.0']
+        ValidationError: [u'Wrong network address for given mask, should be 10.11.12.0']
 
     """
 
     if not iptools.IpRange(address).startIp == obj_range.startIp:
         raise ValidationError(_(
-            "Invalid network address for given mask, should be " + unicode(obj_range[0])))
+            "Wrong network address for given mask, should be " + unicode(obj_range[0])))
     return True
 
 
-class RangeV4(models.Model):
+class RangeV4(MPTTModel):
     """IPv4 specific Range model"""
 
     id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
@@ -73,30 +92,27 @@ class RangeV4(models.Model):
     membershipprorange = models.ForeignKey("MembershipPRORange", verbose_name="Relation")
 
     class Meta:
-        ordering = ["address"]
+        ordering = ["address_integer", "mask"]
+
+    class MPTTMeta:
+        order_insertion_by = ["address", "mask"]
 
     address = models.GenericIPAddressField(verbose_name="Network Address (IPv4)",
-                                           protocol='IPv4', unpack_ipv4=False)
+                                           protocol='IPv4',
+                                           unpack_ipv4=False)
+
+    address_integer = models.BigIntegerField(verbose_name="IPv4 as Integer",
+                                             editable=False,
+                                             db_index=True)
+
     mask = models.PositiveSmallIntegerField(verbose_name="Mask in Bits (e.g. /24)",
                                             validators=[MaxValueValidator(32)])
 
-    subnet_of = models.OneToOneField('self', null=True, blank=True, on_delete=models.SET_NULL)
-
-    def cidr(self):
-        if self.address and self.mask:
-            return self.address + "/" + unicode(self.mask)
-        else:
-            return ""
-    cidr = property(cidr)
-
-    def ip_range(self):
-        try:
-            return iptools.IpRange(self.cidr)
-        except:
-            # TODO (2015-11-23; RH)
-            print("warning.. unable to create an ip_range from input!")
-            return None
-    ip_range = property(ip_range)
+    parent = TreeForeignKey('self',
+                            null=True,
+                            blank=True,
+                            related_name='children',
+                            db_index=True)
 
     def __repr__(self):
         return "<{0}: {1}>".format(
@@ -105,6 +121,29 @@ class RangeV4(models.Model):
 
     def __unicode__(self):  # __str__ on Python 3
         return self.cidr
+
+    # properties
+    def cidr(self):
+        if self.address and self.mask:
+            return self.address + "/" + unicode(self.mask)
+        elif self.address == "0.0.0.0" and self.mask == 0:
+            return "0.0.0.0/0"
+        else:
+            return ""
+    cidr = property(cidr)
+
+    def ip_range(self):
+        try:
+            return iptools.IpRange(self.cidr)
+        except ValueError:
+            # 2015-11-23 (RH): TODO when and how can parsing the IpRange fail?!
+            logger.warn("warning.. unable to create an ip_range from input!")
+            return None
+    ip_range = property(ip_range)
+
+    def address_int(self):
+        return iptools.IpRange(self.address).startIp
+    address_int = property(address_int)
 
     def clean(self):
         """validate fields
@@ -116,21 +155,47 @@ class RangeV4(models.Model):
 
         """
 
+        # make sure db field address_integer is set to the correct value
+        if not self.address_integer == self.address_int:
+            self.address_integer = self.address_int
+
+        # make sure that given address is really the startIp of the range (with given mask)
         if self.ip_range:
             network_address_validator(self.address, iptools.IpRange(self.ip_range))
 
+        # check for duplicates
+        # TODO (RH) 2015-11-29: duplicate handling?!
         self.check_is_duplicate()
 
-        if self.subnet_of:
-            if self.address not in self.subnet_of.ip_range:
+        # check whether new RangeV4 is really a child of selected parent
+        # TODO (RH) 2015-11-29: should user really be allow / required to set parent?!
+        if self.parent:
+            if self.address not in self.parent.ip_range:
                 raise ValidationError(_(
-                    self.cidr + " is not a subnet of " + self.subnet_of.cidr))
+                    self.cidr + " is not a subnet of " + self.parent.cidr))
+
+        # insert into tree at correct position (no matter what user selected as "parent")
+        try:
+            self.insert_into_tree()
+        except IntegrityError:
+            logger.debug("Integrity because object is not new.. so that's fine.")
+
+        # 2015-11-29 (RH): TODO does this hurt? Shouldn't really!
+        # play it safe.. rebuild on every save
+        RangeV4.objects.rebuild()
 
         return self
 
-    def delete(self, *args, **kwargs):
-        """ Override built in delete method to update the "is_duplicate" flag"""
+    # well.. seems a bit dangerous to override save() .. easily get's you into a loop
+    """
+    def save(self, *args, **kwargs):
+        pass
+    """
 
+    def delete(self, *args, **kwargs):
+        """Override built in delete method to update the "is_duplicate" flag"""
+
+        # update is_duplicate flags
         if self.is_duplicate:
             all_dupes = RangeV4.objects.filter(address=self.address).exclude(id=self.id)
             if len(all_dupes) == 1:
@@ -139,53 +204,392 @@ class RangeV4(models.Model):
                     all_dupes[0].is_duplicate = False
                     all_dupes[0].save()
 
-        if self.rangev4 and self.subnet_of:
-            print("need to move relation")
-            """
-            _top = self.subnet_of
-            _bottom = self.rangev4
-
-            print(self.id)
-            print(self.subnet_of)
-            print(self.subnet_of_id)
-
-            self.subnet_of_id = None
-            self.subnet_of = None
-
-            print(self.id)
-            print(self.subnet_of)
-            print(self.subnet_of_id)
-
-            _top.rangev4 = _bottom
-            _top.flush()
-
-            print(_bottom.id)
-            print(_bottom.subnet_of)
-            print(_bottom.subnet_of_id)
-
-            _bottom.subnet_of = _top
-
-            print(_bottom.id)
-            print(_bottom.subnet_of)
-            print(_bottom.subnet_of_id)
-
-            _bottom.save()
-            """
+        # 2015-11-29 (RH): TODO When delete a node the children are also deleted?!
+        # take care of parent/child relations
+        self.prepare_delete()
+        RangeV4.objects.rebuild()
 
         super(RangeV4, self).delete(*args, **kwargs)  # Call the "real" save() method.
+
+    def prepare_delete(self, preserve_children=True):
+        """Prepare deletion of a node.
+
+        Args:
+            preserve_children (bool): If False all children will be deleted with node
+                When True will preserve children (might require to promote new root
+
+        Returns:
+            True if everything is find, otherwise (e.g. unable to promote new root) False
+
+        """
+
+        if not preserve_children:
+            return True
+
+        # 2015-11-28 (RH): TODO move relation .. write some tests! :-)
+        # Fixture for tests: 20151129.datadump.json
+        if self.is_root_node():
+            if self.is_leaf_node():
+                logger.debug("Node is both root and leaf.. no need to move anything.")
+                return True
+            else:
+                new_root_candidates = self.get_children()
+                if len(new_root_candidates) == 1:
+                    new_root = new_root_candidates[0]
+                    logger.info("Make this the new tree root: " + str(new_root.cidr))
+                    new_root.parent = None
+                    new_root.move_to(None, None)
+                    new_root.save()
+
+                    return True
+                else:
+                    logger.info("Root (going to be deleted) has more than one child. Split..")
+                    for new_root_candidate in new_root_candidates:
+                        logger.debug("New root: " + str(new_root_candidate))
+                        new_root_candidate.parent = None
+                        new_root_candidate.move_to(None, None)
+                        new_root_candidate.save()
+
+                    return False
+
+        else:
+            if self.is_leaf_node():
+                logger.debug("Node is a leaf.. no need to move anything.")
+                return True
+            else:
+                logger.debug("need to fix parent - child relations...")
+                for node in self.get_children():
+                    logger.debug("kids: " + node.cidr)
+                    node.parent = self.parent
+                    node.save()
+
+                return True
+
+    @classmethod
+    def validate_trees(cls):
+        """validate database (iterate over every root)"""
+
+        root_nodes = RangeV4.objects.root_nodes()
+
+        inconsistent_trees = list()
+        tree_errors = list()
+
+        for root in root_nodes:
+            result, error_codes = root.validate_tree()
+            if not result:
+                inconsistent_trees.append(root)
+                tree_errors.append(error_codes)
+
+        if inconsistent_trees:
+            logger.error("Inconsistent tree(s): ")
+            for i_tree in tree_errors:
+                for _range, error in i_tree:
+                    logger.error(_range.cidr + ": \t" + error.message)
+
+            raise Exception(_("Error: Inconsistent tree(s)"))
+        else:
+            logger.info("Tree(s) appear to be consistent!")
+
+    def validate_tree(self):
+        """validate one tee
+
+            Iterate every item in tree and check:
+                is item cidr contained in parent cidr
+                is cidr of every child contained in item cidr
+
+        Returns:
+            True or False
+            2015-12-01 (RH): TODO update the return (now return errors)
+
+        Notes:
+            2015-11-28 (RH): TODO Some cases are missing
+                * document implemented cases
+                * document missing cases
+                * implement missing cases
+                * write tests! ;-)
+
+        """
+
+        error_codes = list()
+
+        logger.info("---")
+        logger.info("Tree: " + self.cidr)
+
+        try:
+            res1 = self._validate_tree_from_leaf_ancestors_top_down(self)
+        except TreeValidationError as err:
+            res1 = False
+            error_codes.append((self, err),)
+        #logger.debug("validate_tree_from_leaf_ancestors_top_down: " + str(res1))
+
+        try:
+            res2 = self._validate_tree_no_siblings_have_same_address(self)
+        except TreeValidationError as err:
+            res2 = False
+            error_codes.append((self, err),)
+        #logger.debug("validate_tree_no_siblings_have_same_address: " + str(res2))
+
+        try:
+            res3 = self._validate_tree_by_each_node(self)
+        except TreeValidationError as err:
+            res3 = False
+            error_codes.append((self, err),)
+        #logger.debug("validate_tree_by_each_node: " + str(res3))
+
+        if res1 and res2 and res3:
+            return True, None
+        else:
+            return False, error_codes
+
+    @staticmethod
+    def _validate_tree_by_each_node(tree_root):
+        """Validate a tree by checking every child to parent and parent to child relation
+
+        2015-01-12 (RH): TODO be more verbose
+
+        Args:
+            tree_root (RangeV4): root node of a RangeV4 tree
+
+        Returns:
+            False as soon as a validation error occurs, otherwise True
+
+        Notes:
+            **Be aware that validation STOPs when first error is encountered!**
+
+        """
+
+        all_nodes = tree_root.get_family()
+
+        for item in all_nodes:
+            logger.debug("validating on: " + item.cidr)
+            # check parent (unless item is a root_node)
+            if not item.is_root_node():
+                if item.address not in item.parent.ip_range:
+                    logger.error("Range " + item.cidr + " not in " + str(item.parent.ip_range))
+                    raise TreeValidationError("Range " + item.cidr + " not in " + str(item.parent.ip_range))
+
+                # store current value of item.parent, run find_parent and then compare
+                cur_parent = item.parent
+                item.find_parent(item.get_root())
+                if cur_parent is not item.parent:
+                    logger.error("Range " + item.cidr + " points to wrong parent.")
+                    raise TreeValidationError("Range " + item.cidr + " points to wrong parent.")
+
+            # check children (unless item is a leaf_node)
+            if not item.is_leaf_node():
+                for child in item.get_children():
+                    if child.address not in item.ip_range:
+                        logger.error("Range " + child.cidr + " not in " + str(item.ip_range))
+                        raise TreeValidationError("Range " + child.cidr + " not in " + str(item.ip_range))
+
+        return True
+
+    @staticmethod
+    def _validate_tree_from_leaf_ancestors_top_down(tree_root):
+        """Validate a tree by checking that every child has longer/bigger mask than parent
+
+        Get list of all leaves, iterate over each and get list of ancestors.
+        Then iterate over ancestor list from top to bottom using custom for loop index
+        counter (idx) and check mask of current node against next node's mask.
+        Last for loop iteration checks last list element against the current calling
+        leaf (as leaf is not included in get_ancestors() call).
+
+        A tree is considered valid if the mask of a child is longer - that means numerical
+        bigger - than the mask of it's parent. E.g.:
+                Root: 192.168.0.0/16>  - 24 bigger than 16
+                    Child of root: 192.168.20.0/24  - 25 bigger than 24
+                        It's child:  192.168.20.128/25  - 26 bigger than 25
+                            It's child: 192.168.20.192/26 (which is also the leaf)
+
+        Args:
+            tree_root (RangeV4): root node of a RangeV4 tree
+
+        Returns:
+            False as soon as a validation error occurs, otherwise True
+
+        Notes:
+            **Be aware that validation STOPs when first error is encountered!**
+
+        """
+
+        all_leaves = tree_root.get_leafnodes()
+
+        for leaf in all_leaves:
+            ancestors = leaf.get_ancestors()
+            logger.debug("---")
+            for idx in range(0, len(ancestors)):
+                idx_next = idx + 1
+                if idx_next < len(ancestors):
+                    logger.debug("Compare mask for: " + str(ancestors[idx]) +
+                                 " and: " + str(ancestors[idx_next]))
+                    if ancestors[idx].mask >= ancestors[idx_next].mask:
+                        logger.error("Child mask is not longer/bigger than parent mask")
+                        raise TreeValidationError("Child mask is not longer/bigger than parent mask")
+                else:
+                    logger.debug("Last: C mask: " + str(ancestors[idx]) + " and " + str(leaf))
+                    if ancestors[idx].mask >= leaf.mask:
+                        logger.error("Child mask is not longer/bigger than parent mask")
+                        raise TreeValidationError("Child mask is not longer/bigger than parent mask")
+
+        return True
+
+    @staticmethod
+    def _validate_tree_no_siblings_have_same_address(tree_root):
+        """Validate a tree by checking that no siblings have the same value for address
+
+        Iterate over all descendants of calling tree root (tree_root).
+        On each iteration compile a list of all siblings of current descendant node
+        (including node itself) and then check whether this list ("siblings") contains
+        duplicate values for node.address field. Duplicate check uses "set()" function.
+
+        Args:
+            tree_root (RangeV4): root node of a RangeV4 tree
+
+        Returns:
+            False as soon as a validation error occurs, otherwise True
+
+        Notes:
+            **Be aware that validation STOPs when first error is encountered!**
+
+        """
+
+        descendants = tree_root.get_descendants()
+
+        for descendant in descendants:
+            siblings = list()
+            logger.debug("---")
+            for sibling in descendant.get_siblings(include_self=True):
+                logger.debug("Child: " + sibling.cidr)
+                siblings.append(sibling.address)
+
+            if len(siblings) != len(set(siblings)):
+                logger.debug("At least two siblings have same address on level: " +
+                             str(descendant.level) + " (" + descendant.cidr + ")")
+                raise TreeValidationError("At least two siblings have same address on level: " +
+                                  str(descendant.level) + " (" + descendant.cidr + ")")
+
+        return True
+
+    '''
+    def check_is_subnet_of_existing(self):
+        # try to find out whether there already is range of which is range is a subnet
+
+        all_ranges = RangeV4.objects.all().exclude(id=self.id)
+
+        candidate_list = list()
+        for _range in all_ranges:
+            if self.address in _range.ip_range:
+                candidate_list.append(_range)
+
+        if not candidate_list:
+            return False
+
+        longest_parent_range = False
+        for candidate in candidate_list:
+            if not longest_parent_range:
+                if 0 < candidate.mask < self.mask:
+                    longest_parent_range = candidate
+            else:
+                if longest_parent_range.mask < candidate.mask < self.mask:
+                    longest_parent_range = candidate
+
+        return longest_parent_range
+    '''
+
+
+
+    def insert_into_tree(self):
+        """Insert into tree at correct position.
+
+        Insert as member method to insert a _new_ object at the right position.
+        Parent and Child relations are taken care of
+
+        Raises:
+            IntegrityError: if object already exists in DB
+
+        """
+
+        # ensure that object is not already in DB - in that case it would be a move
+        if RangeV4.objects.filter(pk=self.pk).exists():
+            raise IntegrityError("Object instance already in database.")
+
+        # find tree that range belongs to; if none found create new tree
+        all_root_nodes = RangeV4.objects.root_nodes()
+        for root_node in all_root_nodes:
+            if self.address in root_node.ip_range:
+                logger.debug("Need to insert Range " + self.cidr + " below: " + str(root_node))
+                break
+        else:  # from for loop!
+            # range is not part of an existing tree
+            # 2015-11-29 (RH): TODO new tree handling! Passt?!
+            logger.debug("Range not in any existing tree! Create new tree.")
+            self.insert_at(None)
+            self.save()
+            RangeV4.objects.rebuild()
+            return True
+
+        self.parent = self.find_parent(root_node)
+        logger.debug("Setting newly created Range as child of: " + str(self.parent))
+        self.save()
+
+        # rearranging any items that were children of parent and are now children of self
+        for child in self.parent.get_children():
+            # as we are saving self above we appear as child of parent.. just skip
+            if child.cidr == self.cidr:
+                pass
+            elif child.address in self.ip_range:
+                logger.info("Setting newly created Range as parent for: " + str(child))
+                child.parent = self
+                child.save()
+
+        return True
+
+    def find_parent(self, node):
+        """Find the parent of self in tree starting from top/root.
+
+        Assumes that the tree exists.
+        Tree needs to be valid (Ranges reflect IP subnet rules)
+        Runs recursively.
+        Initial run must pass in the tree root as "node".
+
+        Args:
+            node (RangeV4): Must be the root of a tree that contains self
+
+        Returns:
+            parent (RangeV4)
+
+        """
+
+        parent = node
+
+        for item in node.get_children():
+            if self.address in item.ip_range:
+                logger.debug("Yepp: self is part of this branch: " + str(parent.cidr))
+                parent = self.find_parent(item)
+                break
+
+        return parent
 
     def check_is_duplicate(self):
         """Method to check whether there already is a Range object defined with the exact
         same "cidr" value. If so also check for duplicates_allowed flag and act on it."""
 
-        all_dupes = RangeV4.objects.filter(address=self.address).exclude(id=self.id)
+        all_dupes_same_mask = RangeV4.objects.filter(address=self.address, mask=self.mask).exclude(id=self.id)
+
+        if not all_dupes_same_mask:
+            return False
+        logger.debug("made it past here!")
+
+        all_dupes = RangeV4.objects.filter(address=self.address, mask=self.mask).exclude(id=self.id)
 
         if not all_dupes:
             return False
 
+        logger.debug("and here!")
+
         if not self.duplicates_allowed:
             raise ValidationError(_(
-                "Range already exists but allow duplicates is set to False on this Range."))
+                "Range already exists but duplicates_allowed is set to False on this Range."))
 
         duplicates_allowed_list = list()
         duplicates_forbidden_id_list = list()
@@ -219,8 +623,10 @@ class RangeV4(models.Model):
         return True
 
 
+# 2015-11-29 (RH): TODO there is a lot to take over from RangeV4!!
 class RangeV6(models.Model):
     """IPv6 specific Range model"""
+
     id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
     created = models.DateTimeField('date created', auto_now_add=True)
     updated = models.DateTimeField('date update', auto_now=True)

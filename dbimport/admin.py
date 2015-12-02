@@ -4,6 +4,8 @@ from __future__ import print_function
 from django.contrib import admin
 from reversion.admin import VersionAdmin
 
+from mptt.admin import MPTTModelAdmin
+
 # Import then Register your models here.
 from .models import RangeV4, RangeV6, RangeDNS
 from .models import Person, Organization, Role, MembershipPRORange
@@ -26,23 +28,51 @@ class CustomDeleteMixin(admin.ModelAdmin):
         return actions
 
 
-class RangeV4Admin(VersionAdmin, CustomDeleteMixin):
+class RangeV4Admin(MPTTModelAdmin, VersionAdmin, CustomDeleteMixin):
 
-    readonly_fields = ("is_duplicate", "cidr")
-    fields = ["cidr", "address", "mask", "subnet_of", "membershipprorange",
-              "comment", "is_duplicate", "duplicates_allowed"]
-    list_display = ("cidr", "subnet_of", "membershipprorange",
-                    "comment", "is_duplicate", "duplicates_allowed")
+    # visual indention of children
+    mptt_level_indent = 15
+
+    # "normal" declaration of readonly (ro) fields (never editable)
+    readonly_fields = ("is_duplicate", "cidr",)
+
+    # "special" readonly fields: add (admin form): readwrite (rw) - view: readonly (ro)
+    def get_readonly_fields(self, request, obj=None):
+        if obj:
+            ## return ('address', 'mask', 'parent',) + self.readonly_fields
+            # while dev/debug make parent rw
+            return ('address', 'mask',) + self.readonly_fields
+        return self.readonly_fields
+
+    # fields (and order) in list/table view
+    list_display = ("cidr",
+                    "parent",
+                    "membershipprorange",
+                    "comment",
+                    "duplicates_allowed",
+                    "is_duplicate")
+
+    # fields (and order) in detail/edit view
+    fields = ["cidr",                # add: ro - view: ro
+              "address",             # add: rw - view: ro
+              "mask",                # add: rw - view: ro
+              "parent",              # add: rw - view: rw
+              "membershipprorange",  # add: rw - view: rw
+              "comment",             # add: rw - view: rw
+              "duplicates_allowed",  # add: rw - view: rw
+              "is_duplicate"]        # add: ro - view: ro
 
 
 
 class RangeV6Admin(VersionAdmin, CustomDeleteMixin):
-
+    pass
+    """
     readonly_fields = ("is_duplicate", "cidr")
-    fields = ["cidr", "address", "mask", "subnet_of", "membershipprorange",
+    fields = ["cidr", "address", "mask",  "membershipprorange",
               "comment", "is_duplicate", "duplicates_allowed"]
-    list_display = ("cidr", "subnet_of", "membershipprorange",
+    list_display = ("cidr", "membershipprorange",
                     "comment", "is_duplicate", "duplicates_allowed")
+    """
 
 
 class RangeDNSAdmin(VersionAdmin, CustomDeleteMixin):
@@ -60,9 +90,9 @@ class RangeV4Inline(admin.TabularInline):
     extra = 1
 
     readonly_fields = ("is_duplicate",)
-    fields = ["address", "mask", "subnet_of",
+    fields = ["address", "mask",
               "comment", "is_duplicate", "duplicates_allowed"]
-    list_display = ("address", "mask", "subnet_of",
+    list_display = ("address", "mask", "children_range",
                     "comment", "is_duplicate", "duplicates_allowed")
 
 
@@ -72,10 +102,11 @@ class RangeV6Inline(admin.TabularInline):
     extra = 1
 
     readonly_fields = ("is_duplicate",)
-    fields = ["address", "mask", "subnet_of",
+    fields = ["address", "mask",
               "comment", "is_duplicate", "duplicates_allowed"]
-    list_display = ("address", "mask", "subnet_of",
+    list_display = ("address", "mask",
                     "comment", "is_duplicate", "duplicates_allowed")
+
 
 
 class RangeDNSInline(admin.TabularInline):
