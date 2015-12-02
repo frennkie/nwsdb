@@ -21,8 +21,10 @@ logger = logging.getLogger(__name__)
 
 
 class TreeValidationError(StandardError):
-    def __init__(self, message):
+    def __init__(self, message, tree=None, range_info_tuple=(None, None)):
         self.message = message
+        self.tree = tree
+        self.range_info_tuple = range_info_tuple
 
     def __repr__(self):
         return "<{0}: {1}>".format(
@@ -267,24 +269,35 @@ class RangeV4(MPTTModel):
 
     @classmethod
     def validate_trees(cls):
-        """validate database (iterate over every root)"""
+        """Validate database by iterating over every tree and checking it's consistency
+
+        Raises:
+            Exception if at least one tree is inconsistent
+
+        Notes:
+            2015-12-02 (RH): TODO think about: What if one tree is actually a sub tree of
+                                another?! Should that raise an Exception and be reported?!
+
+        """
+
+        trees_errors = []
 
         root_nodes = RangeV4.objects.root_nodes()
 
-        inconsistent_trees = list()
-        tree_errors = list()
-
         for root in root_nodes:
-            result, error_codes = root.validate_tree()
+            result, errors = root.validate_tree()
             if not result:
-                inconsistent_trees.append(root)
-                tree_errors.append(error_codes)
+                trees_errors.append(errors)
 
-        if inconsistent_trees:
-            logger.error("Inconsistent tree(s): ")
-            for i_tree in tree_errors:
-                for _range, error in i_tree:
-                    logger.error(_range.cidr + ": \t" + error.message)
+        if trees_errors:
+            for tree_error in trees_errors:
+                for tree, errors in tree_error:
+                    logger.error("\n\n")
+                    logger.error("Inconsistent tree: " + tree.cidr)
+                    for error in errors:
+                        logger.error(error.message)
+                        logger.error("Affects: " + str(error.range_info_tuple))
+                        logger.error("---")
 
             raise Exception(_("Error: Inconsistent tree(s)"))
         else:
@@ -310,36 +323,24 @@ class RangeV4(MPTTModel):
 
         """
 
-        error_codes = list()
+        all_validations_errors = []
 
-        logger.info("---")
-        logger.info("Tree: " + self.cidr)
+        res1, errors1 = self._validate_tree_from_leaf_ancestors_top_down(self)
+        if not res1:
+            all_validations_errors.append((self, errors1),)
 
-        try:
-            res1 = self._validate_tree_from_leaf_ancestors_top_down(self)
-        except TreeValidationError as err:
-            res1 = False
-            error_codes.append((self, err),)
-        #logger.debug("validate_tree_from_leaf_ancestors_top_down: " + str(res1))
+        res2, errors2 = self._validate_tree_no_siblings_have_same_address(self)
+        if not res2:
+            all_validations_errors.append((self, errors2),)
 
-        try:
-            res2 = self._validate_tree_no_siblings_have_same_address(self)
-        except TreeValidationError as err:
-            res2 = False
-            error_codes.append((self, err),)
-        #logger.debug("validate_tree_no_siblings_have_same_address: " + str(res2))
-
-        try:
-            res3 = self._validate_tree_by_each_node(self)
-        except TreeValidationError as err:
-            res3 = False
-            error_codes.append((self, err),)
-        #logger.debug("validate_tree_by_each_node: " + str(res3))
+        res3, errors3 = self._validate_tree_by_each_node(self)
+        if not res3:
+            all_validations_errors.append((self, errors3),)
 
         if res1 and res2 and res3:
-            return True, None
+            return True, []
         else:
-            return False, error_codes
+            return False, all_validations_errors
 
     @staticmethod
     def _validate_tree_by_each_node(tree_root):
@@ -355,8 +356,11 @@ class RangeV4(MPTTModel):
 
         Notes:
             **Be aware that validation STOPs when first error is encountered!**
+            2015-12-02 (RH): TODO somehow it can happen that item.get_root() returns 2+
 
         """
+
+        validation_errors = []
 
         all_nodes = tree_root.get_family()
 
@@ -365,24 +369,39 @@ class RangeV4(MPTTModel):
             # check parent (unless item is a root_node)
             if not item.is_root_node():
                 if item.address not in item.parent.ip_range:
-                    logger.error("Range " + item.cidr + " not in " + str(item.parent.ip_range))
-                    raise TreeValidationError("Range " + item.cidr + " not in " + str(item.parent.ip_range))
+                    # logger.error("Range " + item.cidr + " not in " + str(item.parent.ip_range))
+                    err = TreeValidationError(
+                        "Range " + item.cidr + " not in " + str(item.parent.ip_range),
+                        tree=tree_root,
+                        range_info_tuple=(item, item.parent))
+                    validation_errors.append(err)
 
                 # store current value of item.parent, run find_parent and then compare
                 cur_parent = item.parent
                 item.find_parent(item.get_root())
                 if cur_parent is not item.parent:
-                    logger.error("Range " + item.cidr + " points to wrong parent.")
-                    raise TreeValidationError("Range " + item.cidr + " points to wrong parent.")
+                    # logger.error("Range " + item.cidr + " points to wrong parent.")
+                    err = TreeValidationError(
+                        "Range " + item.cidr + " points to wrong parent.",
+                        tree=tree_root,
+                        range_info_tuple=(item, None))
+                    validation_errors.append(err)
 
             # check children (unless item is a leaf_node)
             if not item.is_leaf_node():
                 for child in item.get_children():
                     if child.address not in item.ip_range:
-                        logger.error("Range " + child.cidr + " not in " + str(item.ip_range))
-                        raise TreeValidationError("Range " + child.cidr + " not in " + str(item.ip_range))
+                        # logger.error("Range " + child.cidr + " not in " + str(item.ip_range))
+                        err = TreeValidationError(
+                            "Range " + child.cidr + " not in " + str(item.ip_range),
+                            tree=tree_root,
+                            range_info_tuple=(item, item.parent))
+                        validation_errors.append(err)
 
-        return True
+        if validation_errors:
+            return False, validation_errors
+        else:
+            return True, []
 
     @staticmethod
     def _validate_tree_from_leaf_ancestors_top_down(tree_root):
@@ -412,6 +431,8 @@ class RangeV4(MPTTModel):
 
         """
 
+        validation_errors = []
+
         all_leaves = tree_root.get_leafnodes()
 
         for leaf in all_leaves:
@@ -423,15 +444,26 @@ class RangeV4(MPTTModel):
                     logger.debug("Compare mask for: " + str(ancestors[idx]) +
                                  " and: " + str(ancestors[idx_next]))
                     if ancestors[idx].mask >= ancestors[idx_next].mask:
-                        logger.error("Child mask is not longer/bigger than parent mask")
-                        raise TreeValidationError("Child mask is not longer/bigger than parent mask")
+                        # logger.error("Child mask is not longer/bigger than parent mask")
+                        err = TreeValidationError(
+                            "Child mask is not longer/bigger than parent mask",
+                            tree=tree_root,
+                            range_info_tuple=(ancestors[idx], ancestors[idx_next]))
+                        validation_errors.append(err)
                 else:
                     logger.debug("Last: C mask: " + str(ancestors[idx]) + " and " + str(leaf))
                     if ancestors[idx].mask >= leaf.mask:
-                        logger.error("Child mask is not longer/bigger than parent mask")
-                        raise TreeValidationError("Child mask is not longer/bigger than parent mask")
+                        # logger.error("Child mask is not longer/bigger than parent mask")
+                        err = TreeValidationError(
+                            "Child mask is not longer/bigger than parent mask",
+                            tree=tree_root,
+                            range_info_tuple=(ancestors[idx], ancestors[idx_next]))
+                        validation_errors.append(err)
 
-        return True
+        if validation_errors:
+            return False, validation_errors
+        else:
+            return True, []
 
     @staticmethod
     def _validate_tree_no_siblings_have_same_address(tree_root):
@@ -453,22 +485,31 @@ class RangeV4(MPTTModel):
 
         """
 
+        validation_errors = []
+
         descendants = tree_root.get_descendants()
 
         for descendant in descendants:
-            siblings = list()
+            siblings = []
             logger.debug("---")
             for sibling in descendant.get_siblings(include_self=True):
                 logger.debug("Child: " + sibling.cidr)
                 siblings.append(sibling.address)
 
             if len(siblings) != len(set(siblings)):
-                logger.debug("At least two siblings have same address on level: " +
-                             str(descendant.level) + " (" + descendant.cidr + ")")
-                raise TreeValidationError("At least two siblings have same address on level: " +
-                                  str(descendant.level) + " (" + descendant.cidr + ")")
+                # logger.error("At least two siblings have same address on level: " +
+                #             str(descendant.level) + " (" + descendant.cidr + ")")
+                err = TreeValidationError(
+                     "At least two siblings have same address on level: " +
+                     str(descendant.level)  ,
+                     tree=tree_root,
+                     range_info_tuple=(descendant, None))
+                validation_errors.append(err)
 
-        return True
+        if validation_errors:
+            return False, validation_errors
+        else:
+            return True, []
 
     '''
     def check_is_subnet_of_existing(self):
@@ -476,7 +517,7 @@ class RangeV4(MPTTModel):
 
         all_ranges = RangeV4.objects.all().exclude(id=self.id)
 
-        candidate_list = list()
+        candidate_list = []
         for _range in all_ranges:
             if self.address in _range.ip_range:
                 candidate_list.append(_range)
@@ -591,8 +632,8 @@ class RangeV4(MPTTModel):
             raise ValidationError(_(
                 "Range already exists but duplicates_allowed is set to False on this Range."))
 
-        duplicates_allowed_list = list()
-        duplicates_forbidden_id_list = list()
+        duplicates_allowed_list = []
+        duplicates_forbidden_id_list = []
 
         for dupe in all_dupes:
             if self.id == dupe.id:
@@ -702,8 +743,8 @@ class RangeV6(models.Model):
             raise ValidationError(_(
                 "Range already exists but allow duplicates is set to False on this Range."))
 
-        duplicates_allowed_list = list()
-        duplicates_forbidden_id_list = list()
+        duplicates_allowed_list = []
+        duplicates_forbidden_id_list = []
 
         for dupe in all_dupes:
             if self.id == dupe.id:
@@ -804,8 +845,8 @@ class RangeDNS(models.Model):
         if not self.duplicates_allowed:
             raise ValidationError(_("Range already exists but allow duplicates is set to False on this Range."))
 
-        duplicates_allowed_list = list()
-        duplicates_forbidden_id_list = list()
+        duplicates_allowed_list = []
+        duplicates_forbidden_id_list = []
 
         for dupe in all_dupes:
             if self.id == dupe.id:
