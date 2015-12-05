@@ -79,7 +79,7 @@ def network_address_validator(address, obj_range):
     return True
 
 
-class RangeV4(MPTTModel):
+class Range(MPTTModel):
     """IPv4 specific Range model"""
 
     id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
@@ -88,27 +88,21 @@ class RangeV4(MPTTModel):
 
     comment = models.CharField(max_length=255, default="", blank=True)
 
+    address_binary = models.BinaryField(max_length=16,
+                                        verbose_name="IP as Binary",
+                                        editable=False)
+
     duplicates_allowed = models.BooleanField(default=False)
     is_duplicate = models.BooleanField(default=False, editable=False)
 
     membershipprorange = models.ForeignKey("MembershipPRORange", verbose_name="Relation")
 
     class Meta:
-        ordering = ["address_integer", "mask"]
+        ordering = ["address_binary", "mask"]
+        abstract = True
 
     class MPTTMeta:
         order_insertion_by = ["address", "mask"]
-
-    address = models.GenericIPAddressField(verbose_name="Network Address (IPv4)",
-                                           protocol='IPv4',
-                                           unpack_ipv4=False)
-
-    address_integer = models.BigIntegerField(verbose_name="IPv4 as Integer",
-                                             editable=False,
-                                             db_index=True)
-
-    mask = models.PositiveSmallIntegerField(verbose_name="Mask in Bits (e.g. /24)",
-                                            validators=[MaxValueValidator(32)])
 
     parent = TreeForeignKey('self',
                             null=True,
@@ -143,9 +137,10 @@ class RangeV4(MPTTModel):
             return None
     ip_range = property(ip_range)
 
-    def address_int(self):
-        return iptools.IpRange(self.address).startIp
-    address_int = property(address_int)
+    def address_bin(self):
+        address_int = iptools.IpRange(self.address).startIp
+        return bin(address_int)
+    address_bin = property(address_bin)
 
     def clean(self):
         """validate fields
@@ -158,8 +153,13 @@ class RangeV4(MPTTModel):
         """
 
         # make sure db field address_integer is set to the correct value
+        """
         if not self.address_integer == self.address_int:
             self.address_integer = self.address_int
+        """
+        if not self.address_binary == self.address_bin:
+            self.address_binary = self.address_bin
+
 
         # make sure that given address is really the startIp of the range (with given mask)
         if self.ip_range:
@@ -184,7 +184,8 @@ class RangeV4(MPTTModel):
 
         # 2015-11-29 (RH): TODO does this hurt? Shouldn't really!
         # play it safe.. rebuild on every save
-        RangeV4.objects.rebuild()
+
+        self.__class__.objects.rebuild()
 
         return self
 
@@ -199,7 +200,7 @@ class RangeV4(MPTTModel):
 
         # update is_duplicate flags
         if self.is_duplicate:
-            all_dupes = RangeV4.objects.filter(address=self.address).exclude(id=self.id)
+            all_dupes = self.objects.filter(address=self.address).exclude(id=self.id)
             if len(all_dupes) == 1:
                 with transaction.atomic(), revisions.create_revision():
                     revisions.set_comment("set is_duplicate to False while deleting")
@@ -209,9 +210,9 @@ class RangeV4(MPTTModel):
         # 2015-11-29 (RH): TODO When delete a node the children are also deleted?!
         # take care of parent/child relations
         self.prepare_delete()
-        RangeV4.objects.rebuild()
+        self.__class__.objects.rebuild()
 
-        super(RangeV4, self).delete(*args, **kwargs)  # Call the "real" save() method.
+        super(self, self).delete(*args, **kwargs)  # Call the "real" save() method.
 
     def prepare_delete(self, preserve_children=True):
         """Prepare deletion of a node.
@@ -282,7 +283,7 @@ class RangeV4(MPTTModel):
 
         trees_errors = []
 
-        root_nodes = RangeV4.objects.root_nodes()
+        root_nodes = cls.objects.root_nodes()
 
         for root in root_nodes:
             result, errors = root.validate_tree()
@@ -538,7 +539,6 @@ class RangeV4(MPTTModel):
     '''
 
 
-
     def insert_into_tree(self):
         """Insert into tree at correct position.
 
@@ -551,11 +551,11 @@ class RangeV4(MPTTModel):
         """
 
         # ensure that object is not already in DB - in that case it would be a move
-        if RangeV4.objects.filter(pk=self.pk).exists():
+        if self.__class__.objects.filter(pk=self.pk).exists():
             raise IntegrityError("Object instance already in database.")
 
         # find tree that range belongs to; if none found create new tree
-        all_root_nodes = RangeV4.objects.root_nodes()
+        all_root_nodes = self.__class__.objects.root_nodes()
         for root_node in all_root_nodes:
             if self.address in root_node.ip_range:
                 logger.debug("Need to insert Range " + self.cidr + " below: " + str(root_node))
@@ -566,7 +566,7 @@ class RangeV4(MPTTModel):
             logger.debug("Range not in any existing tree! Create new tree.")
             self.insert_at(None)
             self.save()
-            RangeV4.objects.rebuild()
+            self.__class__.objects.rebuild()
             return True
 
         self.parent = self.find_parent(root_node)
@@ -615,13 +615,13 @@ class RangeV4(MPTTModel):
         """Method to check whether there already is a Range object defined with the exact
         same "cidr" value. If so also check for duplicates_allowed flag and act on it."""
 
-        all_dupes_same_mask = RangeV4.objects.filter(address=self.address, mask=self.mask).exclude(id=self.id)
+        all_dupes_same_mask = self.__class__.objects.filter(address=self.address, mask=self.mask).exclude(id=self.id)
 
         if not all_dupes_same_mask:
             return False
         logger.debug("made it past here!")
 
-        all_dupes = RangeV4.objects.filter(address=self.address, mask=self.mask).exclude(id=self.id)
+        all_dupes = self.objects.filter(address=self.address, mask=self.mask).exclude(id=self.id)
 
         if not all_dupes:
             return False
@@ -664,116 +664,29 @@ class RangeV4(MPTTModel):
         return True
 
 
+class RangeV4(Range):
+
+
+    address = models.GenericIPAddressField(verbose_name="Network Address (IPv4)",
+                                           protocol='IPv4',
+                                           unpack_ipv4=False)
+
+    mask = models.PositiveSmallIntegerField(verbose_name="Mask in Bits (e.g. /24)",
+                                            validators=[MaxValueValidator(32)])
+
+
 # 2015-11-29 (RH): TODO there is a lot to take over from RangeV4!!
-class RangeV6(models.Model):
+class RangeV6(Range):
     """IPv6 specific Range model"""
 
-    id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
-    created = models.DateTimeField('date created', auto_now_add=True)
-    updated = models.DateTimeField('date update', auto_now=True)
-
-    comment = models.CharField(max_length=255, default="", blank=True)
-
-    duplicates_allowed = models.BooleanField(default=False)
-    is_duplicate = models.BooleanField(default=False, editable=False)
-
-    membershipprorange = models.ForeignKey("MembershipPRORange", verbose_name="Relation")
-
-    class Meta:
-        ordering = ["address"]
-
     address = models.GenericIPAddressField(verbose_name="IPv6 Address",
-                                           protocol='IPv6', unpack_ipv4=False)
+                                           protocol='IPv6',
+                                           unpack_ipv4=False)
+
     mask = models.PositiveSmallIntegerField(verbose_name="CIDR Bits",
                                             validators=[MaxValueValidator(128)])
 
-    subnet_of = models.OneToOneField('self', null=True, blank=True, on_delete=models.SET_NULL)
 
-    def cidr(self):
-        if self.address and self.mask:
-            return self.address + "/" + unicode(self.mask)
-        else:
-            return ""
-    cidr = property(cidr)
-
-    def ip_range(self):
-        return iptools.IpRange(self.cidr)
-    ip_range = property(ip_range)
-
-    def __repr__(self):
-        return "<{0}: {1}>".format(
-                self.__class__.__name__,
-                self.address)
-
-    def __unicode__(self):  # __str__ on Python 3
-        return self.address
-
-    def clean(self, exclude=None):
-        """validate fields"""
-        self.check_is_duplicate()
-        return self
-
-    def delete(self, *args, **kwargs):
-        """ Override built in delete to update the "is_duplicate" flag"""
-
-        if self.is_duplicate:
-            all_dupes = RangeV6.objects.filter(address=self.address).exclude(id=self.id)
-            if len(all_dupes) == 1:
-                with transaction.atomic(), revisions.create_revision():
-                    revisions.set_comment("set is_duplicate to False while deleting")
-                    all_dupes[0].is_duplicate = False
-                    all_dupes[0].save()
-
-            super(RangeV6, self).delete(*args, **kwargs)
-            return  # just return
-        else:
-            super(RangeV6, self).delete(*args, **kwargs)  # Call the "real" save() method.
-            return
-
-    def check_is_duplicate(self):
-        """Method to check whether there already is a Range object defined with the exact
-        same "address" value. If so also check for duplicates_allowed flag and act on it."""
-
-        all_dupes = RangeV6.objects.filter(address=self.address).exclude(id=self.id)
-
-        if not all_dupes:
-            return False
-
-        if not self.duplicates_allowed:
-            raise ValidationError(_(
-                "Range already exists but allow duplicates is set to False on this Range."))
-
-        duplicates_allowed_list = []
-        duplicates_forbidden_id_list = []
-
-        for dupe in all_dupes:
-            if self.id == dupe.id:
-                pass
-            else:
-                if dupe.duplicates_allowed:
-                    duplicates_allowed_list.append(dupe)
-                else:
-                    duplicates_forbidden_id_list.append(dupe.id)
-
-        if duplicates_forbidden_id_list:
-            raise ValidationError(_(
-                """Range already exists and at least one existing entry does not allow
-                duplicates. Check: """ + unicode(duplicates_forbidden_id_list)))
-
-        with transaction.atomic(), revisions.create_revision():
-            revisions.set_comment("set is_duplicate to True while adding")
-            self.is_duplicate = True
-            self.save()
-
-        for dupe in all_dupes:
-            if not dupe.is_duplicate:
-                with transaction.atomic(), revisions.create_revision():
-                    revisions.set_comment("set is_duplicate to True while adding " +
-                                          unicode(self.id))
-                    dupe.is_duplicate = True
-                    dupe.save()
-
-        return True
 
 
 class RangeDNS(models.Model):
