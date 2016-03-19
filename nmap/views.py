@@ -22,6 +22,7 @@ from django.contrib.auth.models import User
 from django import forms
 from .forms import ScanForm
 
+
 def get_remote_user(_request):
     """Return remote_user (value is None if empty)"""
 
@@ -66,6 +67,8 @@ def index(request):
     print("Authenticated: " +  str(request.user.is_authenticated()))
     print("Superuser: "  + str(request.user.is_superuser))
     print("Groups: "  + str(request.user.groups.count()))
+
+    print("foo bar")
 
     """ /DEBUG INFO """
 

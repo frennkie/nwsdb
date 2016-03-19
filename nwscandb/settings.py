@@ -1,3 +1,4 @@
+# -*- coding: utf-8 -*-
 """
 Django settings for nwscandb project.
 
@@ -39,12 +40,14 @@ INSTALLED_APPS = (
     'django.contrib.staticfiles',
     'django_extensions',
     'django.contrib.humanize',
+    'sslserver',
     'sniplates',
     'crispy_forms',
     'reversion',
     'djcelery',
     'dbimport',
     'nmap',
+    'multidns',
     'django_nose',
     'mptt',
 )
@@ -60,7 +63,7 @@ MIDDLEWARE_CLASSES = (
     'django.middleware.common.CommonMiddleware',
     'django.middleware.csrf.CsrfViewMiddleware',
     'django.contrib.auth.middleware.AuthenticationMiddleware',
-    'django.contrib.auth.middleware.RemoteUserMiddleware',
+    'django.contrib.auth.middleware.PersistentRemoteUserMiddleware',
     'django.contrib.auth.middleware.SessionAuthenticationMiddleware',
     'django.contrib.messages.middleware.MessageMiddleware',
     'django.middleware.clickjacking.XFrameOptionsMiddleware',
@@ -89,6 +92,14 @@ TEMPLATES = [
         },
     },
 ]
+
+"""
+TEMPLATE_LOADERS = (
+            'django.template.loaders.filesystem.Loader',
+            'django.template.loaders.app_directories.Loader',
+            'django.template.loaders.eggs.Loader',
+)
+"""
 
 WSGI_APPLICATION = 'nwscandb.wsgi.application'
 
@@ -153,16 +164,21 @@ USE_TZ = True
 
 
 # Static files (CSS, JavaScript, Images)
-# https://docs.djangoproject.com/en/1.8/howto/static-files/
-
+# https://docs.djangoproject.com/en/1.9/howto/static-files/
 
 # User dir: app_name + /static/ + app_name for app specific!
-STATIC_URL = '/static/'
+STATIC_URL = "/static/"
 
-# Use base_dir + /static/ for general files
-#STATICFILES_DIRS = [BASE_DIR + '/common-static/', ]
+""" http://blog.doismellburning.co.uk/django-and-static-files/
+Update: To be absolutely clear, STATIC_ROOT should live outside of your Django
+project – it's the directory to where your static files are collected, for use
+by a local webserver or similar; Django's involvement with that directory should
+end once your static files have been collected there
+"""
 
-STATIC_ROOT = os.path.join(BASE_DIR, "common-static/")
+# used for bash$ manage.py collectstatic (useful for collecting for production web server)
+STATIC_ROOT = os.path.join(BASE_DIR, "static/")
+
 
 CELERY_RESULT_BACKEND = 'djcelery.backends.database:DatabaseBackend'
 

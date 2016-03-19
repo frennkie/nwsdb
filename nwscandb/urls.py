@@ -17,6 +17,7 @@ from django.conf.urls import include, url, patterns
 from django.contrib import admin
 import nmap
 from nmap import urls as nmap_urls
+from multidns import urls as multidns_urls
 from dbimport import urls as dbimport_urls
 
 urlpatterns =  patterns('',
@@ -24,5 +25,6 @@ urlpatterns =  patterns('',
     url(r'^logout/$', nmap.views.remote_user_logout, name='Log out'),
     url(r'^logged_out/$', nmap.views.remote_user_logged_out, name='Logged out'),
     url(r'^nmap/', include(nmap_urls)),
+    url(r'^multidns/', include(multidns_urls)),
     url(r'^admin/', include(admin.site.urls)),
  )
