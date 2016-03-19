@@ -15,3 +15,4 @@ my.cnf
 .coverage
 .cache/
 *.log
+static/

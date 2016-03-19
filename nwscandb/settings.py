@@ -132,7 +132,7 @@ LOGGING = {
         'file': {
             'level': 'DEBUG',
             'class': 'logging.FileHandler',
-            'filename': 'nwscandb.log',
+            'filename': '/var/log/nwscandb.log',
             'formatter': 'verbose'
         },
     },

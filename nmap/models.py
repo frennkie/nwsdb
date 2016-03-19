@@ -375,6 +375,6 @@ class Contact(models.Model):
                 self.name,
                 self.email)
 
-    def __unicode__(self): # __str__ on Python 3
+    def __unicode__(self):  # __str__ on Python 3
         return self.name
 

@@ -378,7 +378,7 @@ class NmapReportsView(PermissionRequiredMixin, TemplateView):
         orgunits = u.orgunit_set.all()
         nmap_reports = NmapReportMeta.objects.filter(org_unit__in=orgunits)
 
-        paginator = Paginator(nmap_reports, 25)
+        paginator = Paginator(nmap_reports, 15)
 
         page = request.GET.get('page')
 
