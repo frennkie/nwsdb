@@ -4,6 +4,7 @@
 *.bak
 *.png
 *.sql
+*.json
 .htpasswd
 config.py
 testtools/*
