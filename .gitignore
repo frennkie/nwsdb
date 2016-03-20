@@ -17,4 +17,3 @@ my.cnf
 .cache/
 *.log
 static_for_prod/
-common-static/
