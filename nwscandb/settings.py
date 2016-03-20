@@ -50,6 +50,7 @@ INSTALLED_APPS = (
     'multidns',
     'django_nose',
     'mptt',
+    'rest_framework',
 )
 
 LOGIN_URL = '/nmap/login/'
@@ -114,6 +115,14 @@ DATABASES = {
             'read_default_file': '/home/robbie/work/nmap_tool/nwsdb/nwscandb/my.cnf',
         },
     }
+}
+
+REST_FRAMEWORK = {
+    # Use Django's standard `django.contrib.auth` permissions,
+    # or allow read-only access for unauthenticated users.
+    'DEFAULT_PERMISSION_CLASSES': [
+        'rest_framework.permissions.DjangoModelPermissionsOrAnonReadOnly'
+    ]
 }
 
 LOGGING = {

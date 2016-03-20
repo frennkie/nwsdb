@@ -103,7 +103,7 @@ def index(request):
 
 
 def remote_user_logout(request):
-    """remoe_user_logout(request)"""
+    """remote_user_logout(request)"""
 
     remote_user = get_remote_user(request)
 
@@ -116,10 +116,10 @@ def remote_user_logout(request):
 
     #print("get user remote user: " + get_user(remote_user))
 
-    print("Authenticated: " +  str(request.user.is_authenticated()))
+    print("Authenticated: " + str(request.user.is_authenticated()))
 
-    print("Superuser: "  + str(request.user.is_superuser))
-    print("Groups: "  + str(request.user.groups.count()))
+    print("Superuser: " + str(request.user.is_superuser))
+    print("Groups: " + str(request.user.groups.count()))
 
     """ /DEBUG INFO """
 
@@ -129,18 +129,25 @@ def remote_user_logout(request):
 
     if not remote_user:
         print("not remote user.. regular log out")
-
         logout(request)
+        print("Authenticated: " + str(request.user.is_authenticated()))
         return redirect("{0}://{1}/".format(request.scheme, request.get_host()))
 
     else:
-        print("remote user.. log out 'invalid'")
+        print("remote user.. log out using work around (invalid user 'log_out_user')")
+        logout(request)
+        print("Authenticated: " + str(request.user.is_authenticated()))
         return redirect("{0}://log_out_user:@{1}/nmap/logged_out".format(request.scheme,
                                                                          request.get_host()))
 
 
 def remote_user_logged_out(request):
     """ """
+
+    print("remote_user: " + str(get_remote_user(request)))
+    print("user: " + str(request.user))
+    print("Authenticated: " + str(request.user.is_authenticated()))
+
     print("logged out and redirecting")
     return redirect("{0}://{1}/".format(request.scheme, request.get_host()))
 
