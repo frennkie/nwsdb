@@ -21,7 +21,7 @@ BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 # See https://docs.djangoproject.com/en/1.8/howto/deployment/checklist/
 
 # SECURITY WARNING: keep the secret key used in production secret!
-SECRET_KEY = 'v2%0t$i54n2lm)rz)e_p@$7xae6&go8=(dgb$vg9yh+6ktgc*6'
+SECRET_KEY = 'v2%0t$i54n2lm)rz)e_p@$7xne6&go8=(dgb$vg9yh+6ktgc*6'
 
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = True
@@ -69,7 +69,12 @@ MIDDLEWARE_CLASSES = (
     'django.contrib.messages.middleware.MessageMiddleware',
     'django.middleware.clickjacking.XFrameOptionsMiddleware',
     'django.middleware.security.SecurityMiddleware',
+    # custom middle to add REMOTE_USER when testing
+    'nwscandb.middleware.DevAddRemoteUserMiddleware',
 )
+
+DEV_ADD_REMOTE_ENABLED = True
+DEV_ADD_REMOTE_USER = "robbie"
 
 AUTHENTICATION_BACKENDS = (
     'django.contrib.auth.backends.RemoteUserBackend',
