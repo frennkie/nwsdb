@@ -45,6 +45,7 @@ INSTALLED_APPS = (
     'crispy_forms',
     'reversion',
     'djcelery',
+    'accounts',
     'dbimport',
     'nmap',
     'multidns',
