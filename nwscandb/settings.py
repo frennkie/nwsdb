@@ -1,3 +1,4 @@
+# -*- coding: utf-8 -*-
 """
 Django settings for nwscandb project.
 
@@ -39,10 +40,17 @@ INSTALLED_APPS = (
     'django.contrib.staticfiles',
     'django_extensions',
     'django.contrib.humanize',
+    'sslserver',
     'sniplates',
     'crispy_forms',
+    'reversion',
     'djcelery',
+    'dbimport',
     'nmap',
+    'multidns',
+    'django_nose',
+    'mptt',
+    'rest_framework',
 )
 
 LOGIN_URL = '/nmap/login/'
@@ -56,7 +64,7 @@ MIDDLEWARE_CLASSES = (
     'django.middleware.common.CommonMiddleware',
     'django.middleware.csrf.CsrfViewMiddleware',
     'django.contrib.auth.middleware.AuthenticationMiddleware',
-    'django.contrib.auth.middleware.RemoteUserMiddleware',
+    'django.contrib.auth.middleware.PersistentRemoteUserMiddleware',
     'django.contrib.auth.middleware.SessionAuthenticationMiddleware',
     'django.contrib.messages.middleware.MessageMiddleware',
     'django.middleware.clickjacking.XFrameOptionsMiddleware',
@@ -86,6 +94,14 @@ TEMPLATES = [
     },
 ]
 
+"""
+TEMPLATE_LOADERS = (
+            'django.template.loaders.filesystem.Loader',
+            'django.template.loaders.app_directories.Loader',
+            'django.template.loaders.eggs.Loader',
+)
+"""
+
 WSGI_APPLICATION = 'nwscandb.wsgi.application'
 
 
@@ -101,6 +117,46 @@ DATABASES = {
     }
 }
 
+REST_FRAMEWORK = {
+    # Use Django's standard `django.contrib.auth` permissions,
+    # or allow read-only access for unauthenticated users.
+    'DEFAULT_PERMISSION_CLASSES': [
+        'rest_framework.permissions.DjangoModelPermissionsOrAnonReadOnly'
+    ]
+}
+
+LOGGING = {
+    'version': 1,
+    'disable_existing_loggers': False,
+    'formatters': {
+        'verbose': {
+            'format': "[%(asctime)s] %(levelname)s [%(name)s:%(lineno)s] %(message)s",
+            'datefmt': "%d/%b/%Y %H:%M:%S"
+        },
+        'simple': {
+            'format': '%(levelname)s %(message)s'
+        },
+    },
+    'handlers': {
+        'file': {
+            'level': 'DEBUG',
+            'class': 'logging.FileHandler',
+            'filename': '/var/log/nwscandb.log',
+            'formatter': 'verbose'
+        },
+    },
+    'loggers': {
+        'django': {
+            'handlers': ['file'],
+            'propagate': True,
+            'level': 'DEBUG',
+        },
+        'dbimport': {
+            'handlers': ['file'],
+            'level': 'DEBUG',
+        },
+    }
+}
 
 # Internationalization
 # https://docs.djangoproject.com/en/1.8/topics/i18n/
@@ -117,17 +173,33 @@ USE_TZ = True
 
 
 # Static files (CSS, JavaScript, Images)
-# https://docs.djangoproject.com/en/1.8/howto/static-files/
-
+# https://docs.djangoproject.com/en/1.9/howto/static-files/
 
 # User dir: app_name + /static/ + app_name for app specific!
-STATIC_URL = '/static/'
+STATIC_URL = "/static/"
 
-# Use base_dir + /static/ for general files
-#STATICFILES_DIRS = [BASE_DIR + '/common-static/', ]
+""" http://blog.doismellburning.co.uk/django-and-static-files/
+Update: To be absolutely clear, STATIC_ROOT should live outside of your Django
+project – it's the directory to where your static files are collected, for use
+by a local webserver or similar; Django's involvement with that directory should
+end once your static files have been collected there
+"""
 
-STATIC_ROOT = os.path.join(BASE_DIR, "common-static/")
+# used for bash$ manage.py collectstatic (useful for collecting for production web server)
+STATIC_ROOT = os.path.join(BASE_DIR, "static/")
+
 
 CELERY_RESULT_BACKEND = 'djcelery.backends.database:DatabaseBackend'
 
 CRISPY_TEMPLATE_PACK = 'bootstrap3'
+
+# testing
+TEST_RUNNER = 'django_nose.NoseTestSuiteRunner'
+
+NOSE_ARGS = [
+    '--with-doctest',
+    '--with-coverage',
+    '--cover-package=dbimport',
+    '--cover-inclusive',
+]
+

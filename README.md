@@ -77,3 +77,8 @@ Autoreload (careful!)
 %autoreload 2
 ```
 
+##### Schema Graph
+```
+./manage.py graph_models auth nmap  -g -o my_project_visualized.png
+```
+

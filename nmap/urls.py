@@ -1,12 +1,12 @@
-from django.conf.urls import url, patterns
-
+from django.conf.urls import url
 from . import views
 from .views import ScanView, TasksJsonView, TasksView, TaskDelete
 from .views import NmapReportView, NmapReportIDView, NmapReportsView
 from .views import Profile, NoPermission
 from .views import ImportView
 
-urlpatterns = patterns('',
+
+urlpatterns = [
     url(r'^$', views.index, name='index'),
     url(r'^logout/$', views.remote_user_logout, name='logout'),
     url(r'^logged_out/$', views.remote_user_logged_out, name='logout'),
@@ -21,4 +21,4 @@ urlpatterns = patterns('',
     url(r'^report/([-\w]+)$', NmapReportView.as_view(), name='nmapreport_view'),
     url(r'^report/task_id/([-\w]+)$', NmapReportView.as_view(), name='nmapreport_task_id_view'),
     url(r'^report/id/([-\w]+)$', NmapReportIDView.as_view(), name='nmapreport_id_view'),
-)
+]
