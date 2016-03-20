@@ -192,7 +192,11 @@ end once your static files have been collected there
 """
 
 # used for bash$ manage.py collectstatic (useful for collecting for production web server)
-STATIC_ROOT = os.path.join(BASE_DIR, "static/")
+STATIC_ROOT = os.path.join(BASE_DIR, "static_for_prod/")
+
+# this is used for common/shared assets (e.g. jquery is used in multiple apps)
+# http://vincesalvino.blogspot.de/2013/02/share-static-files-between-apps-in.html
+STATICFILES_DIRS = [os.path.join(BASE_DIR, "common-static"), ]
 
 
 CELERY_RESULT_BACKEND = 'djcelery.backends.database:DatabaseBackend'

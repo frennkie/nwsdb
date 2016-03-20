@@ -1,24 +1,23 @@
-.page-header {
-    padding-bottom: 0px;
-    margin: 70px 0 0px;
-    border-bottom: 0px solid #eee
+body {
+  padding-top: 20px;
+  padding-bottom: 40px;
+  background-color: #eee;
 }
 
-/* start form-create (/admin/add_user) */
-.form-create {
+.form-signin {
   max-width: 330px;
   padding: 15px;
   padding-top: 0px;
   margin: 0 auto;
 }
-.form-create .form-create-heading,
-.form-create .checkbox {
+.form-signin .form-signin-heading,
+.form-signin .checkbox {
   margin-bottom: 10px;
 }
-.form-create .checkbox {
+.form-signin .checkbox {
   font-weight: normal;
 }
-.form-create .form-control {
+.form-signin .form-control {
   position: relative;
   height: auto;
   -webkit-box-sizing: border-box;
@@ -27,19 +26,17 @@
   padding: 10px;
   font-size: 16px;
 }
-.form-create .form-control:focus {
+.form-signin .form-control:focus {
   z-index: 2;
 }
-.form-create input[type="text"],
-.form-create input[type="email"] {
+.form-signin input[type="text"],
+.form-signin input[type="email"] {
   margin-bottom: -1px;
   border-bottom-right-radius: 0;
   border-bottom-left-radius: 0;
 }
-.form-create input[type="password"] {
+.form-signin input[type="password"] {
   margin-bottom: 10px;
   border-top-left-radius: 0;
   border-top-right-radius: 0;
 }
-/* end form-create (/admin/add_user) */
-
