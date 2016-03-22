@@ -1,3 +1,8 @@
+2016-YY-XX - 0.1.Z
+
+* remove remote user (local auth only)
+
+
 2016-03-20 - 0.1.5
 
 * add api (djangorestframework)
