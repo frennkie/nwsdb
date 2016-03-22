@@ -4,7 +4,7 @@ from django.contrib import admin
 from .models import Membership, OrgUnit
 from .models import Contact
 from .models import NmapTask, NmapReportMeta
-
+from .models import NetworkService
 
 class MembershipInline(admin.TabularInline):
     model = Membership
@@ -22,6 +22,8 @@ class ContactAdmin(admin.ModelAdmin):
     #list_display = ('Name',)
     #fields = ['comment', 'email']
 
+class NetworkServiceAdmin(admin.ModelAdmin):
+    pass
 
 class NmapTaskAdmin(admin.ModelAdmin):
     pass
@@ -33,6 +35,7 @@ class NmapReportMetaAdmin(admin.ModelAdmin):
 # registers
 admin.site.register(OrgUnit, OrgUnitAdmin)
 admin.site.register(Contact, ContactAdmin)
+admin.site.register(NetworkService, NetworkServiceAdmin)
 admin.site.register(NmapTask, NmapTaskAdmin)
 admin.site.register(NmapReportMeta, NmapReportMetaAdmin)
 

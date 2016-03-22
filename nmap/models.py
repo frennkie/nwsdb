@@ -54,8 +54,6 @@ class Membership(models.Model):
     org = models.ForeignKey(OrgUnit)
 
 
-
-
 class NmapTask(models.Model):
     """ NmapTask Class
 
@@ -345,6 +343,40 @@ class NmapReportMeta(models.Model):
 
     def create_scan_from_report(self):
         pass
+
+
+class NetworkService(models.Model):
+    """ A Network Service identified by protocol, address, port (e.g. tcp/127.0.0.1:80)
+
+    """
+
+    created = models.DateTimeField('date created', auto_now_add=True)
+    updated = models.DateTimeField('date update', auto_now=True)
+
+    address = models.CharField(max_length=255)
+    port = models.PositiveIntegerField(default=0)
+
+    PROTOCOL_CHOICES = (
+        ('TCP', 'TCP'),
+        ('UDP', 'UDP'),
+        ('OTHER', 'Other'),
+    )
+    protocol = models.CharField(max_length=20, choices=PROTOCOL_CHOICES)
+
+    nmap_report_meta = models.ForeignKey(NmapReportMeta)
+
+    def __repr__(self):
+        return "<{0}: {1}/{2}:{3}>".format(
+                self.__class__.__name__,
+                self.protocol,
+                self.address,
+                self.port)
+
+    def __unicode__(self):  # __str__ on Python 3
+        return "{0}/{1}:{2}".format(
+                self.protocol,
+                self.address,
+                self.port)
 
 
 class Contact(models.Model):

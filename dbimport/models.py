@@ -537,7 +537,6 @@ class Range(MPTTModel):
         return longest_parent_range
     '''
 
-
     def insert_into_tree(self):
         """Insert into tree at correct position.
 
@@ -665,7 +664,6 @@ class Range(MPTTModel):
 
 class RangeV4(Range):
 
-
     address = models.GenericIPAddressField(verbose_name="Network Address (IPv4)",
                                            protocol='IPv4',
                                            unpack_ipv4=False)
@@ -684,8 +682,6 @@ class RangeV6(Range):
 
     mask = models.PositiveSmallIntegerField(verbose_name="CIDR Bits",
                                             validators=[MaxValueValidator(128)])
-
-
 
 
 class RangeDNS(models.Model):
