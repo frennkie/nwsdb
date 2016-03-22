@@ -15,21 +15,21 @@
 
     <!-- Bootstrap -->
     <!-- Latest compiled and minified CSS -->
-    <link rel="stylesheet" href="{% static "nmap/css/bootstrap.min.css" %}">
+    <link rel="stylesheet" href="{% static "css/bootstrap.min.css" %}">
     <!-- Optional theme -->
     <!--<link rel="stylesheet" href="/static/nmap/css/bootstrap-theme.min.css">-->
 
     <!-- custom nmap css -->
-    <link rel="stylesheet" href="{% static "nmap/css/custom-base.css" %}">
+    <link rel="stylesheet" href="{% static "css/custom-base.css" %}">
 
     <!-- jQuery (necessary for Bootstrap's JavaScript plugins) -->
-    <script src="{% static "nmap/js/jquery-1.11.3.min.js" %}"></script>
+    <script src="{% static "js/jquery-1.11.3.min.js" %}"></script>
 
     <!-- Latest compiled and minified JavaScript -->
-    <script src="{% static "nmap/js/bootstrap.min.js" %}"></script>
+    <script src="{% static "js/bootstrap.min.js" %}"></script>
 
     <!-- Latest compiled and minified JavaScript -->
-    <script src="{% static "nmap/js/moment-with-locales.min.js" %}"></script>
+    <script src="{% static "js/moment-with-locales.min.js" %}"></script>
 
   </head>
 
@@ -86,7 +86,7 @@
                         {% endif %}
 
                         {% widget "widgets_base:render_nav_link" title=user.username icon="user" link="/nmap/profile/"|add:user.username|add:"/" %}
-                        {% widget "widgets_base:render_nav_link" title="Log out" icon="off" link="/nmap/logout/" %}
+                        {% widget "widgets_base:render_nav_link" title="Log out" icon="off" link="/accounts/logout/" %}
                     </ul>
                 </div>
                 <!-- //Show this only for authenticated users: -->
@@ -102,7 +102,7 @@
 
                     <ul class="nav navbar-nav navbar-right">
                         {% widget "widgets_base:render_nav_link" title="Admin" icon="cog" link="/admin/" %}
-                        {% widget "widgets_base:render_nav_link" title="Log in" icon="user" link="/nmap/" %}
+                        {% widget "widgets_base:render_nav_link" title="Log in" icon="user" link="/accounts/login" %}
                    </ul>
                 </div>
                 <!-- //unauthenticated visitors -->

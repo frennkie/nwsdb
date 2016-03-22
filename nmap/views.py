@@ -1,6 +1,5 @@
 from django.views.generic import TemplateView
-from braces.views import MessageMixin, LoginRequiredMixin, GroupRequiredMixin
-from braces.views import PermissionRequiredMixin
+from django.views.generic.base import ContextMixin
 from django.http import HttpResponse, HttpResponseBadRequest
 from django.db.models import ObjectDoesNotExist
 from django.shortcuts import render, redirect
@@ -8,6 +7,10 @@ from django.core.urlresolvers import resolve
 from django.core.paginator import Paginator, EmptyPage, PageNotAnInteger
 from django.contrib import messages
 from django.contrib.auth import logout
+
+from django.contrib.auth.mixins import PermissionRequiredMixin
+from django.contrib.auth.mixins import LoginRequiredMixin
+
 
 from xlsx import Workbook
 
@@ -22,31 +25,43 @@ from django.contrib.auth.models import User
 from django import forms
 from .forms import ScanForm
 
-
+"""
 def get_remote_user(_request):
-    """Return remote_user (value is None if empty)"""
+    # Return remote_user (value is None if empty)
 
     try:
         remote_user = _request.META['REMOTE_USER']
     except KeyError:
         remote_user = None
     return remote_user
-
+"""
 
 """
 This is the standard layout for a authenticated view to a html template.
-call with: url(r'^some/$', SomeView.as_view(), name='some_view'), :
+call with:
+url(r'^some/$', SomeView.as_view(), name='some_view'),
+or
+url(r'^some/(?P<some_id>[0-9]+)$',  SomeView.as_view(), name='some_view'),
 
+class SomeView(PermissionRequiredMixin, TemplateView):
+    permission_required = "nmap.permission_name"
+or
 class SomeView(LoginRequiredMixin, TemplateView):
-    def get(self, request):
+    def get(self, request, *args, **kwargs):
+        # get - context provides some_id
+        context = self.get_context_data(**kwargs)  # prepare context data (kwargs from URL)
+        or
+        context = {}
+        template_name = 'nmap/template_file.html'
+
 
         some = SomeClass.objects.all()
         other_stuff = OtherStuff.objects.all()
 
-        cdict = {}
-        cdict.update({"some": some,
+        context = {}
+        context.update({"some": some,
                        "other_stuff": other_stuff})
-        return render(request, 'nmap/index.html', cdict)
+        return render(request, template_name, context)
 
 """
 
@@ -57,13 +72,11 @@ def index(request):
 
     """ DEBUG INFO """
 
-    remote_user = get_remote_user(request)
-
     view_name = request.resolver_match.url_name
     print(view_name)
 
     print("user: " + str(request.user))
-    print("remote_user: " + str(remote_user))
+    #print("remote_user: " + str(remote_user))
     print("Authenticated: " +  str(request.user.is_authenticated()))
     print("Superuser: "  + str(request.user.is_superuser))
     print("Groups: "  + str(request.user.groups.count()))
@@ -96,60 +109,11 @@ def index(request):
 
     _contacts = Contact.objects.all()
 
-    cdict = {"remote_user": get_remote_user(request)}
-    cdict.update({"contacts": _contacts,
+    context = {}
+    context.update({"contacts": _contacts,
                   "view_name": view_name})
-    return render(request, 'nmap/index.html', cdict)
+    return render(request, 'nmap/index.html', context)
 
-
-def remote_user_logout(request):
-    """remote_user_logout(request)"""
-
-    remote_user = get_remote_user(request)
-
-    """ DEBUG INFO """
-
-    print("full url: " + str(request.build_absolute_uri()))
-
-    print("user: " + str(request.user))
-    print("remote_user: " + str(remote_user))
-
-    #print("get user remote user: " + get_user(remote_user))
-
-    print("Authenticated: " + str(request.user.is_authenticated()))
-
-    print("Superuser: " + str(request.user.is_superuser))
-    print("Groups: " + str(request.user.groups.count()))
-
-    """ /DEBUG INFO """
-
-    if not request.user.is_authenticated():
-        print("not authenticated.. what are you doing here?!")
-        return HttpResponse("Sorry - 403 Forbidden")
-
-    if not remote_user:
-        print("not remote user.. regular log out")
-        logout(request)
-        print("Authenticated: " + str(request.user.is_authenticated()))
-        return redirect("{0}://{1}/".format(request.scheme, request.get_host()))
-
-    else:
-        print("remote user.. log out using work around (invalid user 'log_out_user')")
-        logout(request)
-        print("Authenticated: " + str(request.user.is_authenticated()))
-        return redirect("{0}://log_out_user:@{1}/nmap/logged_out".format(request.scheme,
-                                                                         request.get_host()))
-
-
-def remote_user_logged_out(request):
-    """ """
-
-    print("remote_user: " + str(get_remote_user(request)))
-    print("user: " + str(request.user))
-    print("Authenticated: " + str(request.user.is_authenticated()))
-
-    print("logged out and redirecting")
-    return redirect("{0}://{1}/".format(request.scheme, request.get_host()))
 
 """ Profile """
 
@@ -157,40 +121,38 @@ def remote_user_logged_out(request):
 class Profile(LoginRequiredMixin, TemplateView):
     """Profile"""
 
-    def get(self, request, username, *args, **kwargs):
-        """get"""
+    def get(self, request, *args, **kwargs):
+        # get - context provides "username"
+        context = self.get_context_data(**kwargs)  # prepare context data (kwargs from URL)
+        template_name = 'nmap/profile.html'
 
-        u = User.objects.get(username=get_remote_user(request))
+        # u = User.objects.get(username=get_remote_user(request))
+        u = User.objects.get(username=request.user)
         orgunits = u.orgunit_set.all()
 
-        cdict = {"remote_user": get_remote_user(request)}
-        cdict.update({"orgunits": orgunits})
-        cdict.update({"username": username})
-        return render(request, 'nmap/profile.html', cdict)
-
-
-class NoPermission(LoginRequiredMixin, TemplateView):
-    """NoPermission"""
-
-    def get(self, request, *args, **kwargs):
-        """get"""
-
-        cdict = {"remote_user": get_remote_user(request)}
-        return render(request, 'nmap/no_permission.html', cdict)
+        # context.update({"remote_user": get_remote_user(request)})
+        context.update({"remote_user": "fake_remote_user"})
+        context.update({"orgunits": orgunits})
+        context.update({"username": context['username']})
+        return render(request, template_name, context)
 
 
 """ NWScanDB Models Start here """
 
 
-class ScanView(LoginRequiredMixin, TemplateView):
+class ScanView(PermissionRequiredMixin, TemplateView):
     """Scan View"""
 
+    permission_required = "nmap.view_scan"
 
     def get(self, request, *args, **kwargs):
-        """get"""
+        # get - context provides nothing
+        # context = self.get_context_data(**kwargs)  # prepare context data (kwargs from URL)
+        context = {}
         template_name = "nmap/scan.html"
 
-        u = User.objects.get(username=get_remote_user(request))
+        # u = User.objects.get(username=get_remote_user(request))
+        u = User.objects.get(username=request.user)
         org_units = u.orgunit_set.all()
 
         form = ScanForm(
@@ -201,11 +163,9 @@ class ScanView(LoginRequiredMixin, TemplateView):
 
         form.fields['org_unit'].queryset = u.orgunit_set
 
-        cdict = {}
-        cdict.update({"form": form})
-        cdict.update({"org_units": org_units})
-        return render(request, template_name, cdict)
-
+        context.update({"form": form})
+        context.update({"org_units": org_units})
+        return render(request, template_name, context)
 
 
 class TasksJsonView(PermissionRequiredMixin, TemplateView):
@@ -216,13 +176,14 @@ class TasksJsonView(PermissionRequiredMixin, TemplateView):
     Return result as JSON dump so that the progress bar can be drawn with AJAX
 
     """
+
     permission_required = "nmap.view_task"
-    login_url = "/nmap/no_permission"
 
     def get(self, request, *args, **kwargs):
         """TODO: get current user/group for filter"""
 
-        u = User.objects.get(username=get_remote_user(request))
+        # u = User.objects.get(username=get_remote_user(request))
+        u = User.objects.get(username=request.user)
         orgunits = u.orgunit_set.all()
 
         _result = NmapTask.get_tasks_status_as_dict(org_unit__in=orgunits)
@@ -235,26 +196,30 @@ class TasksView(PermissionRequiredMixin, TemplateView):
     get and post
 
     """
+
     permission_required = "nmap.view_task"
-    login_url = "/nmap/no_permission"
 
     def get(self, request, *args, **kwargs):
-        """get"""
+        # get - context provides nothing
+        # context = self.get_context_data(**kwargs)  # prepare context data (kwargs from URL)
+        context = {}
         template_name = "nmap/tasks.html"
 
-        u = User.objects.get(username=get_remote_user(request))
+        # u = User.objects.get(username=get_remote_user(request))
+        u = User.objects.get(username=request.user)
         orgunits = u.orgunit_set.all()
         _nmap_task = NmapTask.objects.filter(org_unit__in=orgunits)
 
-        cdict = {"remote_user": get_remote_user(request)}
-        cdict.update({"orgunits": orgunits})
-        cdict.update({"nmap_tasks": _nmap_task})
-        return render(request, template_name, cdict)
+        #context.update({"remote_user": get_remote_user(request)})
+        context.update({"orgunits": orgunits})
+        context.update({"nmap_tasks": _nmap_task})
+        return render(request, template_name, context)
 
     def post(self, request, *args, **kwargs):
         """post"""
 
-        u = User.objects.get(username=get_remote_user(request))
+        # u = User.objects.get(username=get_remote_user(request))
+        u = User.objects.get(username=request.user)
         org_units = u.orgunit_set.all()
 
         form = ScanForm(request.POST)
@@ -262,13 +227,12 @@ class TasksView(PermissionRequiredMixin, TemplateView):
             template_name = "nmap/scan.html"
             form.fields['org_unit'].queryset = u.orgunit_set
 
-            cdict = {}
-            cdict.update({"form": form})
-            cdict.update({"org_units": org_units})
-            return render(request, template_name, cdict)
+            context = {}
+            context.update({"form": form})
+            context.update({"org_units": org_units})
+            return render(request, template_name, context)
 
         print("Form is valid!")
-
 
         targets = form.cleaned_data["targets"]
         comment = form.cleaned_data['comment']
@@ -348,12 +312,15 @@ class TasksView(PermissionRequiredMixin, TemplateView):
         return redirect('/nmap/tasks/')
 
 
-class TaskDelete(LoginRequiredMixin, TemplateView):
+class TaskDelete(PermissionRequiredMixin, TemplateView):
     """Tasks Delete"""
 
     def get(self, request, task_id, *args, **kwargs):
+        # get - context provides 'task_id'
+        context = self.get_context_data(**kwargs)  # prepare context data (kwargs from URL)
+
         try:
-            _nmap_task = NmapTask.objects.get(task_id=task_id)
+            _nmap_task = NmapTask.objects.get(task_id=context['task_id'])
             _nmap_task.delete()
         except ObjectDoesNotExist:
             messages.error(request, "does not exist!")
@@ -366,9 +333,12 @@ class NmapReportsView(PermissionRequiredMixin, TemplateView):
     """NmapReports View takes task_id"""
 
     permission_required = "nmap.view_task"
-    login_url = "/nmap/no_permission"
 
     def get(self, request, *args, **kwargs):
+        # get - context provides nothing
+        # context = self.get_context_data(**kwargs)  # prepare context data (kwargs from URL)
+        context = {}
+        template_name = "nmap/reports.html"
 
         """
         _nmap_report = NmapReportMeta.get_nmap_report_by_task_id(task_id)
@@ -379,9 +349,9 @@ class NmapReportsView(PermissionRequiredMixin, TemplateView):
 
             scanned_host.get_open_ports_count = len(scanned_host.get_open_ports())
         """
-        template_name = "nmap/reports.html"
 
-        u = User.objects.get(username=get_remote_user(request))
+        # u = User.objects.get(username=get_remote_user(request))
+        u = User.objects.get(username=request.user)
         orgunits = u.orgunit_set.all()
         nmap_reports = NmapReportMeta.objects.filter(org_unit__in=orgunits)
 
@@ -398,20 +368,26 @@ class NmapReportsView(PermissionRequiredMixin, TemplateView):
             # If page is out of range (e.g. 9999), deliver last page of results.
             items_paged = paginator.page(paginator.num_pages)
 
-        cdict = {"remote_user": get_remote_user(request)}
-        cdict.update({"items_paged": items_paged})
+        #context.update({"remote_user": get_remote_user(request)})
+        context.update({"items_paged": items_paged})
 
-        return render(request, template_name, cdict)
+        return render(request, template_name, context)
 
 
-class NmapReportView(LoginRequiredMixin, TemplateView):
+class NmapReportView(PermissionRequiredMixin, TemplateView):
     """NmapReport View takes task_id"""
 
-    def get(self, request, task_id, *args, **kwargs):
+    permission_required = "nmap.view_task"
 
-        u = User.objects.get(username=get_remote_user(request))
+    def get(self, request, *args, **kwargs):
+        # get - context provides "task_id"
+        context = self.get_context_data(**kwargs)  # prepare context data (kwargs from URL)
+        template_name = 'nmap/report.html'
 
-        _nmap_report = NmapReportMeta.get_nmap_report_by_task_id(task_id, user_obj=u)
+        # u = User.objects.get(username=get_remote_user(request))
+        u = User.objects.get(username=request.user)
+
+        _nmap_report = NmapReportMeta.get_nmap_report_by_task_id(context['task_id'], user_obj=u)
         for scanned_host in _nmap_report.hosts:
 
             scanned_host.datetime_starttime = datetime.datetime.fromtimestamp(int(scanned_host.starttime))
@@ -419,37 +395,47 @@ class NmapReportView(LoginRequiredMixin, TemplateView):
 
             scanned_host.get_open_ports_count = len(scanned_host.get_open_ports())
 
-        cdict = {}
-        cdict.update({"report": _nmap_report})
-        return render(request, 'nmap/report.html', cdict)
+        context = {}
+        context.update({"report": _nmap_report})
+        return render(request, template_name, context)
 
 
-class NmapReportIDView(LoginRequiredMixin, TemplateView):
+class NmapReportIDView(PermissionRequiredMixin, TemplateView):
     """NmapReportID View - same as NmapReportView but takes id instead of task_id """
 
-    def get(self, request, id, *args, **kwargs):
-
-        _nmap_report = NmapReportMeta.get_nmap_report_by_id(id)
-
-        cdict = {}
-        cdict.update({"report": _nmap_report})
-        return render(request, 'nmap/report.html', cdict)
-
-
-class ImportView(LoginRequiredMixin, TemplateView):
-    """Import View"""
+    permission_required = "nmap.view_task"
 
     def get(self, request, *args, **kwargs):
-        """get"""
+        # get - context provides "report_id"
+        context = self.get_context_data(**kwargs)  # prepare context data (kwargs from URL)
+        template_name = 'nmap/report.html'
+
+        print("foo bar")
+        print(context)
+        print(type(context))
+        _nmap_report = NmapReportMeta.get_nmap_report_by_id(context['report_id'])
+
+        context.update({"report": _nmap_report})
+        print(context)
+        return render(request, template_name, context)
+
+
+class ImportView(PermissionRequiredMixin, TemplateView):
+    """Import View"""
+    permission_required = "nmap.view_task"
+
+    def get(self, request, *args, **kwargs):
+        # get - context provides nothing
+        # context = self.get_context_data(**kwargs)  # prepare context data (kwargs from URL)
+        context = {}
         template_name = "nmap/import.html"
 
-        cdict = {}
-        #cdict.update({"import": "import"})
-        return render(request, template_name, cdict)
+        #context.update({"import": "import"})
+        return render(request, template_name, context)
 
     def post(self, request, *args, **kwargs):
-        """post"""
-
+        # post -
+        context = self.get_context_data(**kwargs)  # prepare context data (kwargs from URL)
         template_name = "nmap/import_result.html"
 
         import_file = request.FILES['file']
@@ -461,49 +447,14 @@ class ImportView(LoginRequiredMixin, TemplateView):
                     sheets.append(sheet)
             content = import_file.read()
 
-            cdict = {}
-            cdict.update({"sheets": sheets})
-            return render(request, template_name, cdict)
+            context.update({"sheets": sheets})
+            return render(request, template_name, context)
         else:
             raise Exception("nmap_import failed")
 
 
 
 
-"""
-#@login_required
-def scan(request):
-
-    if request.user.is_authenticated():
-        print(request.user)
-
-    else:
-        print("you will need to login")
-
-    #user.has_perm('foo.add_bar')
-
-
-    #user.has_perm('foo.add_bar')
-    return render(request, 'nmap/scan.html')
-"""
-
-
 """sample:
-https://django.readthedocs.org/en/1.8.x/topics/class-based-views/intro.html#mixins-that-wrap-as-view
-class MyFormView(View):
-    form_class = MyForm
-    initial = {'key': 'value'}
-    template_name = 'form_template.html'
 
-    def get(self, request, *args, **kwargs):
-        form = self.form_class(initial=self.initial)
-        return render(request, self.template_name, {'form': form})
-
-    def post(self, request, *args, **kwargs):
-        form = self.form_class(request.POST)
-        if form.is_valid():
-            # <process form cleaned data>
-            return HttpResponseRedirect('/success/')
-
-        return render(request, self.template_name, {'form': form})
 """

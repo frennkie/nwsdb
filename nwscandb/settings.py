@@ -21,7 +21,7 @@ BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 # See https://docs.djangoproject.com/en/1.8/howto/deployment/checklist/
 
 # SECURITY WARNING: keep the secret key used in production secret!
-SECRET_KEY = 'v2%0t$i54n2lm)rz)e_p@$7xae6&go8=(dgb$vg9yh+6ktgc*6'
+SECRET_KEY = 'v2%0t$i54n2lm)rz)e_p@$7xne6&go8=(dgb$vg9yh+6ktgc*6'
 
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = True
@@ -45,6 +45,7 @@ INSTALLED_APPS = (
     'crispy_forms',
     'reversion',
     'djcelery',
+    'accounts',
     'dbimport',
     'nmap',
     'multidns',
@@ -53,9 +54,9 @@ INSTALLED_APPS = (
     'rest_framework',
 )
 
-LOGIN_URL = '/nmap/login/'
-LOGOUT_URL = '/nmap/logout/'
-LOGIN_REDIRECT_URL = '/nmap/'
+LOGIN_URL = '/accounts/login/'
+LOGOUT_URL = '/accounts/logout/'
+LOGIN_REDIRECT_URL = '/'
 
 SESSION_EXPIRE_AT_BROWSER_CLOSE = True
 
@@ -69,7 +70,12 @@ MIDDLEWARE_CLASSES = (
     'django.contrib.messages.middleware.MessageMiddleware',
     'django.middleware.clickjacking.XFrameOptionsMiddleware',
     'django.middleware.security.SecurityMiddleware',
+    # custom middle to add REMOTE_USER when testing
+    'nwscandb.middleware.DevAddRemoteUserMiddleware',
 )
+
+DEV_ADD_REMOTE_ENABLED = True
+DEV_ADD_REMOTE_USER = "robbie"
 
 AUTHENTICATION_BACKENDS = (
     'django.contrib.auth.backends.RemoteUserBackend',
@@ -186,7 +192,11 @@ end once your static files have been collected there
 """
 
 # used for bash$ manage.py collectstatic (useful for collecting for production web server)
-STATIC_ROOT = os.path.join(BASE_DIR, "static/")
+STATIC_ROOT = os.path.join(BASE_DIR, "static_for_prod/")
+
+# this is used for common/shared assets (e.g. jquery is used in multiple apps)
+# http://vincesalvino.blogspot.de/2013/02/share-static-files-between-apps-in.html
+STATICFILES_DIRS = [os.path.join(BASE_DIR, "common-static"), ]
 
 
 CELERY_RESULT_BACKEND = 'djcelery.backends.database:DatabaseBackend'

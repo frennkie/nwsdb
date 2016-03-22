@@ -1,0 +1,69 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="utf-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <!-- The above 3 meta tags *must* come first in the head; any other
+        head content must come *after* these tags -->
+    <title>Sign-in - Web Nmap</title>
+
+    {% load staticfiles %}
+    {% load sniplates %}
+
+    <!-- Bootstrap -->
+    <!-- Latest compiled and minified CSS -->
+    <link rel="stylesheet" href="{% static "css/bootstrap.min.css" %}">
+
+    <!-- Custom styles for this template -->
+    <link href="{% static "accounts/css/log-in.css" %}" rel="stylesheet">
+
+</head>
+
+<body>
+
+    <div class="container">
+
+        <!-- Bootstrap display flashed messages -->
+        <!-- possible values: alert alert-[info|success|warning|danger] -->
+        <!--
+        # django shortcut level methods
+        [x] messages.info(request, 'All items on this page have free shipping.')
+        [x] messages.success(request, 'Email sent successfully.')
+        [x] messages.warning(request, 'You will need to change your password in one week.')
+        [!] messages.error(request, 'We could not process your request at this time.'
+        # Debug messages ignored by default
+        [ ] messages.debug(request, 'The following SQL statements were executed: %s' % sqlqueries)
+
+        # use in html:
+        messages.info(request, "info: Invalid credentials!")
+        messages.success(request, "success: Invalid credentials!")
+        messages.warning(request, "warning: Invalid credentials!")
+        messages.error(request, "error: Invalid credentials!")
+        # Debug messages ignored by default settings.py: MESSAGE_LEVEL = message_constants.DEBUG
+        messages.debug(request, "debug: Invalid credentials!")
+        -->
+
+        {% if messages %}
+            {% for message in messages %}
+                <div
+                        {% if message.tags and message.tags == "error" %}
+                                class="alert alert-danger"
+                        {% elif message.tags %}
+                                class="alert alert-{{ message.tags }}"
+                        {% endif %} >
+                        {{ message }}
+                </div>
+            {% endfor %}
+        {% endif %}
+
+        <form class="form-log-in" method="POST" action="/accounts/login/" accept-charset="utf-8">
+            <h2 class="form-log-in-heading">Local(!) log in</h2>
+            {% csrf_token %}
+            {{ form.as_p }}
+            <button class="btn btn-lg btn-primary btn-block" type="submit" value="Login">Log in</button>
+        </form>
+
+    </div> <!-- /container -->
+</body>
+</html>

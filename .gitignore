@@ -16,4 +16,4 @@ my.cnf
 .coverage
 .cache/
 *.log
-static/
+static_for_prod/
