@@ -86,7 +86,7 @@
                         {% endif %}
 
                         {% widget "widgets_base:render_nav_link" title=user.username icon="user" link="/nmap/profile/"|add:user.username|add:"/" %}
-                        {% widget "widgets_base:render_nav_link" title="Log out" icon="off" link="/nmap/logout/" %}
+                        {% widget "widgets_base:render_nav_link" title="Log out" icon="off" link="/accounts/logout/" %}
                     </ul>
                 </div>
                 <!-- //Show this only for authenticated users: -->
@@ -102,7 +102,7 @@
 
                     <ul class="nav navbar-nav navbar-right">
                         {% widget "widgets_base:render_nav_link" title="Admin" icon="cog" link="/admin/" %}
-                        {% widget "widgets_base:render_nav_link" title="Log in" icon="user" link="/nmap/" %}
+                        {% widget "widgets_base:render_nav_link" title="Log in" icon="user" link="/accounts/login" %}
                    </ul>
                 </div>
                 <!-- //unauthenticated visitors -->

@@ -115,55 +115,11 @@ def user_login(request, form=None):
         return render(request, 'accounts/login.html', r_data)
 
 
-
-
 # Use the login_required() decorator to ensure only those logged in can access the view.
-#@login_required
-def remote_user_logout(request):
-    """
-    user_logout(request)
-    """
+@login_required
+def user_logout(request):
+    # Since we know the user is logged in, we can now just log them out.
+    logout(request)
 
-    try:
-        remote_user = request.META['REMOTE_USER']
-    except KeyError:
-        remote_user = None
-
-    if not request.user.is_authenticated():
-        print("not authenticated.. what are you doing here?!")
-        #return HttpResponseForbidden()
-        return HttpResponse("Sorry - 403 Forbidden")
-
-    if not remote_user:
-        print("not remote user.. regular log out")
-
-        logout(request)
-        return redirect("{0}://{1}/".format(request.scheme, request.get_host()))
-
-    else:
-        print("remote user.. log out 'invalid'")
-        return redirect("{0}://log_out_user:@{1}/nmap/logged_out".format(request.scheme,
-                                                                         request.get_host()))
-
-
-def remote_user_logged_out(request):
-    return HttpResponse("logged out..  go to: foo")
-
-"""
-class MyFormView(View):
-    form_class = MyForm
-    initial = {'key': 'value'}
-    template_name = 'form_template.html'
-
-    def get(self, request, *args, **kwargs):
-        form = self.form_class(initial=self.initial)
-        return render(request, self.template_name, {'form': form})
-
-    def post(self, request, *args, **kwargs):
-        form = self.form_class(request.POST)
-        if form.is_valid():
-            # <process form cleaned data>
-            return HttpResponseRedirect('/success/')
-
-        return render(request, self.template_name, {'form': form})
-"""
+    # Take the user back to the homepage.
+    return redirect('/accounts/login/')
