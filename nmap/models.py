@@ -293,7 +293,7 @@ class NmapReportMeta(models.Model):
 
     @classmethod
     def save_report(cls, task_id=None):
-        """This method stores a new NmapReportMeta and NmapReport to db
+        """This method stores a new NmapReportMeta to db
 
         Call this method right after the Celery Task is finished.
         It will
@@ -307,7 +307,7 @@ class NmapReportMeta(models.Model):
             task_id (str): The task_id as a string (e.g faef323-afec3-a...)
 
         Returns:
-            True or False
+            NmapReportMeta
 
         Raises:
             MultipleObjectsReturned - if task_id is not unique (should never be the case)
@@ -351,7 +351,53 @@ class NmapReportMeta(models.Model):
         r = Address.discover_from_report(report_id=_id)
         """
 
-        # return True
+        return report_meta
+
+    @classmethod
+    def save_report_from_import(cls,
+                                xml_str=None,
+                                comment=None,
+                                user=None,
+                                org_unit=None):
+
+        """This method stores a new NmapReportMeta to db
+
+
+        Args:
+            xml_str (str):
+            comment (str):
+            user (User obj):
+            org_unit (OrgUnit obj(:
+
+        Returns:
+            NmapReportMeta
+
+        """
+
+        fake_task_id = uuid.uuid4()
+
+        try:
+            _nmap_report = NmapParser.parse_fromstring(xml_str)
+
+            if isinstance(_nmap_report, NmapReport):
+                print("Debug: NmapReport:")
+                print(_nmap_report)
+            else:
+                print("Error: Did not produce a valid NmapReport!")
+                raise Exception("Parse Report - Did not produce a valid NmapReport!")
+
+        except Exception as err:
+            raise Exception("Parse Report - Something went wrong: {0}".format(err))
+
+        report_meta = NmapReportMeta(task_id=fake_task_id,
+                                     task_comment=comment,
+                                     task_created=timezone.now(),
+                                     report_stored=1,
+                                     report=xml_str,
+                                     user=user,
+                                     org_unit=org_unit)
+        report_meta.save()
+
         return report_meta
 
     def create_scan_from_report(self):

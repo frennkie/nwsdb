@@ -1,6 +1,6 @@
 from django.views.generic import TemplateView, View
 from django.views.generic.base import ContextMixin
-from django.http import HttpResponse, HttpResponseBadRequest
+from django.http import HttpResponse, HttpResponseBadRequest, JsonResponse
 from django.db.models import ObjectDoesNotExist
 from django.shortcuts import render, redirect
 from django.core.urlresolvers import resolve
@@ -15,6 +15,7 @@ from djqscsv import render_to_csv_response
 from xlsx import Workbook
 
 import json
+import logging
 import datetime
 import re
 
@@ -24,6 +25,8 @@ from .models import Contact, NmapTask, NmapReportMeta, OrgUnit, NetworkService
 from django.contrib.auth.models import User
 from django import forms
 from .forms import ScanForm
+
+logger = logging.getLogger()
 
 """
 def get_remote_user(_request):
@@ -492,6 +495,49 @@ class NetworkServicesGet(PermissionRequiredMixin, View):
                                                  'banner',
                                                  'nmap_report_meta_id')
         return render_to_csv_response(nw)
+
+
+class NmapXMLImport(PermissionRequiredMixin, TemplateView):
+    """NMAP XML Import View"""
+    permission_required = "nmap.view_task"
+
+    def get(self, request, *args, **kwargs):
+        # get - context provides nothing
+        # context = self.get_context_data(**kwargs)  # prepare context data (kwargs from URL)
+        context = {}
+        template_name = "nmap/import_nmap_xml.html"
+
+        return render(request, template_name, context)
+
+    def post(self, request, *args, **kwargs):
+        # post - get file from request
+        import_file = request.FILES['file']
+        if import_file:
+            # get user an first Org (TODO: make Org chosable)
+            u = User.objects.get(username=request.user)
+            org_units = u.orgunit_set.all()
+            o = org_units[0]
+            # get content of uploaded file
+            content = import_file.read()
+
+            try:
+                nmr = NmapReportMeta.save_report_from_import(content, "Manual Imported", u, o)
+            except Exception as err:
+                logger.error("nmap_import failed: {0}".format(err))
+                return JsonResponse({"result": "failed",
+                                     "message": "could not parse file"})
+
+            try:
+                nmr.discover_network_services()
+            except Exception as err:
+                logger.error("discover NetworkService objects failed: {0}".format(err))
+
+            return JsonResponse({"result": "success",
+                                 "message": "all clear",
+                                 "NmapResultMeta": "{0}".format(nmr.__repr__())})
+        else:
+            return JsonResponse({"result": "failed",
+                                 "message": "no file provided?!"})
 
 
 class ImportView(PermissionRequiredMixin, TemplateView):
