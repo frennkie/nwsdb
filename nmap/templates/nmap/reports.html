@@ -9,6 +9,8 @@
         <legend>Showing Reports from finished tasks (Total: {{ items_paged.paginator.count }})</legend>
         <table id="reportstable" class="table table-striped">
           <th>ID</th><th>TaskID</th><th>Started</th><th>User</th><th>OrgUnit</th><th>Comment</th><th>Details</th>
+            <th><span class="glyphicon glyphicon-eye-open"></span></th>
+              <th><span class="glyphicon glyphicon-download"></span></th>
 
           {% for report_meta in items_paged %}
             <tr>
@@ -20,7 +22,15 @@
             <td id="{{ report_meta.id }}">{{ report_meta.user }}</td>
             <td id="{{ report_meta.id }}">{{ report_meta.org_unit }}</td>
             <td id="{{ report_meta.id }}">{{ report_meta.task_comment }}</td>
+
             <td id="{{ report_meta.id }}"><a href="report/task_id/{{ report_meta.task_id }}">Details</a></td>
+
+            <td id="{{ report_meta.id }}">
+                <a href="{% url 'nmap_report_view_xml' report_meta.task_id %}"><span class="glyphicon glyphicon-eye-open"></span></a></td>
+            <td id="{{ report_meta.id }}">
+
+
+                <a href="{% url 'nmap_report_get_xml' report_meta.task_id %}"><span class="glyphicon glyphicon-download"></span></a></td>
             </tr>
           {% endfor %}
         </table>

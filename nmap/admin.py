@@ -22,8 +22,33 @@ class ContactAdmin(admin.ModelAdmin):
     #list_display = ('Name',)
     #fields = ['comment', 'email']
 
+
 class NetworkServiceAdmin(admin.ModelAdmin):
-    pass
+    # "normal" declaration of readonly (ro) fields (never editable)
+    readonly_fields = ("name", )
+
+    list_display = ('name',
+                    "protocol",
+                    "address",
+                    "port",
+                    'service',
+                    'state',
+                    'reason',
+                    'banner',
+                    "nmap_report_meta")
+
+    # fields (and order) in detail/edit view  - TODO - actually no service should be editable
+    fields = ["name",              # add: ro - view: ro
+              "protocol",          # add: rw - view: rw
+              "address",           # add: rw - view: rw
+              "port",              # add: rw - view: rw
+              "service",           # add: rw - view: rw
+              "state",             # add: rw - view: rw
+              "reason",            # add: rw - view: rw
+              "banner",            # add: rw - view: rw
+              "nmap_report_meta"]  # add: rw - view: rw
+
+
 
 class NmapTaskAdmin(admin.ModelAdmin):
     pass

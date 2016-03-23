@@ -1,4 +1,4 @@
-from django.views.generic import TemplateView
+from django.views.generic import TemplateView, View
 from django.views.generic.base import ContextMixin
 from django.http import HttpResponse, HttpResponseBadRequest
 from django.db.models import ObjectDoesNotExist
@@ -11,7 +11,7 @@ from django.contrib.auth import logout
 from django.contrib.auth.mixins import PermissionRequiredMixin
 from django.contrib.auth.mixins import LoginRequiredMixin
 
-
+from djqscsv import render_to_csv_response
 from xlsx import Workbook
 
 import json
@@ -20,7 +20,7 @@ import re
 
 # start import from my models
 from nmap.tasks import celery_nmap_scan
-from .models import Contact, NmapTask, NmapReportMeta, OrgUnit
+from .models import Contact, NmapTask, NmapReportMeta, OrgUnit, NetworkService
 from django.contrib.auth.models import User
 from django import forms
 from .forms import ScanForm
@@ -395,9 +395,28 @@ class NmapReportView(PermissionRequiredMixin, TemplateView):
 
             scanned_host.get_open_ports_count = len(scanned_host.get_open_ports())
 
-        context = {}
         context.update({"report": _nmap_report})
         return render(request, template_name, context)
+
+
+class NmapReportXMLView(PermissionRequiredMixin, View):
+    """NmapReport XML View takes task_id"""
+    permission_required = "nmap.view_task"
+    def get(self, request, task_id, *args, **kwargs):
+        # u = User.objects.get(username=get_remote_user(request))
+        u = User.objects.get(username=request.user)
+        nmap_report_str = NmapReportMeta.get_nmap_report_as_string_by_task_id(task_id, user_obj=u)
+        return HttpResponse(nmap_report_str, content_type="text/plain; charset=utf-8")
+
+
+class NmapReportXMLGet(PermissionRequiredMixin, View):
+    """NmapReport XML Get takes task_id"""
+    permission_required = "nmap.view_task"
+    def get(self, request, task_id, *args, **kwargs):
+        # u = User.objects.get(username=get_remote_user(request))
+        u = User.objects.get(username=request.user)
+        nmap_report_str = NmapReportMeta.get_nmap_report_as_string_by_task_id(task_id, user_obj=u)
+        return HttpResponse(nmap_report_str, content_type="application/force-download; charset=utf-8")
 
 
 class NmapReportIDView(PermissionRequiredMixin, TemplateView):
@@ -418,6 +437,61 @@ class NmapReportIDView(PermissionRequiredMixin, TemplateView):
         context.update({"report": _nmap_report})
         print(context)
         return render(request, template_name, context)
+
+
+class NetworkServicesView(PermissionRequiredMixin, TemplateView):
+    """NetworkServices View takes task_id"""
+
+    permission_required = "nmap.view_task"
+
+    def get(self, request, *args, **kwargs):
+        # get - context provides nothing
+        # context = self.get_context_data(**kwargs)  # prepare context data (kwargs from URL)
+        context = {}
+        template_name = "nmap/services.html"
+
+
+        # u = User.objects.get(username=get_remote_user(request))
+        u = User.objects.get(username=request.user)
+
+        network_services = NetworkService.objects.all()
+
+        paginator = Paginator(network_services, 40)
+
+        page = request.GET.get('page')
+
+        try:
+            items_paged = paginator.page(page)
+        except PageNotAnInteger:
+            # If page is not an integer, deliver first page.
+            items_paged = paginator.page(1)
+        except EmptyPage:
+            # If page is out of range (e.g. 9999), deliver last page of results.
+            items_paged = paginator.page(paginator.num_pages)
+
+        #context.update({"remote_user": get_remote_user(request)})
+        context.update({"items_paged": items_paged})
+
+        return render(request, template_name, context)
+
+
+class NetworkServicesGet(PermissionRequiredMixin, View):
+    """Network Services get all """
+    permission_required = "nmap.view_task"
+
+    def get(self, request, *args, **kwargs):
+        # get and return as CSV (only selected fields)
+        # nw = NetworkService.objects.all()
+        nw = NetworkService.objects.all().values('updated',
+                                                 'protocol',
+                                                 'address',
+                                                 'port',
+                                                 'service',
+                                                 'state',
+                                                 'reason',
+                                                 'banner',
+                                                 'nmap_report_meta_id')
+        return render_to_csv_response(nw)
 
 
 class ImportView(PermissionRequiredMixin, TemplateView):
