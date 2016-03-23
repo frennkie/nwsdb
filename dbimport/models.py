@@ -8,7 +8,7 @@ from django.utils.translation import ugettext_lazy as _
 from mptt.models import MPTTModel, TreeForeignKey
 
 from django.db import transaction
-import reversion as revisions
+from reversion import revisions as reversion
 
 import idna
 import uuid
@@ -201,8 +201,8 @@ class Range(MPTTModel):
         if self.is_duplicate:
             all_dupes = self.objects.filter(address=self.address).exclude(id=self.id)
             if len(all_dupes) == 1:
-                with transaction.atomic(), revisions.create_revision():
-                    revisions.set_comment("set is_duplicate to False while deleting")
+                with transaction.atomic(), reversion.create_revision():
+                    reversion.set_comment("set is_duplicate to False while deleting")
                     all_dupes[0].is_duplicate = False
                     all_dupes[0].save()
 
@@ -647,15 +647,15 @@ class Range(MPTTModel):
                 """Range already exists and at least one existing entry does not allow
                 duplicates. Check: """ + unicode(duplicates_forbidden_id_list)))
 
-        with transaction.atomic(), revisions.create_revision():
-            revisions.set_comment("set is_duplicate to True while adding")
+        with transaction.atomic(), reversion.create_revision():
+            reversion.set_comment("set is_duplicate to True while adding")
             self.is_duplicate = True
             self.save()
 
         for dupe in all_dupes:
             if not dupe.is_duplicate:
-                with transaction.atomic(), revisions.create_revision():
-                    revisions.set_comment("set is_duplicate to True while adding " + unicode(self.id))
+                with transaction.atomic(), reversion.create_revision():
+                    reversion.set_comment("set is_duplicate to True while adding " + unicode(self.id))
                     dupe.is_duplicate = True
                     dupe.save()
 
@@ -734,8 +734,8 @@ class RangeDNS(models.Model):
         if self.is_duplicate:
             all_dupes = RangeDNS.objects.filter(address=self.address).exclude(id=self.id)
             if len(all_dupes) == 1:
-                with transaction.atomic(), revisions.create_revision():
-                    revisions.set_comment("set is_duplicate to False while deleting")
+                with transaction.atomic(), reversion.create_revision():
+                    reversion.set_comment("set is_duplicate to False while deleting")
                     all_dupes[0].is_duplicate = False
                     all_dupes[0].save()
 
@@ -768,15 +768,15 @@ class RangeDNS(models.Model):
         if duplicates_forbidden_id_list:
             raise ValidationError(_("""Range already exists and at least one existing entry does not allow duplicates. Check: """ + unicode(duplicates_forbidden_id_list)))
 
-        with transaction.atomic(), revisions.create_revision():
-            revisions.set_comment("set is_duplicate to True while adding")
+        with transaction.atomic(), reversion.create_revision():
+            reversion.set_comment("set is_duplicate to True while adding")
             self.is_duplicate = True
             self.save()
 
         for dupe in all_dupes:
             if not dupe.is_duplicate:
-                with transaction.atomic(), revisions.create_revision():
-                    revisions.set_comment("set is_duplicate to True while adding " + unicode(self.id))
+                with transaction.atomic(), reversion.create_revision():
+                    reversion.set_comment("set is_duplicate to True while adding " + unicode(self.id))
                     dupe.is_duplicate = True
                     dupe.save()
 
