@@ -13,6 +13,8 @@ import datetime
 import json
 import uuid
 
+from django.db import transaction
+from reversion import revisions as reversion
 
 # Create your models here.
 
@@ -403,7 +405,7 @@ class NmapReportMeta(models.Model):
     def create_scan_from_report(self):
         pass
 
-    def discover_network_services(self):
+    def discover_network_services(self, version_comment=None):
         """ discover all network services from this NmapReportMeta object and store each
         service individually as NetworkService objects
 
@@ -418,16 +420,50 @@ class NmapReportMeta(models.Model):
 
         for scanned_host in _nmap_report.hosts:
             for scanned_service in scanned_host.services:
+                #
+                _proto = scanned_service.protocol.lower()
+                # find out how many objects exist with exactly this triple
+                nw_list = NetworkService.objects.filter(address=scanned_host.address,
+                                                        port=scanned_service.port,
+                                                        protocol=_proto)
 
-                nw = NetworkService.create(scanned_host.address,
-                                           scanned_service.port,
-                                           scanned_service.protocol.lower(),
-                                           scanned_service.banner,
-                                           scanned_service.reason,
-                                           scanned_service.service,
-                                           scanned_service.state,
-                                           self)
-                nw.save()
+                if len(nw_list) == 0:
+                    # create new NetworkService and initialize revision
+                    nw = NetworkService.create(scanned_host.address,
+                                               scanned_service.port,
+                                               scanned_service.protocol.lower(),
+                                               scanned_service.banner,
+                                               scanned_service.reason,
+                                               scanned_service.service,
+                                               scanned_service.state,
+                                               self)
+                    with transaction.atomic(), reversion.create_revision():
+                        reversion.set_user(self.user)
+                        if version_comment:
+                            reversion.set_comment("initial discovery - {0}".format(version_comment))
+                        else:
+                            reversion.set_comment("initial discovery")
+                        nw.save()
+
+                elif len(nw_list) == 1:
+                    # update existing NetworkService and keep revision
+                    nw = nw_list[0]
+
+                    nw.banner = scanned_service.banner
+                    nw.reason = scanned_service.reason
+                    nw.service = scanned_service.service
+                    nw.state = scanned_service.state
+
+                    with transaction.atomic(), reversion.create_revision():
+                        reversion.set_user(self.user)
+                        if version_comment:
+                            reversion.set_comment("updated - {0}".format(version_comment))
+                        else:
+                            reversion.set_comment("updated")
+                        nw.save()
+                else:
+                    print("More that one.. that's wrong")
+                    raise Exception("More that one.. that's wrong")
 
         return True
 

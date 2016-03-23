@@ -523,14 +523,16 @@ class NmapXMLImport(PermissionRequiredMixin, TemplateView):
             try:
                 nmr = NmapReportMeta.save_report_from_import(content, "Manual Imported", u, o)
             except Exception as err:
-                logger.error("nmap_import failed: {0}".format(err))
+                #logger.error("nmap_import failed: {0}".format(err))
+                print("nmap_import failed: {0}".format(err))
                 return JsonResponse({"result": "failed",
                                      "message": "could not parse file"})
 
             try:
                 nmr.discover_network_services()
             except Exception as err:
-                logger.error("discover NetworkService objects failed: {0}".format(err))
+                #logger.error("discover NetworkService objects failed: {0}".format(err))
+                print("discover NetworkService objects failed: {0}".format(err))
 
             return JsonResponse({"result": "success",
                                  "message": "all clear",

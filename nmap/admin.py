@@ -1,5 +1,8 @@
 from django.contrib import admin
 
+from reversion.admin import VersionAdmin
+
+
 # Import then Register your models here.
 from .models import Membership, OrgUnit
 from .models import Contact
@@ -23,7 +26,7 @@ class ContactAdmin(admin.ModelAdmin):
     #fields = ['comment', 'email']
 
 
-class NetworkServiceAdmin(admin.ModelAdmin):
+class NetworkServiceAdmin(VersionAdmin):
     # "normal" declaration of readonly (ro) fields (never editable)
     readonly_fields = ("name", )
 
