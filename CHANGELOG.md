@@ -1,7 +1,10 @@
-2016-YY-XX - 0.1.Z
+2016-03-25 - 0.1.7
 
-* remove remote user (local auth only)
-
+* remove REMOTE_USER webserver (e.g. Apache2) auth
+* add application based LDAP auth
+* add NetoworkService Model
+* add NMAP XML Import
+* add NMAP XML Export/Download
 
 2016-03-20 - 0.1.5
 
