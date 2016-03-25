@@ -6,6 +6,8 @@ from nwscandb.celery import app
 from libnmap.parser import NmapParser
 from libnmap.objects import NmapReport
 
+from django.contrib.auth.models import User
+
 #from nwscandb.celeryapp import celery_pipe
 from celery.states import READY_STATES
 from sqlalchemy import asc, desc
@@ -16,10 +18,10 @@ import uuid
 from django.db import transaction
 from reversion import revisions as reversion
 
+import logging
+logger = logging.getLogger(__name__)
+
 # Create your models here.
-
-
-from django.contrib.auth.models import User
 
 
 class OrgUnit(models.Model):
@@ -382,8 +384,9 @@ class NmapReportMeta(models.Model):
             _nmap_report = NmapParser.parse_fromstring(xml_str)
 
             if isinstance(_nmap_report, NmapReport):
-                print("Debug: NmapReport:")
-                print(_nmap_report)
+                #print("Debug: NmapReport:")
+                #print(_nmap_report)
+                pass
             else:
                 print("Error: Did not produce a valid NmapReport!")
                 raise Exception("Parse Report - Did not produce a valid NmapReport!")
@@ -408,6 +411,9 @@ class NmapReportMeta(models.Model):
     def discover_network_services(self, version_comment=None):
         """ discover all network services from this NmapReportMeta object and store each
         service individually as NetworkService objects
+
+        Args:
+            version_comment (str):
 
         Returns:
 

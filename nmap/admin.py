@@ -52,7 +52,6 @@ class NetworkServiceAdmin(VersionAdmin):
               "nmap_report_meta"]  # add: rw - view: rw
 
 
-
 class NmapTaskAdmin(admin.ModelAdmin):
     pass
 

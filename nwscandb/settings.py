@@ -70,8 +70,6 @@ MIDDLEWARE_CLASSES = (
     'django.contrib.messages.middleware.MessageMiddleware',
     'django.middleware.clickjacking.XFrameOptionsMiddleware',
     'django.middleware.security.SecurityMiddleware',
-    # custom middle to add REMOTE_USER when testing
-    'nwscandb.middleware.DevAddRemoteUserMiddleware',
 )
 
 DEV_ADD_REMOTE_ENABLED = True
@@ -118,7 +116,7 @@ DATABASES = {
     'default': {
         'ENGINE': 'django.db.backends.mysql',
         'OPTIONS': {
-            'read_default_file': '/home/robbie/work/nmap_tool/nwsdb/nwscandb/my.cnf',
+            'read_default_file': os.path.join(BASE_DIR, "nwscandb/my.cnf"),
         },
     }
 }
@@ -158,6 +156,18 @@ LOGGING = {
             'level': 'DEBUG',
         },
         'dbimport': {
+            'handlers': ['file'],
+            'level': 'DEBUG',
+        },
+        'multidns': {
+            'handlers': ['file'],
+            'level': 'DEBUG',
+        },
+        'nmap': {
+            'handlers': ['file'],
+            'level': 'DEBUG',
+        },
+        'accounts': {
             'handlers': ['file'],
             'level': 'DEBUG',
         },

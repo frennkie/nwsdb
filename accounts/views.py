@@ -1,61 +1,81 @@
 from django.shortcuts import render, redirect
+from django.views.generic import TemplateView
 from django.http import HttpResponse
 from django.template import RequestContext
 from django.contrib.auth import authenticate, login, logout
 from django.contrib.auth.decorators import login_required
+
 from django.contrib import messages
 from django.conf import settings
+
+from django.contrib.auth.mixins import LoginRequiredMixin, PermissionRequiredMixin
+from django.contrib.auth.models import User
 
 from django.http import HttpResponseForbidden
 
 from .forms import LoginForm
+import logging
+
+logger = logging.getLogger(__name__)
+
 
 def index(request):
-    return redirect('login')
-
-"""
-def remote_user_login(request, remote_user, next=None):
-    login(request, remote_user)
-    return True
-"""
-
-def user_login(request, form=None):
-
-    view_name = request.resolver_match.url_name
-    print(view_name)
-    print("full url: " + str(request.build_absolute_uri()))
-
-    try:
-        remote_user = request.META['REMOTE_USER']
-    except KeyError:
-        remote_user = None
-
-    print("user: " + str(request.user))
-    print("remote_user: " + str(remote_user))
+    return redirect('accounts:login')
 
 
-    # If the request is a HTTP POST, try to pull out the relevant information.
-    if request.method == 'POST':
+class UserLogin(TemplateView):
+    """UserLogin"""
 
-        form = LoginForm(data=request.POST)
+    def get(self, request, *args, **kwargs):
+        # get - context provides "username"
+        context = self.get_context_data(**kwargs)  # prepare context data (kwargs from URL)
+        template_name = "accounts/login.html"
+
+        # hu?
+        view_name = request.resolver_match.url_name
+        logger.debug(view_name)
+        logger.debug("full url: " + str(request.build_absolute_uri()))
+
+        """
+        try:
+            remote_user = request.META['REMOTE_USER']
+        except KeyError:
+            remote_user = None
+        logger.debug("remote_user: " + str(remote_user))
+        """
+
+        logger.debug("user: " + str(request.user))
+
+        # hu?
+
+        _next_view = request.GET.get('next_view', False)
+        if _next_view:
+            logger.debug("Next View: {0}".format(_next_view))
+            context.update({'form': LoginForm(initial={'next_view': _next_view})})
+        else:
+            context.update({'form': LoginForm()})
+
+        return render(request, template_name, context)
+
+    def post(self, request, *args, **kwargs):
+        # post
+        context = self.get_context_data(**kwargs)  # prepare context data (kwargs from URL)
+        template_name = "accounts/login.html"
+
+        form = LoginForm(request.POST)
         if form.is_valid():
             # Gather the username and password provided by the user.
             # This information is obtained from the login form.
-            username = request.POST['username']
-            password = request.POST['password']
+            username = request.POST.get('username', False)
+            password = request.POST.get('password', False)
 
             # Use Django's machinery to attempt to see if the username/password
             # combination is valid - a User object is returned if it is.
             user = authenticate(username=username, password=password)
 
-            try:
-                _remember_me = request.POST['remember_me']
-                if _remember_me == "on":
-                    print("yepp")
-                else:
-                    print("nope")
-            except:
-                print("not at all")
+            _remember_me = request.POST.get('remember_me', False)
+            if _remember_me == "on":
+                logger.debug("remember_me set..  currently not implemented")
 
             # If we have a User object, the details are correct.
             # If None (Python's way of representing the absence of a value), no user
@@ -66,60 +86,75 @@ def user_login(request, form=None):
                     # If the account is valid and active, we can log the user in.
                     # We'll send the user back to the homepage.
                     login(request, user)
-                    print("logged in user: " + str(user))
+                    logger.debug("logged in user: " + str(user))
 
-                    # Check whether a POST contains a value for 'next' (next site)
-                    try:
-                        _next = request.POST['next']
-                        return redirect(_next)
-                    except:
+                    # Check whether a POST contains a value for 'next_view' (next site/url)
+                    _next_view = request.POST.get('next_view', False)
+                    if _next_view:
+                        logger.debug("Next View: {0}".format(_next_view))
+                        return redirect(_next_view)
+                    else:
                         return redirect(settings.LOGIN_REDIRECT_URL)
 
                 else:
                     # An inactive account was used
                     messages.error(request, "This account is disabled.")
-                    return render(request, 'accounts/login.html', r_data)
+                    return render(request, self.template_name, context)
             else:
                 # Bad login details were provided. So we can't log the user in.
                 messages.error(request, "error: Invalid credentials!")
 
-                try:
-                    r_data = {'form': LoginForm(initial={'next': request.GET['next']})}
-                except:
-                    r_data = {'form': LoginForm()}
+                _next_view = request.POST.get('next_view', False)
+                if _next_view:
+                    logger.debug("Next View: {0}".format(_next_view))
+                    context.update({'form': LoginForm(initial={'next_view': _next_view})})
+                else:
+                    context.update({'form': LoginForm()})
 
-                return render(request, 'accounts/login.html', r_data)
-
-                """
-                print "Invalid credentials for user: {0}".format(username)
-                return HttpResponse("Invalid login details supplied.")
-                """
+                return render(request, template_name, context)
 
         else:
-            # Check whether a POST contains a value for 'next' (next site)
-            try:
-                form.next = request.POST['next']
-            except:
-                pass
+            # Check whether a POST contains a value for 'next_view' (next_view site)
+            messages.error(request, "error: Invalid Form!")
+            _next_view = request.POST.get('next_view', False)
+            if _next_view:
+                logger.debug("Next View: {0}".format(_next_view))
+                context.update({'form': LoginForm(initial={'next_view': _next_view})})
+            else:
+                context.update({'form': LoginForm()})
 
-            r_data = {'form': form}
-            return render(request, 'accounts/login.html', r_data)
-
-    # The request is not a HTTP POST, so display the login form.
-    else:
-        try:
-            r_data = {'form': LoginForm(initial={'next': request.GET['next']})}
-        except:
-            r_data = {'form': LoginForm()}
-
-        return render(request, 'accounts/login.html', r_data)
+            return render(request, self.template_name, context)
 
 
-# Use the login_required() decorator to ensure only those logged in can access the view.
-@login_required
-def user_logout(request):
-    # Since we know the user is logged in, we can now just log them out.
-    logout(request)
+class UserLogout(LoginRequiredMixin, TemplateView):
+    """UserLogout"""
 
-    # Take the user back to the homepage.
-    return redirect('/accounts/login/')
+    def get(self, request, *args, **kwargs):
+        # get - context provides "username"
+        #context = self.get_context_data(**kwargs)  # prepare context data (kwargs from URL)
+
+        logout(request)
+
+        return redirect('accounts:login')
+
+
+""" Profile """
+
+
+class Profile(LoginRequiredMixin, TemplateView):
+    """Profile"""
+
+    def get(self, request, *args, **kwargs):
+        # get - context provides "username"
+        context = self.get_context_data(**kwargs)  # prepare context data (kwargs from URL)
+        template_name = 'nmap/profile.html'
+
+        # u = User.objects.get(username=get_remote_user(request))
+        u = User.objects.get(username=request.user)
+        orgunits = u.orgunit_set.all()
+
+        # context.update({"remote_user": get_remote_user(request)})
+        # context.update({"remote_user": "fake_remote_user"})
+        context.update({"orgunits": orgunits})
+        context.update({"username": context['username']})
+        return render(request, template_name, context)

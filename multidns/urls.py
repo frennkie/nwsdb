@@ -1,9 +1,10 @@
-from django.conf.urls import url, patterns
-
+from django.conf.urls import url
 from . import views
-from .views import DummyView
+
+# set namespace
+app_name = 'multidns'
 
 urlpatterns = [
     url(r'^$', views.index, name='index'),
-    url(r'^dummy/$', DummyView.as_view(), name='dummy'),
+    url(r'^dummy/$', views.DummyView.as_view(), name='dummy'),
 ]

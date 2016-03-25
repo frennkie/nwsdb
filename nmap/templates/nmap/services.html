@@ -22,7 +22,7 @@
                 <td id="{{ service.id }}">{{ service.state }}</td>
                 <td id="{{ service.id }}">{{ service.updated }}</td>
                 <td id="{{ service.id }}">
-                    <a href="{% url 'nmapreport_task_id_view' service.nmap_report_meta.task_id %}"><span class="glyphicon glyphicon-eye-open"></span></a></td>
+                    <a href="{% url 'nmap:report_task_id_view' service.nmap_report_meta.task_id %}"><span class="glyphicon glyphicon-eye-open"></span></a></td>
             </tr>
           {% endfor %}
         </table>

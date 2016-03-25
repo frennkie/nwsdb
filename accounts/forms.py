@@ -21,4 +21,4 @@ class LoginForm(forms.Form):
                                widget=forms.PasswordInput(attrs={'class': 'form-control',
                                                                  'placeholder': 'Password'}))
 
-    next = forms.CharField(label='next', required=False, widget=forms.HiddenInput())
+    next_view = forms.CharField(label='next_view', required=False, widget=forms.HiddenInput())

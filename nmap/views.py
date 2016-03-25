@@ -26,7 +26,7 @@ from django.contrib.auth.models import User
 from django import forms
 from .forms import ScanForm
 
-logger = logging.getLogger()
+logger = logging.getLogger(__name__)
 
 """
 def get_remote_user(_request):
@@ -69,75 +69,59 @@ class SomeView(LoginRequiredMixin, TemplateView):
 """
 
 
-def index(request):
-    """index"""
-
-
-    """ DEBUG INFO """
-
-    view_name = request.resolver_match.url_name
-    print(view_name)
-
-    print("user: " + str(request.user))
-    #print("remote_user: " + str(remote_user))
-    print("Authenticated: " +  str(request.user.is_authenticated()))
-    print("Superuser: "  + str(request.user.is_superuser))
-    print("Groups: "  + str(request.user.groups.count()))
-
-    print("foo bar")
-
-    """ /DEBUG INFO """
-
-    if request.user.is_authenticated():
-        if request.user.is_superuser:
-            print("you can do and see anything")
-            # _contacts = Contact.objects.all()
-        else:
-
-            if request.user.groups.count() == 0:
-                print("no groups assigned")
-            elif request.user.groups.count() == 1:
-                print("exactly one group.. that's normal (=nice)")
-            else:
-                print("hm.. why do you have more than one group?!")
-    else:
-        print("non-auth")
-
-    """ TODO remove this block.. """
-    if request.user.is_authenticated():
-        messages.success(request, "Welcome " + str(request.user))
-    else:
-        messages.error(request, "You do not have permission to access this site!")
-    """ TODO remove this block.. """
-
-    _contacts = Contact.objects.all()
-
-    context = {}
-    context.update({"contacts": _contacts,
-                  "view_name": view_name})
-    return render(request, 'nmap/index.html', context)
-
-
-""" Profile """
-
-
-class Profile(LoginRequiredMixin, TemplateView):
-    """Profile"""
+class Index(TemplateView):
+    """Index"""
 
     def get(self, request, *args, **kwargs):
-        # get - context provides "username"
-        context = self.get_context_data(**kwargs)  # prepare context data (kwargs from URL)
-        template_name = 'nmap/profile.html'
+        # get - context provides nothing
+        # context = self.get_context_data(**kwargs)  # prepare context data (kwargs from URL)
+        context = {}
 
-        # u = User.objects.get(username=get_remote_user(request))
-        u = User.objects.get(username=request.user)
-        orgunits = u.orgunit_set.all()
+        template_name = "nmap/index.html"
 
-        # context.update({"remote_user": get_remote_user(request)})
-        context.update({"remote_user": "fake_remote_user"})
-        context.update({"orgunits": orgunits})
-        context.update({"username": context['username']})
+        """ DEBUG INFO """
+
+        view_name = request.resolver_match.url_name
+        logger.debug(view_name)
+
+        logger.debug("user: " + str(request.user))
+        #logger.debug("remote_user: " + str(remote_user))
+        logger.debug("Authenticated: " +  str(request.user.is_authenticated()))
+        logger.debug("Superuser: "  + str(request.user.is_superuser))
+        logger.debug("Groups: "  + str(request.user.groups.count()))
+
+        logger.debug("foo bar")
+
+        """ /DEBUG INFO """
+
+        if request.user.is_authenticated():
+            if request.user.is_superuser:
+                logger.debug("you can do and see anything")
+                # _contacts = Contact.objects.all()
+            else:
+
+                if request.user.groups.count() == 0:
+                    logger.debug("no groups assigned")
+                elif request.user.groups.count() == 1:
+                    logger.debug("exactly one group.. that's normal (=nice)")
+                else:
+                    logger.debug("hm.. why do you have more than one group?!")
+        else:
+            logger.debug("non-auth")
+
+        """ TODO remove this block.. """
+        if request.user.is_authenticated():
+            messages.success(request, "Welcome " + str(request.user))
+        else:
+            messages.error(request, "You do not have permission to access this site!")
+        """ TODO remove this block.. """
+
+        _contacts = Contact.objects.all()
+
+        context.update({"contacts": _contacts,
+                        "view_name": view_name})
         return render(request, template_name, context)
+
 
 
 """ NWScanDB Models Start here """
@@ -158,16 +142,15 @@ class ScanView(PermissionRequiredMixin, TemplateView):
         u = User.objects.get(username=request.user)
         org_units = u.orgunit_set.all()
 
-        form = ScanForm(
-            initial={
-                'org_unit': org_units[0].id,
-            }
-        )
+        if len(org_units):
+            form = ScanForm(initial={'org_unit': org_units[0].id})
+        else:
+            form = ScanForm(initial={})
 
         form.fields['org_unit'].queryset = u.orgunit_set
 
-        context.update({"form": form})
-        context.update({"org_units": org_units})
+        context.update({"form": form,
+                        "org_units": org_units})
         return render(request, template_name, context)
 
 
@@ -235,7 +218,7 @@ class TasksView(PermissionRequiredMixin, TemplateView):
             context.update({"org_units": org_units})
             return render(request, template_name, context)
 
-        print("Form is valid!")
+        logger.debug("Form is valid!")
 
         targets = form.cleaned_data["targets"]
         comment = form.cleaned_data['comment']
@@ -246,13 +229,13 @@ class TasksView(PermissionRequiredMixin, TemplateView):
         run_now = request.POST.get('run_now', False)
 
         if no_ping:
-            print("no_ping was selected. ")
+            logger.debug("no_ping was selected. ")
         if banner_detection:
-            print("banner_detection was selected.")
+            logger.debug("banner_detection was selected.")
         if os_detection:
-            print("os_detection was selected.")
+            logger.debug("os_detection was selected.")
         if run_now or not run_now:
-            print("run_now is currently disabled.")
+            logger.debug("run_now is currently disabled.")
 
         # as this has been validated.. it must be an OrgUnit obj
         org_unit = form.cleaned_data['org_unit']
@@ -268,16 +251,16 @@ class TasksView(PermissionRequiredMixin, TemplateView):
         else:
             _portlist = ""
 
-        print("ports list")
-        print(_portlist)
+        logger.debug("ports list")
+        logger.debug(_portlist)
 
         if form.cleaned_data["top_ports"]:
             _top_portlist = "--top-ports " + str(form.cleaned_data["top_ports"])
         else:
             _top_portlist = ""
 
-        print("top ports")
-        print(_top_portlist)
+        logger.debug("top ports")
+        logger.debug(_top_portlist)
 
         _no_ping = "-P0" if no_ping else ""
         _os_detection = "-O" if os_detection else ""
@@ -312,13 +295,15 @@ class TasksView(PermissionRequiredMixin, TemplateView):
                       org_unit=org_unit)
         nt.save()
 
-        return redirect('/nmap/tasks/')
+        return redirect('nmap:tasks')
 
 
 class TaskDelete(PermissionRequiredMixin, TemplateView):
     """Tasks Delete"""
 
-    def get(self, request, task_id, *args, **kwargs):
+    permission_required = "nmap.delete_nmaptask"
+
+    def get(self, request, *args, **kwargs):
         # get - context provides 'task_id'
         context = self.get_context_data(**kwargs)  # prepare context data (kwargs from URL)
 
@@ -327,9 +312,10 @@ class TaskDelete(PermissionRequiredMixin, TemplateView):
             _nmap_task.delete()
         except ObjectDoesNotExist:
             messages.error(request, "does not exist!")
+            # TODO 2016-03-25 (RH): why accounts login?!
             return render(request, 'accounts/login.html')
 
-        return redirect('/nmap/tasks/')
+        return redirect("nmap:tasks")
 
 
 class NmapReportsView(PermissionRequiredMixin, TemplateView):
@@ -402,24 +388,30 @@ class NmapReportView(PermissionRequiredMixin, TemplateView):
         return render(request, template_name, context)
 
 
-class NmapReportXMLView(PermissionRequiredMixin, View):
+class NmapReportXMLView(PermissionRequiredMixin, TemplateView):
     """NmapReport XML View takes task_id"""
     permission_required = "nmap.view_task"
-    def get(self, request, task_id, *args, **kwargs):
+
+    def get(self, request, *args, **kwargs):
+        # get - context provides "task_id"
+        context = self.get_context_data(**kwargs)  # prepare context data (kwargs from URL)
         # u = User.objects.get(username=get_remote_user(request))
         u = User.objects.get(username=request.user)
-        nmap_report_str = NmapReportMeta.get_nmap_report_as_string_by_task_id(task_id, user_obj=u)
-        return HttpResponse(nmap_report_str, content_type="text/plain; charset=utf-8")
+        n = NmapReportMeta.get_nmap_report_as_string_by_task_id(context['task_id'], user_obj=u)
+        return HttpResponse(n, content_type="text/plain; charset=utf-8")
 
 
 class NmapReportXMLGet(PermissionRequiredMixin, View):
     """NmapReport XML Get takes task_id"""
     permission_required = "nmap.view_task"
-    def get(self, request, task_id, *args, **kwargs):
+
+    def get(self, request, *args, **kwargs):
+        # get - context provides "task_id"
+        context = self.get_context_data(**kwargs)  # prepare context data (kwargs from URL)
         # u = User.objects.get(username=get_remote_user(request))
         u = User.objects.get(username=request.user)
-        nmap_report_str = NmapReportMeta.get_nmap_report_as_string_by_task_id(task_id, user_obj=u)
-        return HttpResponse(nmap_report_str, content_type="application/force-download; charset=utf-8")
+        n = NmapReportMeta.get_nmap_report_as_string_by_task_id(context['task_id'], user_obj=u)
+        return HttpResponse(n, content_type="application/force-download; charset=utf-8")
 
 
 class NmapReportIDView(PermissionRequiredMixin, TemplateView):
@@ -432,13 +424,13 @@ class NmapReportIDView(PermissionRequiredMixin, TemplateView):
         context = self.get_context_data(**kwargs)  # prepare context data (kwargs from URL)
         template_name = 'nmap/report.html'
 
-        print("foo bar")
-        print(context)
-        print(type(context))
+        logger.debug("foo bar")
+        logger.debug(context)
+        logger.debug(type(context))
         _nmap_report = NmapReportMeta.get_nmap_report_by_id(context['report_id'])
 
         context.update({"report": _nmap_report})
-        print(context)
+        logger.debug(context)
         return render(request, template_name, context)
 
 
@@ -523,16 +515,16 @@ class NmapXMLImport(PermissionRequiredMixin, TemplateView):
             try:
                 nmr = NmapReportMeta.save_report_from_import(content, "Manual Imported", u, o)
             except Exception as err:
-                #logger.error("nmap_import failed: {0}".format(err))
-                print("nmap_import failed: {0}".format(err))
+                logger.error("nmap_import failed: {0}".format(err))
+                logger.debug("nmap_import failed: {0}".format(err))
                 return JsonResponse({"result": "failed",
                                      "message": "could not parse file"})
 
             try:
                 nmr.discover_network_services()
             except Exception as err:
-                #logger.error("discover NetworkService objects failed: {0}".format(err))
-                print("discover NetworkService objects failed: {0}".format(err))
+                logger.error("discover NetworkService objects failed: {0}".format(err))
+                logger.debug("discover NetworkService objects failed: {0}".format(err))
 
             return JsonResponse({"result": "success",
                                  "message": "all clear",
