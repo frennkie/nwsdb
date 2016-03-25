@@ -1,5 +1,7 @@
 2016-YY-XX - 0.1.Z
 
+* Update to Python 3.4 (check dependency changes!)
+
 2016-03-25 - 0.1.8
 
 * add URL and View for Changelog
