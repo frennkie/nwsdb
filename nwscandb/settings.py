@@ -13,14 +13,8 @@ https://docs.djangoproject.com/en/1.8/ref/settings/
 
 # Build paths inside the project like this: os.path.join(BASE_DIR, ...)
 import os
-import ldap
-from django_auth_ldap.config import LDAPSearch, GroupOfNamesType
 
 import logging
-
-logger = logging.getLogger('django_auth_ldap')
-logger.addHandler(logging.StreamHandler())
-logger.setLevel(logging.DEBUG)
 
 BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 
@@ -48,6 +42,7 @@ INSTALLED_APPS = (
     'django.contrib.staticfiles',
     'django_extensions',
     'django.contrib.humanize',
+    'django_python3_ldap',
     'sslserver',
     'sniplates',
     'crispy_forms',
@@ -57,7 +52,6 @@ INSTALLED_APPS = (
     'dbimport',
     'nmap',
     'multidns',
-    'django_nose',
     'mptt',
     'rest_framework',
 )
@@ -81,35 +75,65 @@ MIDDLEWARE_CLASSES = (
 )
 
 AUTHENTICATION_BACKENDS = (
-    'django_auth_ldap.backend.LDAPBackend',
+    'django_python3_ldap.auth.LDAPBackend',
     'django.contrib.auth.backends.ModelBackend',
 )
 
-# LDAP Auth Section (these values will be overwrite from settings_secret.py
-AUTH_LDAP_SERVER_URI = "ldap://ldap.example.com"
 
-AUTH_LDAP_BIND_DN = "cn=django-agent,dc=example,dc=com"
-AUTH_LDAP_BIND_PASSWORD = "phlebotinum"
-AUTH_LDAP_USER_SEARCH = LDAPSearch("ou=users,dc=example,dc=com",
-                                   ldap.SCOPE_SUBTREE, "(uid=%(user)s)")
+# The URL of the LDAP server.
+LDAP_AUTH_URL = "ldaps://ldap.example.com"
 
-# Populate the Django user from the LDAP directory.
-AUTH_LDAP_USER_ATTR_MAP = {
+# Initiate TLS on connection.
+#LDAP_AUTH_USE_TLS = False
+LDAP_AUTH_USE_TLS = True
+
+# The LDAP search base for looking up users.
+LDAP_AUTH_SEARCH_BASE = "cn=accounts,dc=example,dc=com"
+
+# The LDAP class that represents a user.
+LDAP_AUTH_OBJECT_CLASS = "inetOrgPerson"
+
+# User model fields mapped to the LDAP
+# attributes that represent them.
+LDAP_AUTH_USER_FIELDS = {
+    "username": "uid",
     "first_name": "givenName",
     "last_name": "sn",
-    "email": "mail"
+    "email": "mail",
 }
 
-# This is the default, but I like to be explicit.
-AUTH_LDAP_ALWAYS_UPDATE_USER = True
+# A tuple of django model fields used to uniquely identify a user.
+LDAP_AUTH_USER_LOOKUP_FIELDS = ("username",)
 
-# Use LDAP group membership to calculate group permissions.
-# AUTH_LDAP_FIND_GROUP_PERMS = True
-AUTH_LDAP_FIND_GROUP_PERMS = False
+# Path to a callable that takes a dict of {model_field_name: value},
+# returning a dict of clean model data.
+# Use this to customize how data loaded from LDAP is saved to the User model.
+LDAP_AUTH_CLEAN_USER_DATA = "django_python3_ldap.utils.clean_user_data"
 
-# Cache group memberships for an hour to minimize LDAP traffic
-AUTH_LDAP_CACHE_GROUPS = True
-AUTH_LDAP_GROUP_CACHE_TIMEOUT = 3600
+# Path to a callable that takes a user model and a dict of {ldap_field_name: [value]},
+# and saves any additional user relationships based on the LDAP data.
+# Use this to customize how data loaded from LDAP is saved to User model relations.
+# For customizing non-related User model fields, use LDAP_AUTH_CLEAN_USER_DATA.
+LDAP_AUTH_SYNC_USER_RELATIONS = "django_python3_ldap.utils.sync_user_relations"
+
+# Path to a callable that takes a dict of {ldap_field_name: value},
+# returning a list of [ldap_search_filter]. The search filters will then be AND'd
+# together when creating the final search filter.
+LDAP_AUTH_FORMAT_SEARCH_FILTERS = "django_python3_ldap.utils.format_search_filters"
+
+# Path to a callable that takes a dict of {model_field_name: value}, and returns
+# a string of the username to bind to the LDAP server.
+# Use this to support different types of LDAP server.
+LDAP_AUTH_FORMAT_USERNAME = "django_python3_ldap.utils.format_username_openldap"
+
+# Sets the login domain for Active Directory users.
+LDAP_AUTH_ACTIVE_DIRECTORY_DOMAIN = None
+
+# The LDAP username and password of a user for authenticating the `ldap_sync_users`
+# management command. Set to None if you allow anonymous queries.
+LDAP_AUTH_CONNECTION_USERNAME = None
+LDAP_AUTH_CONNECTION_PASSWORD = None
+
 
 
 ROOT_URLCONF = 'nwscandb.urls'
@@ -249,15 +273,5 @@ CELERY_RESULT_BACKEND = 'djcelery.backends.database:DatabaseBackend'
 
 CRISPY_TEMPLATE_PACK = 'bootstrap3'
 
-# testing
-TEST_RUNNER = 'django_nose.NoseTestSuiteRunner'
-
-NOSE_ARGS = [
-    '--with-doctest',
-    '--with-coverage',
-    '--cover-package=dbimport',
-    '--cover-inclusive',
-]
-
 # import settings_secret.py and take sensitive values (e.g. passwords) from there
-from settings_secret import *
+from nwscandb.settings_secret import *

@@ -574,7 +574,7 @@ class ImportView(PermissionRequiredMixin, TemplateView):
             book = Workbook(import_file) #Open xlsx file
             sheets = []
             for sheet in book:
-                    print sheet.name
+                    logger.debug(sheet.name)
                     sheets.append(sheet)
             content = import_file.read()
 

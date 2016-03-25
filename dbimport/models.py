@@ -19,7 +19,7 @@ import logging
 logger = logging.getLogger(__name__)
 
 
-class TreeValidationError(StandardError):
+class TreeValidationError(Exception):
     def __init__(self, message, tree=None, range_info_tuple=(None, None)):
         self.message = message
         self.tree = tree

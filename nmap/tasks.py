@@ -6,7 +6,7 @@ from nwscandb import celery_app
 from celery import current_task
 
 # NWScanDB Classes and library Classes
-from models import NmapReportMeta
+from .models import NmapReportMeta
 from libnmap.process import NmapProcess
 
 
