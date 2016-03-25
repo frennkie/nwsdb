@@ -75,8 +75,9 @@ MIDDLEWARE_CLASSES = (
 )
 
 AUTHENTICATION_BACKENDS = (
-    'django_python3_ldap.auth.LDAPBackend',
     'django.contrib.auth.backends.ModelBackend',
+    'django_python3_ldap.auth.LDAPBackend',
+
 )
 
 
@@ -133,7 +134,6 @@ LDAP_AUTH_ACTIVE_DIRECTORY_DOMAIN = None
 # management command. Set to None if you allow anonymous queries.
 LDAP_AUTH_CONNECTION_USERNAME = None
 LDAP_AUTH_CONNECTION_PASSWORD = None
-
 
 
 ROOT_URLCONF = 'nwscandb.urls'
