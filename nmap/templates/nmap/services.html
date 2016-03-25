@@ -1,0 +1,36 @@
+{% extends "base.html" %}
+{% block title %}Reports{% endblock %}
+{% block body %}
+    <!--Body content-->
+
+        {% load sniplates %}
+        {% load_widgets widgets_base="widgets_base.html" %}
+
+        <legend>Showing Network Services (Total: {{ items_paged.paginator.count }}) -
+            Export all: &nbsp;&nbsp;<span class="glyphicon glyphicon-download"></span></legend>
+        <table id="servicestable" class="table table-striped">
+          <th>Address</th><th>Port</th><th>Protocol</th><th>Banner</th><th>Reason</th><th>Service</th><th>State</th><th>Updated</th><th>Report-Link</th>
+
+          {% for service in items_paged %}
+            <tr>
+                <td id="{{ service.id }}">{{ service.address }}</td>
+                <td id="{{ service.id }}">{{ service.port }}</td>
+                <td id="{{ service.id }}">{{ service.protocol }}</td>
+                <td id="{{ service.id }}">{{ service.banner }}</td>
+                <td id="{{ service.id }}">{{ service.reason }}</td>
+                <td id="{{ service.id }}">{{ service.service }}</td>
+                <td id="{{ service.id }}">{{ service.state }}</td>
+                <td id="{{ service.id }}">{{ service.updated }}</td>
+                <td id="{{ service.id }}">
+                    <a href="{% url 'nmap:report_task_id_view' service.nmap_report_meta.task_id %}"><span class="glyphicon glyphicon-eye-open"></span></a></td>
+            </tr>
+          {% endfor %}
+        </table>
+
+        {% widget "widgets_base:pagination_buttons" items_paged=items_paged %}
+
+{% endblock %}
+
+
+
+

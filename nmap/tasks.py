@@ -113,10 +113,19 @@ def store_nmap_report_meta(nmap_task_id=None):
     # print("Trying to store NmapReportMeta for TaskID: " + nmap_task_id)
     res = NmapReportMeta.save_report(task_id=nmap_task_id)
 
+    # discover and save nw service objects
+    res.discover_network_services()
+
     """ TODO do I need this? For celery table?
         How do I cleanly communicate result back to celery
     """
+
+    """ TODO 2016-03-22 (RH) disabled
     if res is True:
         return {"rc": 0}
     else:
         return {"rc": 1}
+
+    """
+
+    return {"rc": 0}

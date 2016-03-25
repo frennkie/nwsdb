@@ -14,7 +14,7 @@
                 <td id="{{ report_meta.id }}" >{{momentjs(timestamp=report_meta.task_created).format('YYYY-MM-DD HH:mm:ss')}}</td>
                 <td id="{{ report_meta.id }}" > {{ report_meta.task_comment }}</td>
                 <td id="{{ report_meta.id }}" class="detailslink">
-                    <a href="{{ url_for('nmap.report', report_id=report_meta.id) }}">Details</a></td>
+                    <a href="{% url 'nmap:report' report_id=report_meta.id %}">Details</a></td>
             </tr>
         {% endfor %}
         </table>

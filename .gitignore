@@ -4,6 +4,7 @@
 *.bak
 *.png
 *.sql
+*.json
 .htpasswd
 config.py
 testtools/*
@@ -11,8 +12,11 @@ build/
 dump/
 migrations/versions/*
 celerybeat-schedule
+
 my.cnf
+settings_secret.py
+
 .coverage
 .cache/
 *.log
-static/
+static_for_prod/

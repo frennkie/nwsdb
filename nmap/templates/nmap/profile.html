@@ -1,13 +1,8 @@
 {% extends "base.html" %}
-{% block title %}Pfoile{% endblock %}
+{% block title %}Profile{% endblock %}
 {% block body %}
     <!--Body content-->
     <legend>Profile</legend>
-
-    <br/><br/>Remote_User: <br/>
-    {% if remote_user %} {{ remote_user }}
-    {% else %} None
-    {% endif %}
 
     <br/><br/>User: <br/>
     {{ user }}
@@ -26,12 +21,6 @@
 
     <br/><br/>Permission for "nmap.view_task":<br/>
     {{ perms.nmap.view_task }}
-
-    <br/><br/>Url (nmapreport_task_id_view):<br/>
-    {% url 'nmapreport_task_id_view' "f23f-sd1" %}
-
-    <br/><br/>Url (nmapreport_view):<br/>
-    {% url 'nmapreport_view' "1" %}
 
 
 <p>You are member of:

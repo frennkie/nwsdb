@@ -11,6 +11,8 @@
                 <div class="accordion-group">
                     <table class="table table-striped">
                         <th>Host</th><th>Started</th><th>Ended</th><th>Host status</th><th>Open services</th><th>Details</th>
+                            <th><span class="glyphicon glyphicon-eye-open"></span></th>
+                              <th><span class="glyphicon glyphicon-download"></span></th>
                         {% for scanned_host in report.hosts %}
                             <tr>
                                 <td> {{ scanned_host.address }} </td>
@@ -23,9 +25,13 @@
                                         <a class="accordion-toggle" data-toggle="collapse" data-parent="#accordion2" href="#{{ scanned_host.id|cut:"." }}">Details</a>
                                     </div>
                                 </td>
+
+                                <td><a href="{% url 'nmap:report_view_xml' task_id %}"><span class="glyphicon glyphicon-eye-open"></span></a></td>
+                                <td><a href="{% url 'nmap:report_get_xml' task_id %}"><span class="glyphicon glyphicon-download"></span></a></td>
+
                             </tr>
                             <tr>
-                                <td colspan="6">
+                                <td colspan="8">
                                     <div id="{{ scanned_host.id|cut:"." }}" class="accordion-body collapse">
                                         <div class="accordion-inner">
                                             <table class="table table-striped">

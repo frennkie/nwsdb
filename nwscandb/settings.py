@@ -13,6 +13,14 @@ https://docs.djangoproject.com/en/1.8/ref/settings/
 
 # Build paths inside the project like this: os.path.join(BASE_DIR, ...)
 import os
+import ldap
+from django_auth_ldap.config import LDAPSearch, GroupOfNamesType
+
+import logging
+
+logger = logging.getLogger('django_auth_ldap')
+logger.addHandler(logging.StreamHandler())
+logger.setLevel(logging.DEBUG)
 
 BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 
@@ -21,7 +29,7 @@ BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 # See https://docs.djangoproject.com/en/1.8/howto/deployment/checklist/
 
 # SECURITY WARNING: keep the secret key used in production secret!
-SECRET_KEY = 'v2%0t$i54n2lm)rz)e_p@$7xae6&go8=(dgb$vg9yh+6ktgc*6'
+SECRET_KEY = 'v2%0t$i54n2lm)rz)e_p@$7xne6&go8=(dgb$vg9yh+6ktgc*6'
 
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = True
@@ -45,6 +53,7 @@ INSTALLED_APPS = (
     'crispy_forms',
     'reversion',
     'djcelery',
+    'accounts',
     'dbimport',
     'nmap',
     'multidns',
@@ -53,9 +62,9 @@ INSTALLED_APPS = (
     'rest_framework',
 )
 
-LOGIN_URL = '/nmap/login/'
-LOGOUT_URL = '/nmap/logout/'
-LOGIN_REDIRECT_URL = '/nmap/'
+LOGIN_URL = '/accounts/login/'
+LOGOUT_URL = '/accounts/logout/'
+LOGIN_REDIRECT_URL = '/'
 
 SESSION_EXPIRE_AT_BROWSER_CLOSE = True
 
@@ -72,9 +81,36 @@ MIDDLEWARE_CLASSES = (
 )
 
 AUTHENTICATION_BACKENDS = (
-    'django.contrib.auth.backends.RemoteUserBackend',
+    'django_auth_ldap.backend.LDAPBackend',
     'django.contrib.auth.backends.ModelBackend',
 )
+
+# LDAP Auth Section (these values will be overwrite from settings_secret.py
+AUTH_LDAP_SERVER_URI = "ldap://ldap.example.com"
+
+AUTH_LDAP_BIND_DN = "cn=django-agent,dc=example,dc=com"
+AUTH_LDAP_BIND_PASSWORD = "phlebotinum"
+AUTH_LDAP_USER_SEARCH = LDAPSearch("ou=users,dc=example,dc=com",
+                                   ldap.SCOPE_SUBTREE, "(uid=%(user)s)")
+
+# Populate the Django user from the LDAP directory.
+AUTH_LDAP_USER_ATTR_MAP = {
+    "first_name": "givenName",
+    "last_name": "sn",
+    "email": "mail"
+}
+
+# This is the default, but I like to be explicit.
+AUTH_LDAP_ALWAYS_UPDATE_USER = True
+
+# Use LDAP group membership to calculate group permissions.
+# AUTH_LDAP_FIND_GROUP_PERMS = True
+AUTH_LDAP_FIND_GROUP_PERMS = False
+
+# Cache group memberships for an hour to minimize LDAP traffic
+AUTH_LDAP_CACHE_GROUPS = True
+AUTH_LDAP_GROUP_CACHE_TIMEOUT = 3600
+
 
 ROOT_URLCONF = 'nwscandb.urls'
 
@@ -112,7 +148,7 @@ DATABASES = {
     'default': {
         'ENGINE': 'django.db.backends.mysql',
         'OPTIONS': {
-            'read_default_file': '/home/robbie/work/nmap_tool/nwsdb/nwscandb/my.cnf',
+            'read_default_file': os.path.join(BASE_DIR, "nwscandb/my.cnf"),
         },
     }
 }
@@ -155,6 +191,22 @@ LOGGING = {
             'handlers': ['file'],
             'level': 'DEBUG',
         },
+        'multidns': {
+            'handlers': ['file'],
+            'level': 'DEBUG',
+        },
+        'nmap': {
+            'handlers': ['file'],
+            'level': 'DEBUG',
+        },
+        'accounts': {
+            'handlers': ['file'],
+            'level': 'DEBUG',
+        },
+        'admin': {
+            'handlers': ['file'],
+            'level': 'DEBUG',
+        },
     }
 }
 
@@ -186,7 +238,11 @@ end once your static files have been collected there
 """
 
 # used for bash$ manage.py collectstatic (useful for collecting for production web server)
-STATIC_ROOT = os.path.join(BASE_DIR, "static/")
+STATIC_ROOT = os.path.join(BASE_DIR, "static_for_prod/")
+
+# this is used for common/shared assets (e.g. jquery is used in multiple apps)
+# http://vincesalvino.blogspot.de/2013/02/share-static-files-between-apps-in.html
+STATICFILES_DIRS = [os.path.join(BASE_DIR, "common-static"), ]
 
 
 CELERY_RESULT_BACKEND = 'djcelery.backends.database:DatabaseBackend'
@@ -203,3 +259,5 @@ NOSE_ARGS = [
     '--cover-inclusive',
 ]
 
+# import settings_secret.py and take sensitive values (e.g. passwords) from there
+from settings_secret import *

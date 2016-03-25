@@ -6,6 +6,8 @@ from nwscandb.celery import app
 from libnmap.parser import NmapParser
 from libnmap.objects import NmapReport
 
+from django.contrib.auth.models import User
+
 #from nwscandb.celeryapp import celery_pipe
 from celery.states import READY_STATES
 from sqlalchemy import asc, desc
@@ -13,11 +15,13 @@ import datetime
 import json
 import uuid
 
+from django.db import transaction
+from reversion import revisions as reversion
+
+import logging
+logger = logging.getLogger(__name__)
 
 # Create your models here.
-
-
-from django.contrib.auth.models import User
 
 
 class OrgUnit(models.Model):
@@ -52,8 +56,6 @@ class Membership(models.Model):
     """
     user = models.ForeignKey(User)
     org = models.ForeignKey(OrgUnit)
-
-
 
 
 class NmapTask(models.Model):
@@ -281,8 +283,21 @@ class NmapReportMeta(models.Model):
         return NmapParser.parse_fromstring(str(_nrm.report))
 
     @classmethod
+    def get_nmap_report_as_string_by_task_id(cls, nmap_task_id, user_obj=None):
+
+        if user_obj:
+            orgunits = user_obj.orgunit_set.all()
+            queryset = NmapReportMeta.objects.filter(org_unit__in=orgunits)
+        else:
+            queryset = NmapReportMeta.objects.all()
+
+        _report = queryset.get(task_id=nmap_task_id)
+        report_as_str = _report.report
+        return report_as_str
+
+    @classmethod
     def save_report(cls, task_id=None):
-        """This method stores a new NmapReportMeta and NmapReport to db
+        """This method stores a new NmapReportMeta to db
 
         Call this method right after the Celery Task is finished.
         It will
@@ -296,7 +311,7 @@ class NmapReportMeta(models.Model):
             task_id (str): The task_id as a string (e.g faef323-afec3-a...)
 
         Returns:
-            True or False
+            NmapReportMeta
 
         Raises:
             MultipleObjectsReturned - if task_id is not unique (should never be the case)
@@ -340,11 +355,182 @@ class NmapReportMeta(models.Model):
         r = Address.discover_from_report(report_id=_id)
         """
 
-        return True
+        return report_meta
 
+    @classmethod
+    def save_report_from_import(cls,
+                                xml_str=None,
+                                comment=None,
+                                user=None,
+                                org_unit=None):
+
+        """This method stores a new NmapReportMeta to db
+
+
+        Args:
+            xml_str (str):
+            comment (str):
+            user (User obj):
+            org_unit (OrgUnit obj(:
+
+        Returns:
+            NmapReportMeta
+
+        """
+
+        fake_task_id = uuid.uuid4()
+
+        try:
+            _nmap_report = NmapParser.parse_fromstring(xml_str)
+
+            if isinstance(_nmap_report, NmapReport):
+                #print("Debug: NmapReport:")
+                #print(_nmap_report)
+                pass
+            else:
+                print("Error: Did not produce a valid NmapReport!")
+                raise Exception("Parse Report - Did not produce a valid NmapReport!")
+
+        except Exception as err:
+            raise Exception("Parse Report - Something went wrong: {0}".format(err))
+
+        report_meta = NmapReportMeta(task_id=fake_task_id,
+                                     task_comment=comment,
+                                     task_created=timezone.now(),
+                                     report_stored=1,
+                                     report=xml_str,
+                                     user=user,
+                                     org_unit=org_unit)
+        report_meta.save()
+
+        return report_meta
 
     def create_scan_from_report(self):
         pass
+
+    def discover_network_services(self, version_comment=None):
+        """ discover all network services from this NmapReportMeta object and store each
+        service individually as NetworkService objects
+
+        Args:
+            version_comment (str):
+
+        Returns:
+
+        """
+
+        if not self.report_stored:
+            raise Exception("No Report stored!")
+
+        _nmap_report = self.get_nmap_report_by_task_id(self.task_id)
+
+        for scanned_host in _nmap_report.hosts:
+            for scanned_service in scanned_host.services:
+                #
+                _proto = scanned_service.protocol.lower()
+                # find out how many objects exist with exactly this triple
+                nw_list = NetworkService.objects.filter(address=scanned_host.address,
+                                                        port=scanned_service.port,
+                                                        protocol=_proto)
+
+                if len(nw_list) == 0:
+                    # create new NetworkService and initialize revision
+                    nw = NetworkService.create(scanned_host.address,
+                                               scanned_service.port,
+                                               scanned_service.protocol.lower(),
+                                               scanned_service.banner,
+                                               scanned_service.reason,
+                                               scanned_service.service,
+                                               scanned_service.state,
+                                               self)
+                    with transaction.atomic(), reversion.create_revision():
+                        reversion.set_user(self.user)
+                        if version_comment:
+                            reversion.set_comment("initial discovery - {0}".format(version_comment))
+                        else:
+                            reversion.set_comment("initial discovery")
+                        nw.save()
+
+                elif len(nw_list) == 1:
+                    # update existing NetworkService and keep revision
+                    nw = nw_list[0]
+
+                    nw.banner = scanned_service.banner
+                    nw.reason = scanned_service.reason
+                    nw.service = scanned_service.service
+                    nw.state = scanned_service.state
+
+                    with transaction.atomic(), reversion.create_revision():
+                        reversion.set_user(self.user)
+                        if version_comment:
+                            reversion.set_comment("updated - {0}".format(version_comment))
+                        else:
+                            reversion.set_comment("updated")
+                        nw.save()
+                else:
+                    print("More that one.. that's wrong")
+                    raise Exception("More that one.. that's wrong")
+
+        return True
+
+
+class NetworkService(models.Model):
+    """ A Network Service identified by protocol, address, port (e.g. tcp/127.0.0.1:80)
+
+    """
+
+    id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
+    created = models.DateTimeField('date created', auto_now_add=True)
+    updated = models.DateTimeField('date update', auto_now=True)
+
+    address = models.CharField(max_length=255)
+    port = models.PositiveIntegerField(default=0)
+
+    PROTOCOL_CHOICES = (
+        ('tcp', 'TCP'),
+        ('udp', 'UDP'),
+        ('other', 'Other'),
+    )
+    protocol = models.CharField(max_length=20, choices=PROTOCOL_CHOICES)
+
+    banner = models.CharField(max_length=255, blank=True)
+    reason = models.CharField(max_length=255, blank=True)
+    service = models.CharField(max_length=255, blank=True)
+    state = models.CharField(max_length=255, blank=True)
+
+    nmap_report_meta = models.ForeignKey(NmapReportMeta)
+
+    # one should not override __init__ in django
+    @classmethod
+    def create(cls, address, port, protocol, banner, reason, service, state, nmap_report_meta):
+        # so then we do the init here
+        _network_service = cls(address=address,
+                               port=port,
+                               protocol=protocol,
+                               banner=banner,
+                               reason=reason,
+                               service=service,
+                               state=state,
+                               nmap_report_meta=nmap_report_meta)
+        return _network_service
+
+    # is a @property done without the @ shortcut + a label for django admin
+    def name(self):
+        return self.__unicode__()
+    name = property(name)
+
+    def __repr__(self):
+        return "<{0}: {1}/{2}:{3}>".format(
+                self.__class__.__name__,
+                self.protocol,
+                self.address,
+                self.port)
+
+    def __unicode__(self):  # __str__ on Python 3
+        return "{0}/{1}:{2}".format(
+                self.protocol,
+                self.address,
+                self.port)
 
 
 class Contact(models.Model):
