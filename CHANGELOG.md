@@ -1,6 +1,8 @@
 2016-YY-XX - 0.1.Z
 
-*
+2016-03-25 - 0.1.8
+
+* add URL and View for Changelog
 
 2016-03-25 - 0.1.7
 
