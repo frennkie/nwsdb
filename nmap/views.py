@@ -11,12 +11,15 @@ from django.contrib.auth import logout
 from django.contrib.auth.mixins import PermissionRequiredMixin
 from django.contrib.auth.mixins import LoginRequiredMixin
 
+from nwscandb.settings import BASE_DIR
+
 from djqscsv import render_to_csv_response
 from xlsx import Workbook
 
 import json
 import logging
 import datetime
+import os
 import re
 
 # start import from my models
@@ -123,6 +126,20 @@ class Index(TemplateView):
         return render(request, template_name, context)
 
 
+class Changelog(TemplateView):
+    """Changelog"""
+
+    changelog_file = os.path.join(BASE_DIR, "CHANGELOG.md")
+
+    def get(self, request, *args, **kwargs):
+        # get
+        context = {}
+        template_name = "nmap/changelog.html"
+
+        with open(self.changelog_file) as clog:
+            changelog = clog.readlines()
+        context.update({'changelog': changelog})
+        return render(request, template_name, context)
 
 """ NWScanDB Models Start here """
 

@@ -6,6 +6,8 @@ app_name = 'nmap'
 
 urlpatterns = [
     url(r'^$', views.Index.as_view(), name='index'),
+    url(r'^changelog/$',
+        views.Changelog.as_view(), name='changelog'),
     url(r'^scan/$',
         views.ScanView.as_view(), name='scan'),
     url(r'^jsontasks/$',

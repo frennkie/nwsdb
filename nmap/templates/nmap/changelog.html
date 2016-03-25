@@ -1,0 +1,17 @@
+{% extends "base.html" %}
+{% block title %}Home{% endblock %}
+{% block body %}
+    <!--Body content-->
+    <legend>Changelog</legend>
+
+    {% if changelog %}
+        <ul>
+        {% for line in changelog %}
+            <ul>{{ line }} </ul>
+        {% endfor %}
+        </ul>
+    {% else %}
+        <p>Sorry, there is no Changelog (yet?!) :-/ </p>
+    {% endif %}
+
+{% endblock %}

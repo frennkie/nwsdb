@@ -1,8 +1,14 @@
+2016-YY-XX - 0.1.Z
+
+2016-03-25 - 0.1.8
+
+* add URL and View for Changelog
+
 2016-03-25 - 0.1.7
 
 * remove REMOTE_USER webserver (e.g. Apache2) auth
 * add application based LDAP auth
-* add NetoworkService Model
+* add NetworkService Model
 * add NMAP XML Import
 * add NMAP XML Export/Download
 
