@@ -12,7 +12,10 @@ build/
 dump/
 migrations/versions/*
 celerybeat-schedule
+
 my.cnf
+settings_secret.py
+
 .coverage
 .cache/
 *.log
