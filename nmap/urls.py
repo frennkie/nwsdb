@@ -25,7 +25,7 @@ urlpatterns = [
     url(r'^services/$',
         views.NetworkServicesView.as_view(), name='services_view'),
     url(r'^services/get$',
-        views.NetworkServicesGet.as_view(), name='services_view'),
+        views.NetworkServicesGet.as_view(), name='services_get'),
     url(r'^report/([-\w]+)$',
         views.NmapReportView.as_view(), name='report_view'),
     url(r'^report/task_id/(?P<task_id>[-\w]+).xml$',

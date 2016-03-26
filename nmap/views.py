@@ -462,7 +462,6 @@ class NetworkServicesView(PermissionRequiredMixin, TemplateView):
         context = {}
         template_name = "nmap/services.html"
 
-
         # u = User.objects.get(username=get_remote_user(request))
         u = User.objects.get(username=request.user)
 

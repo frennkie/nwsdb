@@ -60,22 +60,22 @@
                         {% url 'nmap:index' as link %}{% widget "widgets_base:render_nav_link" title="Home" icon="home" link=link %}
                         {% url 'nmap:scan' as link %}{% widget "widgets_base:render_nav_link" title="Scan" icon="fire" link=link %}
                         {% url 'nmap:tasks' as link %}{% widget "widgets_base:render_nav_link" title="Tasks" icon="book" link=link %}
-                        {% url 'nmap:reports' as link %}{% widget "widgets_base:render_nav_link" title="Reports" icon="list-alt" link=link %}
-                        <!--
-                        { % widget "widgets_base:render_nav_link" title="Addresses" icon="superscript" link="/nmap/addresses/1" %}
-                        { % widget "widgets_base:render_nav_link" title="Compare" icon="random" link="/nmap/compare/" %}
 
+                        {% url 'nmap:reports' as link %}{% widget "widgets_base:render_nav_link" title="Reports" icon="list-alt" link=link %}
+                        {% url 'nmap:services_view' as link %}{% widget "widgets_base:render_nav_link" title="Network Services" icon="superscript" link=link %}
+                        {% url 'nmap:xml_import' as link %}{% widget "widgets_base:render_nav_link" title="Import NMAP XML" icon="import" link=link %}
+                        {% url 'nmap:import_view' as link %}{% widget "widgets_base:render_nav_link" title="Import Excel" icon="import" link=link %}
+
+                        <!--
+                        "/nmap/compare/" { % url 'nmap:index' as link %}{ % widget "widgets_base:render_nav_link" title="Compare" icon="random" link=link %}
 
                         <li class="dropdown">
                             <a href="#" class="dropdown-toggle" data-toggle="dropdown" role="button" aria-haspopup="true" aria-expanded="false">Database <span class="caret"></span></a>
                             <ul class="dropdown-menu">
-                                { % widget "widgets_base:render_nav_link" title="Overview" icon="hdd" link="/nmap/db/" %}
-                                <li role="separator" class="divider"></li>
-                                { % widget "widgets_base:render_nav_link" title="Export" icon="export" link="/nmap/export/" %}
-                                { % widget "widgets_base:render_nav_link" title="Import" icon="import" link="/nmap/import/" %}
+                                { % url 'nmap:xml_import' as link %}{ % widget "widgets_base:render_nav_link" title="Import NMAP XML" icon="import" link=link %}
+                                { % url 'nmap:import_view' as link %}{ % widget "widgets_base:render_nav_link" title="Import Excel" icon="import" link=link %}
                             </ul>
                         </li>
-
                         -->
 
                     </ul>
