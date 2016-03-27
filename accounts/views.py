@@ -1,21 +1,16 @@
-from django.shortcuts import render, redirect
-from django.views.generic import TemplateView
-from django.http import HttpResponse
-from django.template import RequestContext
-from django.contrib.auth import authenticate, login, logout
-from django.contrib.auth.decorators import login_required
 
-from django.contrib import messages
 from django.conf import settings
 
+from django.views.generic import TemplateView
+from django.shortcuts import render, redirect
+
+from django.contrib.auth import authenticate, login, logout
 from django.contrib.auth.mixins import LoginRequiredMixin, PermissionRequiredMixin
 from django.contrib.auth.models import User
-
-from django.http import HttpResponseForbidden
+from django.contrib import messages
 
 from .forms import LoginForm
 import logging
-
 logger = logging.getLogger(__name__)
 
 
@@ -48,10 +43,10 @@ class UserLogin(TemplateView):
 
         # hu?
 
-        _next_view = request.GET.get('next_view', False)
-        if _next_view:
-            logger.debug("Next View: {0}".format(_next_view))
-            context.update({'form': LoginForm(initial={'next_view': _next_view})})
+        _next = request.GET.get('next', False)
+        if _next:
+            logger.debug("Next View: {0}".format(_next))
+            context.update({'form': LoginForm(initial={'next': _next})})
         else:
             context.update({'form': LoginForm()})
 
@@ -88,11 +83,11 @@ class UserLogin(TemplateView):
                     login(request, user)
                     logger.debug("logged in user: " + str(user))
 
-                    # Check whether a POST contains a value for 'next_view' (next site/url)
-                    _next_view = request.POST.get('next_view', False)
-                    if _next_view:
-                        logger.debug("Next View: {0}".format(_next_view))
-                        return redirect(_next_view)
+                    # Check whether a POST contains a value for 'next' (next site/url)
+                    _next = request.POST.get('next', False)
+                    if _next:
+                        logger.debug("Next View: {0}".format(_next))
+                        return redirect(_next)
                     else:
                         return redirect(settings.LOGIN_REDIRECT_URL)
 
@@ -104,22 +99,22 @@ class UserLogin(TemplateView):
                 # Bad login details were provided. So we can't log the user in.
                 messages.error(request, "error: Invalid credentials!")
 
-                _next_view = request.POST.get('next_view', False)
-                if _next_view:
-                    logger.debug("Next View: {0}".format(_next_view))
-                    context.update({'form': LoginForm(initial={'next_view': _next_view})})
+                _next = request.POST.get('next', False)
+                if _next:
+                    logger.debug("Next View: {0}".format(_next))
+                    context.update({'form': LoginForm(initial={'next': _next})})
                 else:
                     context.update({'form': LoginForm()})
 
                 return render(request, template_name, context)
 
         else:
-            # Check whether a POST contains a value for 'next_view' (next_view site)
+            # Check whether a POST contains a value for 'next' (next site)
             messages.error(request, "error: Invalid Form!")
-            _next_view = request.POST.get('next_view', False)
-            if _next_view:
-                logger.debug("Next View: {0}".format(_next_view))
-                context.update({'form': LoginForm(initial={'next_view': _next_view})})
+            _next = request.POST.get('next', False)
+            if _next:
+                logger.debug("Next View: {0}".format(_next))
+                context.update({'form': LoginForm(initial={'next': _next})})
             else:
                 context.update({'form': LoginForm()})
 
@@ -131,11 +126,11 @@ class UserLogout(LoginRequiredMixin, TemplateView):
 
     def get(self, request, *args, **kwargs):
         # get - context provides "username"
-        #context = self.get_context_data(**kwargs)  # prepare context data (kwargs from URL)
+        # context = self.get_context_data(**kwargs)  # prepare context data (kwargs from URL)
 
         logout(request)
 
-        return redirect('accounts:login')
+        return redirect("index")
 
 
 """ Profile """
@@ -147,7 +142,7 @@ class Profile(LoginRequiredMixin, TemplateView):
     def get(self, request, *args, **kwargs):
         # get - context provides "username"
         context = self.get_context_data(**kwargs)  # prepare context data (kwargs from URL)
-        template_name = 'nmap/profile.html'
+        template_name = "nmap/profile.html"
 
         # u = User.objects.get(username=get_remote_user(request))
         u = User.objects.get(username=request.user)
@@ -156,5 +151,5 @@ class Profile(LoginRequiredMixin, TemplateView):
         # context.update({"remote_user": get_remote_user(request)})
         # context.update({"remote_user": "fake_remote_user"})
         context.update({"orgunits": orgunits})
-        context.update({"username": context['username']})
+        context.update({"username": context["username"]})
         return render(request, template_name, context)

@@ -8,12 +8,8 @@
     <p>Well, you are logged in - but you don't have
     permission to access this resource!</p> <br />
 
-    <p>
-    {% if username %} {{ username }}
-    {% else %} None
-    {% endif %}
-    </p>
-
     <p>User: {{ user }}</p>
+
+    {% if no_permission_to %}<p>Requested Resource: {{ no_permission_to }}</p>{% endif %}
 
 {% endblock %}

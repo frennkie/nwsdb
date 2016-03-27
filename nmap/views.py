@@ -1,74 +1,58 @@
-from django.views.generic import TemplateView, View
-from django.views.generic.base import ContextMixin
-from django.http import HttpResponse, HttpResponseBadRequest, JsonResponse
-from django.db.models import ObjectDoesNotExist
-from django.shortcuts import render, redirect
-from django.core.urlresolvers import resolve
-from django.core.paginator import Paginator, EmptyPage, PageNotAnInteger
-from django.contrib import messages
-from django.contrib.auth import logout
 
+import json
+import datetime
+import os
+import re
+
+from django.http import HttpResponse, JsonResponse, HttpResponseBadRequest
+from django.views.generic import TemplateView, View
+from django.shortcuts import render, redirect
+from django.core.paginator import Paginator, EmptyPage, PageNotAnInteger
+
+from django.db.models import ObjectDoesNotExist
+from .models import *
+
+from django.contrib.auth.models import User
 from django.contrib.auth.mixins import PermissionRequiredMixin
 from django.contrib.auth.mixins import LoginRequiredMixin
+from django.contrib import messages
 
 from nwscandb.settings import BASE_DIR
 
 from djqscsv import render_to_csv_response
 from xlsx import Workbook
 
-import json
-import logging
-import datetime
-import os
-import re
-
-# start import from my models
 from nmap.tasks import celery_nmap_scan
-from .models import Contact, NmapTask, NmapReportMeta, OrgUnit, NetworkService
-from django.contrib.auth.models import User
-from django import forms
 from .forms import ScanForm
 
+import logging
 logger = logging.getLogger(__name__)
 
-"""
-def get_remote_user(_request):
-    # Return remote_user (value is None if empty)
-
-    try:
-        remote_user = _request.META['REMOTE_USER']
-    except KeyError:
-        remote_user = None
-    return remote_user
-"""
 
 """
 This is the standard layout for a authenticated view to a html template.
 call with:
-url(r'^some/$', SomeView.as_view(), name='some_view'),
+url(r'^some_reports/$', SomeReports.as_view(), name='some_reports'),
 or
-url(r'^some/(?P<some_id>[0-9]+)$',  SomeView.as_view(), name='some_view'),
+url(r'^some_report/(?P<report_id>[0-9]+)$',  SomeReport.as_view(), name='some_report'),
 
-class SomeView(PermissionRequiredMixin, TemplateView):
-    permission_required = "nmap.permission_name"
-or
-class SomeView(LoginRequiredMixin, TemplateView):
+
+class SomeReport(PermissionRequiredMixin, TemplateView):
+    # Scan View
+    permission_required = "nmap.view_scan"
+    login_url = 'nmap:no_permission'  # using login_url to point to no permission
+    redirect_field_name = 'no_permission_to'
+
     def get(self, request, *args, **kwargs):
-        # get - context provides some_id
-        context = self.get_context_data(**kwargs)  # prepare context data (kwargs from URL)
-        or
+        # get - context provides nothing
+        # context = self.get_context_data(**kwargs)  # prepare context data (kwargs from URL)
         context = {}
-        template_name = 'nmap/template_file.html'
+        template_name = "nmap/scan.html"
 
+        u = User.objects.get(username=request.user)
 
-        some = SomeClass.objects.all()
-        other_stuff = OtherStuff.objects.all()
-
-        context = {}
-        context.update({"some": some,
-                       "other_stuff": other_stuff})
+        context.update({"something": "30 something")
         return render(request, template_name, context)
-
 """
 
 
@@ -141,6 +125,40 @@ class Changelog(TemplateView):
         context.update({'changelog': changelog})
         return render(request, template_name, context)
 
+""" No Permission """
+
+
+class NoPermission(LoginRequiredMixin, TemplateView):
+    """NoPermission View"""
+
+    def get(self, request, *args, **kwargs):
+        # get - context provides nothing
+        context = self.get_context_data(**kwargs)  # prepare context data (kwargs from URL)
+        template_name = "nmap/no_permission.html"
+
+        no_permission_to = request.GET.get('no_permission_to', False)
+        if no_permission_to:
+            # maybe something went wrong.. check a if user can access resource sent him there
+            if request.user.is_authenticated() and request.user.has_perm(no_permission_to):
+                logger.debug("What are you doing here?!")
+                return redirect(no_permission_to)
+
+            context.update({'no_permission_to': no_permission_to})
+
+        return render(request, template_name, context)
+
+
+class ServerError(TemplateView):
+    """Server Error Page (500)"""
+    def get(self, request, *args, **kwargs):
+        return render(request, "500.html", {})
+
+
+class NotFound(TemplateView):
+    """Not Found (404)"""
+    def get(self, request, *args, **kwargs):
+        return render(request, "404.html", {})
+
 """ NWScanDB Models Start here """
 
 
@@ -148,6 +166,9 @@ class ScanView(PermissionRequiredMixin, TemplateView):
     """Scan View"""
 
     permission_required = "nmap.view_scan"
+
+    login_url = 'nmap:no_permission'  # hijacked login_url to point to no permission
+    redirect_field_name = 'no_permission_to'
 
     def get(self, request, *args, **kwargs):
         # get - context provides nothing

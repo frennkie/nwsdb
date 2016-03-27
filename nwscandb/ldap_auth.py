@@ -1,45 +1,38 @@
+# ldap_auth.py (custom methods for django_python3_ldap)
+from django_python3_ldap.utils import format_search_filters
 
-import re, binascii
-
-from django.contrib.auth.hashers import make_password
-from django.utils.encoding import force_text
-from django.utils.module_loading import import_string
-from django.utils import six
-
-from django_python3_ldap.conf import settings
+from nwscandb.settings import LDAP_AUTH_MEMBER_OF_ATTRIBUTE
+from nwscandb.settings import LDAP_AUTH_GROUP_MEMBER_OF
+from nwscandb.settings import LDAP_AUTH_SYNC_USER_RELATIONS_GROUPS
 
 
-def import_func(func):
-    if callable(func):
-        return func
-    elif isinstance(func, six.string_types):
-        return import_string(func)
-    raise AttributeError("Expected a function {0!r}".format(func))
+import logging
+logger = logging.getLogger(__name__)
 
 
-def convert_model_fields_to_ldap_fields(model_fields):
-    """
-    Converts a set of model fields into a set of corresponding
-    LDAP fields.
-    """
-    return {
-        settings.LDAP_AUTH_USER_FIELDS[field_name]: field_value
-        for field_name, field_value
-        in model_fields.items()
-    }
+def custom_format_search_filters(ldap_fields):
+    # Add in simple filters.
+    ldap_fields[LDAP_AUTH_MEMBER_OF_ATTRIBUTE] = LDAP_AUTH_GROUP_MEMBER_OF
+    # Call the base format callable.
+    search_filters = format_search_filters(ldap_fields)
+    # All done!
+    return search_filters
 
 
-def format_search_filter(model_fields):
-    """
-    Creates an LDAP search filter for the given set of model
-    fields.
-    """
-    ldap_fields = convert_model_fields_to_ldap_fields(model_fields);
-    ldap_fields["objectClass"] = settings.LDAP_AUTH_OBJECT_CLASS
-    search_filters = import_func(settings.LDAP_AUTH_FORMAT_SEARCH_FILTERS)(ldap_fields)
-    return "(&{})".format("".join(search_filters));
-
-
-def sync_user_relations(user, ldap_attributes):
+def custom_sync_user_relations(user, ldap_attributes):
     # do nothing by default
-    pass
+
+    group_memberships = ldap_attributes[LDAP_AUTH_MEMBER_OF_ATTRIBUTE]
+
+    if LDAP_AUTH_SYNC_USER_RELATIONS_GROUPS["staff"] in group_memberships:
+        user.is_staff = True
+        user.save()
+
+    if LDAP_AUTH_SYNC_USER_RELATIONS_GROUPS["superuser"] in group_memberships:
+        user.is_superuser = True
+        user.save()
+    # All done!
+    return
+
+
+

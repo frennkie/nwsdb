@@ -10,6 +10,12 @@
     <br/><br/>User Authenticated: <br/>
     {{ user.is_authenticated }}
 
+    <br/><br/>is Staff: <br/>
+    {{ user.is_staff }}
+
+    <br/><br/>is Superuser: <br/>
+    {{ user.is_superuser }}
+
     <br/><br/>Permission for "foo.add_bar":<br/>
     {{ perms.foo.add_bar }}
 
@@ -21,12 +27,12 @@
 
     <br/><br/>Permission for "nmap.view_task":<br/>
     {{ perms.nmap.view_task }}
+    <br>
 
-
-<p>You are member of:
-    {% for orgunit in orgunits %}
-        {{ orgunit }}{% if not forloop.last %}, {% endif %}
-    {% endfor %}
-</p>
+    <p>You are member of:
+        {% for orgunit in orgunits %}
+            {{ orgunit }}{% if not forloop.last %}, {% endif %}
+        {% endfor %}
+    </p>
 
 {% endblock %}

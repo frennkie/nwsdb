@@ -23,7 +23,7 @@ BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 # See https://docs.djangoproject.com/en/1.8/howto/deployment/checklist/
 
 # SECURITY WARNING: keep the secret key used in production secret!
-SECRET_KEY = 'v2%0t$i54n2lm)rz)e_p@$7xne6&go8=(dgb$vg9yh+6ktgc*6'
+SECRET_KEY = None  # set in settings_secret.py
 
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = True
@@ -58,7 +58,7 @@ INSTALLED_APPS = (
 
 LOGIN_URL = '/accounts/login/'
 LOGOUT_URL = '/accounts/logout/'
-LOGIN_REDIRECT_URL = '/'
+LOGIN_REDIRECT_URL = '/'  # TODO raus?! ändern?
 
 SESSION_EXPIRE_AT_BROWSER_CLOSE = True
 
@@ -77,19 +77,16 @@ MIDDLEWARE_CLASSES = (
 AUTHENTICATION_BACKENDS = (
     'django.contrib.auth.backends.ModelBackend',
     'django_python3_ldap.auth.LDAPBackend',
-
 )
 
-
 # The URL of the LDAP server.
-LDAP_AUTH_URL = "ldaps://ldap.example.com"
+LDAP_AUTH_URL = "ldap://localhost"
 
 # Initiate TLS on connection.
-#LDAP_AUTH_USE_TLS = False
-LDAP_AUTH_USE_TLS = True
+LDAP_AUTH_USE_TLS = False
 
 # The LDAP search base for looking up users.
-LDAP_AUTH_SEARCH_BASE = "cn=accounts,dc=example,dc=com"
+LDAP_AUTH_SEARCH_BASE = "ou=users,dc=denm,dc=de"
 
 # The LDAP class that represents a user.
 LDAP_AUTH_OBJECT_CLASS = "inetOrgPerson"
@@ -97,7 +94,7 @@ LDAP_AUTH_OBJECT_CLASS = "inetOrgPerson"
 # User model fields mapped to the LDAP
 # attributes that represent them.
 LDAP_AUTH_USER_FIELDS = {
-    "username": "uid",
+    "username": "cn",
     "first_name": "givenName",
     "last_name": "sn",
     "email": "mail",
@@ -115,12 +112,26 @@ LDAP_AUTH_CLEAN_USER_DATA = "django_python3_ldap.utils.clean_user_data"
 # and saves any additional user relationships based on the LDAP data.
 # Use this to customize how data loaded from LDAP is saved to User model relations.
 # For customizing non-related User model fields, use LDAP_AUTH_CLEAN_USER_DATA.
-LDAP_AUTH_SYNC_USER_RELATIONS = "django_python3_ldap.utils.sync_user_relations"
+# LDAP_AUTH_SYNC_USER_RELATIONS = "django_python3_ldap.utils.sync_user_relations"
+LDAP_AUTH_SYNC_USER_RELATIONS = "nwscandb.ldap_auth.custom_sync_user_relations"
+
+LDAP_AUTH_SYNC_USER_RELATIONS_GROUPS = {
+    "staff": "cn=django_nwscandb_staff,ou=groups,dc=denm,dc=de",
+    "superuser": "cn=django_nwscandb_superuser,ou=groups,dc=denm,dc=de"
+}
 
 # Path to a callable that takes a dict of {ldap_field_name: value},
 # returning a list of [ldap_search_filter]. The search filters will then be AND'd
 # together when creating the final search filter.
-LDAP_AUTH_FORMAT_SEARCH_FILTERS = "django_python3_ldap.utils.format_search_filters"
+#LDAP_AUTH_FORMAT_SEARCH_FILTERS = "django_python3_ldap.utils.format_search_filters"
+LDAP_AUTH_FORMAT_SEARCH_FILTERS = "nwscandb.ldap_auth.custom_format_search_filters"
+
+
+# my custom search filter checks for "memberOf" (objectclass: groupOfNames) having this group:
+#
+LDAP_AUTH_MEMBER_OF_ATTRIBUTE = "memberOf"
+LDAP_AUTH_GROUP_MEMBER_OF = "cn=django_nwscandb,ou=groups,dc=denm,dc=de"
+
 
 # Path to a callable that takes a dict of {model_field_name: value}, and returns
 # a string of the username to bind to the LDAP server.
@@ -132,8 +143,8 @@ LDAP_AUTH_ACTIVE_DIRECTORY_DOMAIN = None
 
 # The LDAP username and password of a user for authenticating the `ldap_sync_users`
 # management command. Set to None if you allow anonymous queries.
-LDAP_AUTH_CONNECTION_USERNAME = None
-LDAP_AUTH_CONNECTION_PASSWORD = None
+LDAP_AUTH_CONNECTION_USERNAME = None  # set in settings_secret.py
+LDAP_AUTH_CONNECTION_PASSWORD = None  # set in settings_secret.py
 
 
 ROOT_URLCONF = 'nwscandb.urls'
@@ -211,6 +222,10 @@ LOGGING = {
             'propagate': True,
             'level': 'DEBUG',
         },
+        'nwscandb': {
+            'handlers': ['file'],
+            'level': 'DEBUG',
+        },
         'dbimport': {
             'handlers': ['file'],
             'level': 'DEBUG',
@@ -224,10 +239,6 @@ LOGGING = {
             'level': 'DEBUG',
         },
         'accounts': {
-            'handlers': ['file'],
-            'level': 'DEBUG',
-        },
-        'admin': {
             'handlers': ['file'],
             'level': 'DEBUG',
         },

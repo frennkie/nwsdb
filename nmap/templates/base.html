@@ -99,9 +99,7 @@
                         {% url 'nmap:index' as link %}{% widget "widgets_base:render_nav_link" title="Home" icon="home" link=link %}
                     </ul>
 
-
                     <ul class="nav navbar-nav navbar-right">
-                        {% url 'admin:index' as link %}{% widget "widgets_base:render_nav_link" title="Admin Page" icon="cog" link=link %}
                         {% url 'accounts:login' as link %}{% widget "widgets_base:render_nav_link" title="Log in" icon="user" link=link %}
                    </ul>
                 </div>

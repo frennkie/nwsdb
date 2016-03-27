@@ -59,8 +59,6 @@ urlpatterns = [
     url(r'^api-auth/', include('rest_framework.urls', namespace='rest_framework')),
     url(r'^accounts/', include('accounts.urls')),
     url(r'^$', nmap.views.Index.as_view(), name='index'),
-    #url(r'^logout/$', nmap.views.remote_user_logout, name='Log out'),
-    #url(r'^logged_out/$', nmap.views.remote_user_logged_out, name='Logged out'),
     url(r'^nmap/', include('nmap.urls')),
     url(r'^multidns/', include('multidns.urls')),
     url(r'^admin/', include(admin.site.urls)),
