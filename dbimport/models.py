@@ -74,7 +74,7 @@ def network_address_validator(address, obj_range):
 
     if not iptools.IpRange(address).startIp == obj_range.startIp:
         raise ValidationError(_(
-            "Wrong network address for given mask, should be " + unicode(obj_range[0])))
+            "Wrong network address for given mask, should be {0}".format(obj_range[0])))
     return True
 
 
@@ -120,7 +120,7 @@ class Range(MPTTModel):
     # properties
     def cidr(self):
         if self.address and self.mask:
-            return self.address + "/" + unicode(self.mask)
+            return "{0.address}/{0.mask}".format(self)
         elif self.address == "0.0.0.0" and self.mask == 0:
             return "0.0.0.0/0"
         else:
@@ -173,7 +173,7 @@ class Range(MPTTModel):
         if self.parent:
             if self.address not in self.parent.ip_range:
                 raise ValidationError(_(
-                    self.cidr + " is not a subnet of " + self.parent.cidr))
+                    "{0.cidr} is not a subnet of {0.parent.cidr}").format(self))
 
         # insert into tree at correct position (no matter what user selected as "parent")
         try:
@@ -238,7 +238,7 @@ class Range(MPTTModel):
                 new_root_candidates = self.get_children()
                 if len(new_root_candidates) == 1:
                     new_root = new_root_candidates[0]
-                    logger.info("Make this the new tree root: " + str(new_root.cidr))
+                    logger.info("Make this the new tree root: {0}".format(new_root.cidr))
                     new_root.parent = None
                     new_root.move_to(None, None)
                     new_root.save()
@@ -247,7 +247,7 @@ class Range(MPTTModel):
                 else:
                     logger.info("Root (going to be deleted) has more than one child. Split..")
                     for new_root_candidate in new_root_candidates:
-                        logger.debug("New root: " + str(new_root_candidate))
+                        logger.debug("New root: {0}".format(new_root_candidate))
                         new_root_candidate.parent = None
                         new_root_candidate.move_to(None, None)
                         new_root_candidate.save()
@@ -261,7 +261,7 @@ class Range(MPTTModel):
             else:
                 logger.debug("need to fix parent - child relations...")
                 for node in self.get_children():
-                    logger.debug("kids: " + node.cidr)
+                    logger.debug("kids: {0}".format(node.cidr))
                     node.parent = self.parent
                     node.save()
 
@@ -293,10 +293,10 @@ class Range(MPTTModel):
             for tree_error in trees_errors:
                 for tree, errors in tree_error:
                     logger.error("\n\n")
-                    logger.error("Inconsistent tree: " + tree.cidr)
+                    logger.error("Inconsistent tree: {0}".format(tree.cidr))
                     for error in errors:
                         logger.error(error.message)
-                        logger.error("Affects: " + str(error.range_info_tuple))
+                        logger.error("Affects: {0}".format(error.range_info_tuple))
                         logger.error("---")
 
             raise Exception(_("Error: Inconsistent tree(s)"))
@@ -365,13 +365,13 @@ class Range(MPTTModel):
         all_nodes = tree_root.get_family()
 
         for item in all_nodes:
-            logger.debug("validating on: " + item.cidr)
+            logger.debug("validating on: {0}".format(item.cidr))
             # check parent (unless item is a root_node)
             if not item.is_root_node():
                 if item.address not in item.parent.ip_range:
                     # logger.error("Range " + item.cidr + " not in " + str(item.parent.ip_range))
                     err = TreeValidationError(
-                        "Range " + item.cidr + " not in " + str(item.parent.ip_range),
+                        "Range {0.cidr} not in {0.parent.ip_range}".format(item),
                         tree=tree_root,
                         range_info_tuple=(item, item.parent))
                     validation_errors.append(err)
@@ -382,7 +382,7 @@ class Range(MPTTModel):
                 if cur_parent is not item.parent:
                     # logger.error("Range " + item.cidr + " points to wrong parent.")
                     err = TreeValidationError(
-                        "Range " + item.cidr + " points to wrong parent.",
+                        "Range {0.cidr} points to wrong parent.".format(item),
                         tree=tree_root,
                         range_info_tuple=(item, None))
                     validation_errors.append(err)
@@ -393,7 +393,7 @@ class Range(MPTTModel):
                     if child.address not in item.ip_range:
                         # logger.error("Range " + child.cidr + " not in " + str(item.ip_range))
                         err = TreeValidationError(
-                            "Range " + child.cidr + " not in " + str(item.ip_range),
+                            "Range {0.cidr} not in {1.ip_range}".format(child, item),
                             tree=tree_root,
                             range_info_tuple=(item, item.parent))
                         validation_errors.append(err)
@@ -441,8 +441,9 @@ class Range(MPTTModel):
             for idx in range(0, len(ancestors)):
                 idx_next = idx + 1
                 if idx_next < len(ancestors):
-                    logger.debug("Compare mask for: " + str(ancestors[idx]) +
-                                 " and: " + str(ancestors[idx_next]))
+                    logger.debug("Compare mask for: {0} and {1}".format(ancestors[idx],
+                                                                        ancestors[idx_next]))
+
                     if ancestors[idx].mask >= ancestors[idx_next].mask:
                         # logger.error("Child mask is not longer/bigger than parent mask")
                         err = TreeValidationError(
@@ -451,7 +452,7 @@ class Range(MPTTModel):
                             range_info_tuple=(ancestors[idx], ancestors[idx_next]))
                         validation_errors.append(err)
                 else:
-                    logger.debug("Last: C mask: " + str(ancestors[idx]) + " and " + str(leaf))
+                    logger.debug("Last: C mask: {0} and {1}".format(ancestors[idx], leaf))
                     if ancestors[idx].mask >= leaf.mask:
                         # logger.error("Child mask is not longer/bigger than parent mask")
                         err = TreeValidationError(
@@ -493,15 +494,15 @@ class Range(MPTTModel):
             siblings = []
             logger.debug("---")
             for sibling in descendant.get_siblings(include_self=True):
-                logger.debug("Child: " + sibling.cidr)
+                logger.debug("Child: {0}".format(sibling.cidr))
                 siblings.append(sibling.address)
 
             if len(siblings) != len(set(siblings)):
                 # logger.error("At least two siblings have same address on level: " +
                 #             str(descendant.level) + " (" + descendant.cidr + ")")
                 err = TreeValidationError(
-                     "At least two siblings have same address on level: " +
-                     str(descendant.level)  ,
+                     "At least two siblings have same address on "
+                     "level: {0}".format(descendant.level),
                      tree=tree_root,
                      range_info_tuple=(descendant, None))
                 validation_errors.append(err)
@@ -556,7 +557,8 @@ class Range(MPTTModel):
         all_root_nodes = self.__class__.objects.root_nodes()
         for root_node in all_root_nodes:
             if self.address in root_node.ip_range:
-                logger.debug("Need to insert Range " + self.cidr + " below: " + str(root_node))
+                logger.debug("Need to insert Range {0}  below: {1}".format(self.cidr,
+                                                                           root_node))
                 break
         else:  # from for loop!
             # range is not part of an existing tree
@@ -577,7 +579,7 @@ class Range(MPTTModel):
             if child.cidr == self.cidr:
                 pass
             elif child.address in self.ip_range:
-                logger.info("Setting newly created Range as parent for: " + str(child))
+                logger.info("Setting newly created Range as parent for: {0}".format(child))
                 child.parent = self
                 child.save()
 
@@ -603,7 +605,7 @@ class Range(MPTTModel):
 
         for item in node.get_children():
             if self.address in item.ip_range:
-                logger.debug("Yepp: self is part of this branch: " + str(parent.cidr))
+                logger.debug("Yepp: self is part of this branch: {0}".format(parent.cidr))
                 parent = self.find_parent(item)
                 break
 
@@ -644,8 +646,8 @@ class Range(MPTTModel):
 
         if duplicates_forbidden_id_list:
             raise ValidationError(_(
-                """Range already exists and at least one existing entry does not allow
-                duplicates. Check: """ + unicode(duplicates_forbidden_id_list)))
+                "Range already exists and at least one existing entry does not allow "
+                "duplicates. Check: {0}".format(duplicates_forbidden_id_list)))
 
         with transaction.atomic(), reversion.create_revision():
             reversion.set_comment("set is_duplicate to True while adding")
@@ -655,7 +657,7 @@ class Range(MPTTModel):
         for dupe in all_dupes:
             if not dupe.is_duplicate:
                 with transaction.atomic(), reversion.create_revision():
-                    reversion.set_comment("set is_duplicate to True while adding " + unicode(self.id))
+                    reversion.set_comment("set is_duplicate to True while adding {0}".format(self.id))
                     dupe.is_duplicate = True
                     dupe.save()
 
@@ -766,7 +768,9 @@ class RangeDNS(models.Model):
                     duplicates_forbidden_id_list.append(dupe.id)
 
         if duplicates_forbidden_id_list:
-            raise ValidationError(_("""Range already exists and at least one existing entry does not allow duplicates. Check: """ + unicode(duplicates_forbidden_id_list)))
+            raise ValidationError(_("Range already exists and at least one existing entry "
+                                    "does not allow duplicates. "
+                                    "Check: {0}".format(duplicates_forbidden_id_list)))
 
         with transaction.atomic(), reversion.create_revision():
             reversion.set_comment("set is_duplicate to True while adding")
@@ -776,7 +780,7 @@ class RangeDNS(models.Model):
         for dupe in all_dupes:
             if not dupe.is_duplicate:
                 with transaction.atomic(), reversion.create_revision():
-                    reversion.set_comment("set is_duplicate to True while adding " + unicode(self.id))
+                    reversion.set_comment("set is_duplicate to True while adding {0}".format(self.id))
                     dupe.is_duplicate = True
                     dupe.save()
 
@@ -810,7 +814,7 @@ class Person(models.Model):
 
     def display_name(self):
         if len(self.last_name) and len(self.first_names):
-            return self.last_name + ", " + self.first_names
+            return "{0.last_name}, {0.first_names}".format(self)
         elif not len(self.last_name) and not len(self.first_names):
             return "Doe, John"
         elif len(self.last_name):
@@ -825,7 +829,7 @@ class Person(models.Model):
                 self.email)
 
     def __str__(self):  # __unicode__ on Python 2
-        return self.display_name + " (" + self.email + ")"
+        return "{0.display_name} ({0.email})".format(self)
 
 
 class Organization(models.Model):
@@ -896,12 +900,6 @@ class MembershipPRORange(models.Model):
                 self.person.email)
 
     def __str__(self):  # __unicode__ on Python 2
-        """
-        return ("User: \"" + self.person.display_name +
-                "\" Role: \"" + self.role.name +
-                "\" at Org: \"" + self.organization.name +
-                "\" (" + unicode(self.ranges_total) + " Ranges)")
-        """
         return ("User: \"{0.person.display_name}\" "
                 "Role: \"{0.role.name}\" "
                 "at Org: \"{0.organization.name}\" "
