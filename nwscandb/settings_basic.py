@@ -173,7 +173,7 @@ TEMPLATE_LOADERS = (
 )
 """
 
-WSGI_APPLICATION = 'nwscandb.wsgi.application'
+WSGI_APPLICATION = None  # defined for dev/prod separately
 
 
 # Database

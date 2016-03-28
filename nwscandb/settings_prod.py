@@ -1,7 +1,8 @@
 # -*- coding: utf-8 -*-
 
 DEBUG = False
-TEMPLATE_DEBUG = False
+
+WSGI_APPLICATION = 'nwscandb.wsgi_prod.application'
 
 DATABASES = None  # defined in secret settings
 
