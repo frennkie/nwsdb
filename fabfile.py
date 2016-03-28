@@ -88,13 +88,12 @@ def deploy_all(local_root=LOCAL_ROOT, remote_root=REMOTE_ROOT):
 
 
 def sync_project(local_root=LOCAL_ROOT, remote_root=REMOTE_ROOT):
-    remote_dir_project = os.path.join(remote_root, env.project_name)
-    puts("--- Sync from \"{0}\" to {1}  ---".format(local_root, remote_dir_project))
-    chown_dir(remote_dir_project, user=env.user)
-    rsync_project(remote_dir_project, local_root, exclude="nwsdb/.git")
-    chown_dir(remote_dir_project, user="www-data")
+    puts("--- Sync from \"{0}\" to {1}  ---".format(local_root, remote_root))
+    chown_dir(remote_root, user=env.user)
+    rsync_project(remote_root, local_root, exclude="nwsdb/.git")
+    chown_dir(remote_root, user="www-data")
     clean_up_remote(remote_root)
-    sudo("touch {0}/nwscandb/wsgi_prod.py".format(remote_dir_project))
+    sudo("touch {0}/nwsdb/nwscandb/wsgi_prod.py".format(remote_root))
 
 
 def testing():
