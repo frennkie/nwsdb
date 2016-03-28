@@ -17,7 +17,7 @@ from django.contrib.auth.mixins import PermissionRequiredMixin
 from django.contrib.auth.mixins import LoginRequiredMixin
 from django.contrib import messages
 
-from nwscandb.settings import BASE_DIR
+from nwscandb.settings_prod import BASE_DIR
 
 from djqscsv import render_to_csv_response
 from xlsx import Workbook

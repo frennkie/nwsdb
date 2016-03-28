@@ -13,9 +13,10 @@ dump/
 migrations/versions/*
 celerybeat-schedule
 
-my.cnf
-settings_secret.py
+settings_prod_secret.py
+settings_dev_secret.py
 
+.vagrant
 .coverage
 .cache/
 *.log

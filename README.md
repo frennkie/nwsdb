@@ -25,6 +25,62 @@ createdb nwscandb
 
 
 
+Project directory layout
+
+Project Name: nwscandb
+(Web)Site Name: nwscandb   ( could also be www.example.com )
+
+tree /var/www/site_nwscandb/ -L 2
+/var/www/site_nwscandb/        # website_root
+├── nwsdb                    # this should be the project name (nwscandb)! 
+│   ├── accounts
+│   ├── CHANGELOG.md
+│   ├── dbimport
+│   ├── insert.sql
+│   ├── manage.py
+│   ├── multidns
+│   ├── nmap
+---
+/var/www/site_nwscandb/nwsdb/nwscandb
+        ├── celery.py
+        ├── __init__.py
+        ├── ldap_auth.py
+        ├── settings_basic.py
+        ├── settings_dev.py
+        ├── settings_dev_secret.py        
+        ├── settings_prod.py
+        ├── settings_prod_secret.py
+        ├── urls.py
+        ├── wsgi_dev.py
+        └── wsgi_prod.py
+---
+│   ├── nwscandb_dev.conf
+│   ├── nwscandb_prod.conf
+│   ├── README.md
+│   ├── requirements.txt
+│   └── Vagrantfile
+├── static
+│   ├── accounts
+│   ├── admin
+│   ├── css
+│   ├── django_extensions
+│   ├── fonts
+│   ├── js
+│   ├── mptt
+│   └── rest_framework
+└── venv
+    ├── bin
+    ├── djcelery
+    ├── include
+    ├── lib
+    ├── pip-selfcheck.json
+    └── share
+
+
+
+
+
+
 ### Get started
 
 https://django.readthedocs.org/en/1.8.x/intro/tutorial01.html
