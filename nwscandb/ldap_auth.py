@@ -1,9 +1,9 @@
 # ldap_auth.py (custom methods for django_python3_ldap)
 from django_python3_ldap.utils import format_search_filters
 
-from nwscandb.settings import LDAP_AUTH_MEMBER_OF_ATTRIBUTE
-from nwscandb.settings import LDAP_AUTH_GROUP_MEMBER_OF
-from nwscandb.settings import LDAP_AUTH_SYNC_USER_RELATIONS_GROUPS
+from nwscandb.settings_prod import LDAP_AUTH_MEMBER_OF_ATTRIBUTE
+from nwscandb.settings_prod import LDAP_AUTH_GROUP_MEMBER_OF
+from nwscandb.settings_prod import LDAP_AUTH_SYNC_USER_RELATIONS_GROUPS
 
 
 import logging
