@@ -16,6 +16,7 @@ celerybeat-schedule
 settings_prod_secret.py
 settings_dev_secret.py
 
+.vagrant
 .coverage
 .cache/
 *.log
