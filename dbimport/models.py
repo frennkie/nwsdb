@@ -30,7 +30,7 @@ class TreeValidationError(Exception):
                 self.__class__.__name__,
                 self.message)
 
-    def __unicode__(self):  # __str__ on Python 3
+    def __str__(self):  # __str__ on Python 3
         return self.message
 
 
@@ -114,7 +114,7 @@ class Range(MPTTModel):
                 self.__class__.__name__,
                 self.cidr)
 
-    def __unicode__(self):  # __str__ on Python 3
+    def __str__(self):  # __str__ on Python 3
         return self.cidr
 
     # properties
@@ -720,7 +720,7 @@ class RangeDNS(models.Model):
                 self.__class__.__name__,
                 self.address)
 
-    def __unicode__(self):  # __str__ on Python 3
+    def __str__(self):  # __str__ on Python 3
         return self.address
 
     def clean(self, exclude=None):
@@ -824,7 +824,7 @@ class Person(models.Model):
                 self.__class__.__name__,
                 self.email)
 
-    def __unicode__(self):  # __str__ on Python 3
+    def __str__(self):  # __str__ on Python 3
         return self.display_name + " (" + self.email + ")"
 
 
@@ -847,7 +847,7 @@ class Organization(models.Model):
                 self.__class__.__name__,
                 self.name)
 
-    def __unicode__(self):  # __str__ on Python 3
+    def __str__(self):  # __str__ on Python 3
         return self.name
 
 
@@ -870,7 +870,7 @@ class Role(models.Model):
                 self.__class__.__name__,
                 self.name)
 
-    def __unicode__(self):  # __str__ on Python 3
+    def __str__(self):  # __str__ on Python 3
         return self.name
 
 
@@ -895,7 +895,7 @@ class MembershipPRORange(models.Model):
                 self.__class__.__name__,
                 self.person.email)
 
-    def __unicode__(self):  # __str__ on Python 3
+    def __str__(self):  # __str__ on Python 3
         return ("User: \"" + self.person.display_name +
                 "\" Role: \"" + self.role.name +
                 "\" at Org: \"" + self.organization.name +
