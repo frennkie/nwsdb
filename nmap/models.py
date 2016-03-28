@@ -84,7 +84,7 @@ class NmapTask(models.Model):
                                        self.id,
                                        self.task_id)
 
-    def __str__(self): # __str__ on Python 3
+    def __str__(self): # __unicode__ on Python 2
         return self.task_id
 
     @classmethod
@@ -237,7 +237,7 @@ class NmapReportMeta(models.Model):
                                                     self.task_comment)
                                                     # self.task_user_id)
 
-    def __str__(self): # __str__ on Python 3
+    def __str__(self): # __unicode__ on Python 2
         return self.task_id
 
     @classmethod
@@ -526,7 +526,7 @@ class NetworkService(models.Model):
                 self.address,
                 self.port)
 
-    def __str__(self):  # __str__ on Python 3
+    def __str__(self):  # __unicode__ on Python 2
         return "{0}/{1}:{2}".format(
                 self.protocol,
                 self.address,
@@ -561,6 +561,6 @@ class Contact(models.Model):
                 self.name,
                 self.email)
 
-    def __str__(self):  # __str__ on Python 3
+    def __str__(self):  # __unicode__ on Python 2
         return self.name
 
