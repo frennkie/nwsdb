@@ -3,13 +3,16 @@
 https://www.digitalocean.com/community/tutorials/how-to-install-and-use-postgresql-on-ubuntu-14-04
 https://help.ubuntu.com/community/PostgreSQL
 
+```
 sudo apt-get update
-sudo apt-get install postgresql postgresql-server-dev-9.4
- postgresql-contrib 
+sudo apt-get install postgresql postgresql-server-dev-9.4 postgresql-contrib 
+```
 
+```
 sudo -i -u postgres
+```
 
-
+```
 psql
 
 \q
@@ -19,10 +22,11 @@ Enter name of role to add: nwscandb
 Shall the new role be a superuser? (y/n) n
 Shall the new role be allowed to create databases? (y/n) y
 Shall the new role be allowed to create more new roles? (y/n) n
+```
 
-
+```
 createdb nwscandb
-
+```
 
 
 Project directory layout
@@ -30,6 +34,7 @@ Project directory layout
 Project Name: nwscandb
 (Web)Site Name: nwscandb   ( could also be www.example.com )
 
+```
 tree /var/www/site_nwscandb/ -L 2
 /var/www/site_nwscandb/        # website_root
 ├── nwsdb                    # this should be the project name (nwscandb)! 
@@ -75,7 +80,7 @@ tree /var/www/site_nwscandb/ -L 2
     ├── lib
     ├── pip-selfcheck.json
     └── share
-
+```
 
 
 
